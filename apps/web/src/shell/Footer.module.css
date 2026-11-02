@@ -1,0 +1,160 @@
+/*
+ * Site footer. Values match diyorde.com (xstore-design skill, "Footer").
+ * Literal colours that are not tokens are the reference's own footer values.
+ */
+
+.footer {
+  background: var(--x-surface);
+  color: var(--x-text);
+  font-family: var(--x-font);
+  font-weight: 400;
+  letter-spacing: 0;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.inner {
+  box-sizing: content-box;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding: 1.25rem var(--x-gutter) calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--x-text);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.19;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+}
+
+.brand:focus-visible {
+  border-radius: 0.625rem;
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 3px;
+}
+
+.social {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.6875rem;
+  background: var(--x-card);
+  box-shadow: 0 0.25rem 0.625rem rgba(140, 153, 177, 0.08);
+  color: var(--x-link);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.16s var(--x-ease);
+}
+
+/* larger tap target */
+.social::after {
+  content: "";
+  position: absolute;
+  inset: -0.3125rem;
+}
+
+.social:active {
+  transform: scale(0.96);
+}
+
+.social:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.groups ul {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: block;
+  padding-block: 0.375rem;
+  color: var(--x-text);
+  font-size: 0.9375rem;
+  line-height: 1.36;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.link:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.base {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: start;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  background-image: linear-gradient(var(--x-hair), var(--x-hair));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% var(--x-hairline);
+}
+
+.small {
+  margin: 0;
+  color: #626771;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 48em) {
+  .inner {
+    padding-top: 2.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .groups {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    margin-top: 2.25rem;
+  }
+
+  .base {
+    margin-top: 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social {
+    transition: none;
+  }
+
+  .social:active {
+    transform: none;
+  }
+}

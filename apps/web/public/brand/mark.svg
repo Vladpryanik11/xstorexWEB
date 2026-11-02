@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <title>Xstore</title>
+  <defs>
+    <linearGradient id="xstore-x" x1="0" y1="25" x2="0" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0c45b7"/>
+      <stop offset="1" stop-color="#3b75e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="27" fill="#fff"/>
+  <path d="M36 36 84 84M84 36 36 84" fill="none" stroke="url(#xstore-x)" stroke-width="22" stroke-linecap="round"/>
+</svg>

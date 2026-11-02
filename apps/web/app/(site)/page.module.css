@@ -1,0 +1,29 @@
+.hero {
+  box-sizing: content-box;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding: 1.125rem var(--x-gutter) 2.5rem;
+}
+
+.title {
+  max-width: 20.5rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.19;
+  letter-spacing: -0.0103125rem;
+  text-wrap: balance;
+}
+
+@media (min-width: 48em) {
+  .hero {
+    padding-top: 2.5rem;
+  }
+
+  .title {
+    max-width: 34rem;
+    font-size: 2.75rem;
+    line-height: 1.14;
+    letter-spacing: -0.015rem;
+  }
+}

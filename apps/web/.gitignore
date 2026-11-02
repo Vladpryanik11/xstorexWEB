@@ -1,0 +1,4 @@
+next-env.d.ts
+*.tsbuildinfo
+# written by `next dev` (Next.js agent rules); the project keeps its own CLAUDE.md
+AGENTS.md

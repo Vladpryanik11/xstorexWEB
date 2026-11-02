@@ -1,0 +1,62 @@
+/* Dev showcase layout only. */
+
+.hero {
+  margin-top: -3.75rem;
+  padding: calc(3.75rem + 1.125rem) var(--x-gutter) 1.6875rem;
+  background: linear-gradient(var(--x-ink), #0c45b7);
+}
+
+.heroTitle {
+  max-width: 20.5rem;
+  margin: 0 0 1.5rem;
+  color: #fff;
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.19;
+}
+
+.page {
+  box-sizing: content-box;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding: 1.5rem 0 3rem;
+}
+
+.section {
+  display: grid;
+  /* minmax(0, …) keeps the rail scrolling inside the column instead of widening the page */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.section > h2,
+.pad {
+  margin-inline: var(--x-gutter);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-inline: var(--x-gutter);
+}
+
+.glassPanel {
+  margin-inline: var(--x-gutter);
+  padding: 1.5rem var(--x-gutter);
+  border-radius: var(--x-radius-card);
+  background: var(--x-header-gradient);
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 7.5rem;
+  aspect-ratio: 1;
+  border-radius: 22.5%;
+  background: var(--x-card);
+  color: var(--x-text-2);
+  font-size: 0.8125rem;
+  text-align: center;
+}

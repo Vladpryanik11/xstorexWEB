@@ -1,0 +1,468 @@
+/*
+ * Site header. Every value matches diyorde.com (xstore-design skill, "Header").
+ * Literal colours that are not tokens are the reference's own header values.
+ */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--x-header-gradient);
+  font-family: var(--x-font);
+  font-weight: 400;
+  letter-spacing: 0;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 6px strip under the iOS status bar */
+.tint {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 5;
+  height: 0.375rem;
+  background-color: #0c45b7;
+  pointer-events: none;
+}
+
+.inner {
+  box-sizing: content-box;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: var(--x-page-max);
+  min-height: 2.5rem;
+  margin-inline: auto;
+  padding: 0.625rem var(--x-gutter);
+}
+
+.mark {
+  display: block;
+  flex: none;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 0.625rem;
+}
+
+.mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.625rem;
+}
+
+.mark:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Home variant: transparent over the hero, the gradient fades in over 6rem of scroll */
+.over {
+  background: transparent;
+}
+
+.over::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--x-header-gradient);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .over::before {
+    animation: header-shade 1ms linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 6rem;
+  }
+}
+
+@keyframes header-shade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Menu row (≥48em) */
+
+.menu {
+  position: relative;
+  flex: none;
+  order: 3;
+}
+
+.row {
+  display: none;
+  align-items: center;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link,
+.entry,
+.quiet {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.002625rem;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.125rem;
+  padding: 0 0.75rem;
+  border-radius: 62.5rem;
+  color: #e6edfb;
+  transition: background-color 0.16s;
+}
+
+.link[aria-current="page"] {
+  background: var(--x-glass);
+}
+
+.link:focus-visible,
+.entry:focus-visible,
+.quiet:focus-visible,
+.burger:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+}
+
+/* End group */
+
+.end {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+.entry {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: 12.5rem;
+  background: var(--x-glass);
+  box-shadow: var(--x-glass-shadow);
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.entry:active {
+  transform: scale(0.97);
+}
+
+.quiet {
+  display: none;
+}
+
+/* Burger and side sheet (<48em) */
+
+.burger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--x-glass);
+  box-shadow: var(--x-glass-shadow);
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.burger::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+}
+
+.burger:active {
+  transform: scale(0.95);
+}
+
+.entry,
+.burger {
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    box-shadow 0.22s,
+    transform 0.16s var(--x-ease);
+}
+
+.bars {
+  position: relative;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.bars span {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 0.125rem;
+  margin-top: -0.0625rem;
+  border-radius: 62.5rem;
+  background: currentColor;
+  transition:
+    transform 0.26s var(--x-ease),
+    opacity 0.16s;
+}
+
+.bars span:nth-child(1) {
+  transform: translateY(-0.375rem);
+}
+
+.bars span:nth-child(3) {
+  transform: translateY(0.375rem);
+}
+
+.burger[aria-expanded="true"] .bars span:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.burger[aria-expanded="true"] .bars span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0.4);
+}
+
+.burger[aria-expanded="true"] .bars span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+/* Full-screen sheet painted under the header row (z-index -1 inside the header) */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding-top: 3.75rem;
+  background: var(--x-surface);
+  color: var(--x-text);
+  animation: sheet-in 0.32s var(--x-ease-sheet) both;
+}
+
+.leaving {
+  animation: sheet-out 0.22s var(--x-ease-sheet) both;
+}
+
+.sheetBody {
+  flex: auto;
+  min-height: 0;
+  padding: 1.5rem calc(var(--x-gutter) - 0.5rem) calc(1rem + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheetList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheetList + .sheetList {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  background-image: linear-gradient(var(--x-hair), var(--x-hair));
+  background-repeat: no-repeat;
+  background-position: 0.5rem 0;
+  background-size: calc(100% - 1rem) var(--x-hairline);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 3rem;
+  padding: 0 0.5rem;
+  border-radius: var(--x-radius-field);
+  color: var(--x-text);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.36;
+  letter-spacing: 0;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.item[aria-current="page"] {
+  background: var(--x-card);
+}
+
+.quietItem {
+  color: var(--x-text-2);
+}
+
+.item:active {
+  background: #e4e9f5;
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: #e9edf7;
+  }
+}
+
+.icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--x-blue);
+}
+
+.quietItem .icon {
+  color: var(--x-text-3);
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* While the sheet is open the header row sits on the light sheet */
+@media (max-width: 47.9375em) {
+  .header:has(.sheet) {
+    z-index: 70;
+  }
+
+  .header:has(.sheet:not(.leaving)) .tint {
+    background-color: var(--x-surface);
+  }
+
+  .header:has(.sheet:not(.leaving)) .burger,
+  .header:has(.sheet:not(.leaving)) .entry {
+    background: var(--x-card);
+    box-shadow: 0 0 0 var(--x-hairline) #8a8a8d73;
+    color: var(--x-text);
+  }
+}
+
+/* ≥48em: three-column grid, menu row instead of the burger */
+@media (min-width: 48em) {
+  .inner {
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+    column-gap: 1rem;
+  }
+
+  .mark {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .menu {
+    order: 0;
+    grid-column: 2;
+  }
+
+  .row {
+    display: flex;
+  }
+
+  .more {
+    display: none;
+  }
+
+  .end {
+    grid-column: 3;
+    justify-self: end;
+    gap: 0.75rem;
+    margin-inline-start: 0;
+  }
+
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.5rem;
+    border-radius: 62.5rem;
+    color: rgba(230, 237, 251, 0.72);
+    transition: color 0.16s;
+  }
+}
+
+@media (min-width: 48em) and (hover: hover) and (pointer: fine) {
+  .quiet:hover {
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry,
+  .burger,
+  .bars span {
+    transition: none;
+  }
+
+  .entry:active,
+  .burger:active {
+    transform: none;
+  }
+
+  .sheet {
+    animation-name: sheet-fade;
+  }
+
+  .leaving {
+    visibility: hidden;
+    animation: none;
+  }
+}
