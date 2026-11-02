@@ -1,0 +1,22 @@
+.title {
+  margin: 0;
+  font: 700 17px var(--x-system);
+  color: var(--x-text);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.chevron {
+  margin-inline-start: 0.25rem;
+}

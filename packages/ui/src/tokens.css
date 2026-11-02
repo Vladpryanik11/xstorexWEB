@@ -1,0 +1,57 @@
+/* biome-ignore format: token block is kept verbatim from the xstore-design skill */
+:root {
+  --x-blue: #1a6eea;
+  --x-blue-strong: #0167e5;
+  --x-blue-ring: #2276f3;
+  --x-ink: #062260;
+  --x-text: #000;
+  --x-text-2: #6b7280;
+  --x-text-3: #8c97ae;
+  --x-quiet: #8a8a8d;
+  --x-link: #008bff;
+  --x-page: #f3f4f6;
+  --x-surface: #f0f3fa;
+  --x-surface-2: #eceef5;
+  --x-card: #fff;
+  --x-hair: #8a8a8d33;
+  --x-radius-card: 1.5rem;
+  --x-radius-field: .875rem;
+  --x-gutter: 1.25rem;
+  --x-column: 33rem;
+  --x-page-max: 70rem; /* ≥64em: clamp(70rem, 100vw - 10rem, 90rem) */
+  --x-font: "Helvetica Neue", Helvetica, Inter, Arial, sans-serif;
+  --x-system: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --x-header-gradient: linear-gradient(#0c45b7 0%, #134cbe 30%, #1c55c8 51%, #245dd0 69%, #3b75e9 100%);
+  --x-glass: rgba(255,255,255,.2);
+  --x-glass-shadow: inset 0 -1px 1px -.5px rgba(255,255,255,.2), inset 0 1px 1px -.5px rgba(255,255,255,.39);
+  --x-ease: cubic-bezier(.23, 1, .32, 1);
+  --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
+}
+
+/* page width: wider at ≥64em */
+@media (min-width: 64em) {
+  :root {
+    --x-page-max: clamp(70rem, 100vw - 10rem, 90rem);
+  }
+}
+
+/* hairline: 1px; .5px at ≥1.5dppx; .3333px at ≥2.5dppx */
+:root {
+  --x-hairline: 1px;
+}
+
+@media (min-resolution: 1.5dppx) {
+  :root {
+    --x-hairline: 0.5px;
+  }
+}
+
+@media (min-resolution: 2.5dppx) {
+  :root {
+    --x-hairline: 0.3333px;
+  }
+}
+
+body {
+  background: var(--x-page);
+}

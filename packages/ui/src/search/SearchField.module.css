@@ -1,0 +1,61 @@
+.field {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+  width: 100%;
+  max-width: var(--x-column);
+  min-height: 2.75rem;
+  padding: 0 0.8125rem;
+  border-radius: 12.5rem;
+  color: var(--x-ink);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(7.5px);
+  box-shadow: 0 2px 15px rgba(33, 70, 128, 0.25);
+}
+
+.glass:focus-within {
+  box-shadow:
+    0 2px 15px rgba(33, 70, 128, 0.25),
+    0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+
+.page {
+  background: var(--x-card);
+  box-shadow: 0 0 0 var(--x-hairline) var(--x-hair);
+}
+
+.page:focus-within {
+  box-shadow:
+    0 0 0 var(--x-hairline) var(--x-hair),
+    0 0 0 3px var(--x-blue-ring);
+}
+
+.icon {
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: 500 14px var(--x-font);
+  appearance: none;
+}
+
+.glass .input::placeholder {
+  color: #3a507a;
+  opacity: 1;
+}
+
+.page .input::placeholder {
+  color: var(--x-text-3);
+  opacity: 1;
+}
