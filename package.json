@@ -1,0 +1,27 @@
+{
+  "name": "xstore",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:int": "turbo run test:int",
+    "test:e2e": "turbo run test:e2e",
+    "infra:up": "docker compose -f infra/docker-compose.dev.yml up -d --wait",
+    "infra:down": "docker compose -f infra/docker-compose.dev.yml down",
+    "db:migrate": "pnpm --filter @xstore/db migrate:dev"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3"
+  }
+}
