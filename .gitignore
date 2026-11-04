@@ -21,3 +21,4 @@ test-results/
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+packages/db/src/generated/

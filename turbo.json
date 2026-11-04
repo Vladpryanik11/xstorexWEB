@@ -14,7 +14,8 @@
     },
     "test:int": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_TEST", "REDIS_URL", "REDIS_URL_TEST"]
     },
     "test:e2e": {
       "dependsOn": ["^build"],
