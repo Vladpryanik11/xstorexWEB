@@ -1,6 +1,13 @@
 {$SITE_DOMAIN} {
 	encode zstd gzip
 
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# Set after the upstream responds, so MinIO/Next/Nest copies are replaced, not duplicated.
+		defer
+	}
+
 	handle /api/* {
 		reverse_proxy api:3001
 	}
@@ -11,5 +18,12 @@
 }
 
 {$DL_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# Set after the upstream responds, so MinIO/Next/Nest copies are replaced, not duplicated.
+		defer
+	}
+
 	reverse_proxy minio:9000
 }
