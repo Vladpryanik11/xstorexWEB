@@ -5,15 +5,16 @@ vi.mock('next/font/google', () => ({
 }));
 
 describe('root layout', () => {
-  it('layout viewport is cover', async () => {
+  it('layout viewport keeps the page out of the notch', async () => {
     const { viewport } = await import('./layout');
     expect(viewport).toMatchObject({
       width: 'device-width',
       initialScale: 1,
       maximumScale: 1,
-      viewportFit: 'cover',
       themeColor: '#0c45b7',
     });
+    // diyorde.com sets no viewport-fit: with `cover` landscape iPhone puts the logo under the notch.
+    expect(viewport).not.toHaveProperty('viewportFit');
     expect(viewport).not.toHaveProperty('userScalable');
   });
 });
