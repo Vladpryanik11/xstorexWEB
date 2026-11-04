@@ -1,13 +1,38 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header } from './Header';
 
 const nav = vi.hoisted(() => ({ pathname: '/devices/abc' }));
 
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }));
 
+// jsdom has no matchMedia: this one answers only the ≥48em query and lets a test cross it.
+const viewport = {
+  wide: false,
+  listeners: new Set<() => void>(),
+  resize(wide: boolean) {
+    viewport.wide = wide;
+    for (const listener of viewport.listeners) listener();
+  },
+};
+
 beforeEach(() => {
   nav.pathname = '/devices/abc';
+  viewport.wide = false;
+  viewport.listeners.clear();
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    media: query,
+    get matches() {
+      return query === '(min-width: 48em)' && viewport.wide;
+    },
+    addEventListener: (_type: 'change', listener: () => void) => viewport.listeners.add(listener),
+    removeEventListener: (_type: 'change', listener: () => void) =>
+      viewport.listeners.delete(listener),
+  }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('Header', () => {
@@ -147,6 +172,25 @@ describe('MobileMenu', () => {
     rerender(<Header signedIn forcedPath="/profile" />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('closes when the viewport grows past 48em (iPad rotation)', () => {
+    render(<Header signedIn />);
+    const burger = screen.getByRole('button', { name: 'Меню' });
+    fireEvent.click(burger);
+
+    // Still narrow: a change event alone does not close the sheet.
+    act(() => viewport.resize(false));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    act(() => viewport.resize(true));
+
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(burger).toHaveAttribute('aria-expanded', 'false');
+    expect(viewport.listeners.size).toBe(0);
+    // The sheet's keyboard handler is gone too: Escape no longer starts a slide-out.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('a second burger click closes the sheet', () => {

@@ -86,6 +86,9 @@ function Icon({ href }: { href: string }) {
 /** How long the sheet takes to slide out (matches `.leaving` in Header.module.css). */
 const LEAVE_MS = 220;
 
+/** From this width the menu row replaces the burger (the ≥48em block in Header.module.css). */
+const WIDE = '(min-width: 48em)';
+
 export function MobileMenu({ items, signedIn, forcedPath }: MobileMenuProps) {
   const pathname = usePathname();
   const path = forcedPath ?? pathname;
@@ -118,6 +121,18 @@ export function MobileMenu({ items, signedIn, forcedPath }: MobileMenuProps) {
     const timer = setTimeout(() => setState('closed'), LEAVE_MS);
     return () => clearTimeout(timer);
   }, [leaving]);
+
+  // The burger is hidden from 48em, so a sheet left open by a rotation (iPad) could not be
+  // closed: drop it as soon as the viewport crosses the breakpoint.
+  useEffect(() => {
+    if (!open) return;
+    const wide = window.matchMedia(WIDE);
+    const onChange = () => {
+      if (wide.matches) setState('closed');
+    };
+    wide.addEventListener('change', onChange);
+    return () => wide.removeEventListener('change', onChange);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
