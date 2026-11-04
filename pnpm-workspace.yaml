@@ -8,3 +8,4 @@ minimumReleaseAgeExclude:
 allowBuilds:
   '@prisma/engines': true
   prisma: true
+  '@swc/core': false
