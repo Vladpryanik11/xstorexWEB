@@ -15,8 +15,9 @@
     "prisma"
   ],
   "scripts": {
-    "build": "prisma generate && tsc -p tsconfig.build.json",
-    "typecheck": "prisma generate && tsc --noEmit",
+    "generate": "prisma generate",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "test:int": "vitest run test"

@@ -11,14 +11,29 @@
       "outputs": [".next/**", "!.next/cache/**"],
       "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_TELEGRAM_URL"]
     },
+    "@xstore/db#generate": {
+      "outputs": ["src/generated/**"]
+    },
+    "@xstore/db#build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": ["dist/**"]
+    },
     "typecheck": {
       "dependsOn": ["^build"]
+    },
+    "@xstore/db#typecheck": {
+      "dependsOn": ["^build", "generate"]
     },
     "test": {
       "dependsOn": ["^build"]
     },
     "test:int": {
       "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_TEST", "REDIS_URL", "REDIS_URL_TEST"]
+    },
+    "@xstore/db#test:int": {
+      "dependsOn": ["^build", "generate"],
       "cache": false,
       "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_TEST", "REDIS_URL", "REDIS_URL_TEST"]
     },
