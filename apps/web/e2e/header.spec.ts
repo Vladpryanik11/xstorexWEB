@@ -47,3 +47,21 @@ test('side sheet closes on Escape', async ({ page }) => {
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(burger).toBeFocused();
 });
+
+test('focus ring stays visible on the open side sheet', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/dev/ui');
+  const burger = page.getByRole('button', { name: 'Меню' });
+  await burger.click();
+  const links = page.getByRole('dialog').getByRole('link');
+  await expect(links.first()).toBeFocused();
+  // Tab from the last sheet link wraps to the burger, which now sits white on the light sheet.
+  await links.last().focus();
+  await page.keyboard.press('Tab');
+  await expect(burger).toBeFocused();
+  expect(await burger.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+  // toHaveCSS retries, so the .22s background transition can settle first.
+  await expect(burger).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(burger).toHaveCSS('outline-style', 'solid');
+  await expect(burger).toHaveCSS('outline-color', 'rgb(34, 118, 243)');
+});

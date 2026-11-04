@@ -393,6 +393,13 @@
     box-shadow: 0 0 0 var(--x-hairline) #8a8a8d73;
     color: var(--x-text);
   }
+
+  /* the white focus ring would vanish on the light sheet */
+  .header:has(.sheet:not(.leaving)) .mark:focus-visible,
+  .header:has(.sheet:not(.leaving)) .entry:focus-visible,
+  .header:has(.sheet:not(.leaving)) .burger:focus-visible {
+    outline-color: var(--x-blue-ring);
+  }
 }
 
 /* ≥48em: three-column grid, menu row instead of the burger */

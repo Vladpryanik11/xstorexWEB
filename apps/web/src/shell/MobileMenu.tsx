@@ -101,6 +101,17 @@ export function MobileMenu({ items, signedIn, forcedPath }: MobileMenuProps) {
     burger.current?.focus();
   }, []);
 
+  // Any real navigation closes the sheet: the logo and the entry pill stay clickable above it,
+  // and back/forward change the route too. Keyed on the real path, never on forcedPath.
+  const shownPath = useRef(pathname);
+  useEffect(() => {
+    if (shownPath.current === pathname) return;
+    shownPath.current = pathname;
+    // Focus inside the unmounting sheet would be lost; hand it back to the burger.
+    if (sheet.current?.contains(document.activeElement)) burger.current?.focus();
+    setState('closed');
+  }, [pathname]);
+
   // A closing sheet stays mounted, hidden and inert, until it has slid out.
   useEffect(() => {
     if (!leaving) return;
