@@ -46,4 +46,22 @@
 
 ## Структура и команды
 
-Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `infra/`. Команды сборки, тестов и запуска добавляются сюда в рамках вехи M0.
+Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `infra/`. Требуется Node 24, pnpm 12.16.1, Docker Desktop. Подробнее для разработчика: `README.md`.
+
+Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль). Тестовый e2e-сервер web: 3100.
+
+Команды из корня:
+
+- `cp .env.example .env`, `pnpm install` — первая настройка.
+- `pnpm infra:up` / `pnpm infra:down` — Postgres, Redis, MinIO для разработки (`infra/docker-compose.dev.yml`, только 127.0.0.1).
+- `pnpm db:migrate` — миграции Prisma.
+- `pnpm dev` — web, api и worker; `pnpm build` — сборка.
+- `pnpm lint` (Biome), `pnpm format`, `pnpm typecheck`.
+- `pnpm test` — модульные; `pnpm test:int` — интеграционные (нужны `pnpm infra:up`); `pnpm test:e2e` — Playwright.
+- Полный набор перед «готово»: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`.
+
+Production: `docker compose -f infra/docker-compose.yml --env-file .env up -d --build` (порты 80/443 публикует только Caddy), проверка `bash infra/smoke.sh`. Образы собираются из корня: `docker build -f apps/api/Dockerfile .`.
+
+CI (`.github/workflows/ci.yml`): `check`, `integration`, `e2e`, `docker` на pull request и push в `main`.
+
+Windows: CLI Docker Desktop может не быть в PATH (`C:\Program Files\Docker\Dockeresourcesin`); работающий dev-сервер API блокирует движок Prisma, остановите его перед `pnpm build` и `pnpm typecheck`; `infra/smoke.sh` запускается в Git Bash.
