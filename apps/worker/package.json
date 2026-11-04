@@ -1,0 +1,26 @@
+{
+  "name": "@xstore/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env dist/main.js",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src",
+    "test:int": "vitest run test/"
+  },
+  "dependencies": {
+    "@xstore/shared": "workspace:*",
+    "bullmq": "6.5.4",
+    "ioredis": "6.0.0",
+    "pino": "10.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0"
+  }
+}
