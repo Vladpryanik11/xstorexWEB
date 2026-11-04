@@ -1,0 +1,15 @@
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+{$DL_DOMAIN} {
+	reverse_proxy minio:9000
+}

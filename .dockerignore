@@ -1,0 +1,27 @@
+# Build context is the repo root; images rebuild everything from source.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/playwright-report
+**/test-results
+**/*.tsbuildinfo
+packages/db/src/generated
+
+# Secrets and local state never enter an image.
+.env
+.env.*
+!.env.example
+**/*.p8
+**/*.p12
+**/*.pem
+**/*.key
+**/*.mobileprovision
+
+# Not needed to build any image.
+.git
+.claude
+.superpowers
+docs
+infra

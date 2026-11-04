@@ -1,0 +1,144 @@
+# Production stack. From the repo root:
+#   docker compose -f infra/docker-compose.yml --env-file .env up -d --build --wait
+# Only Caddy publishes host ports. In-container URLs use service names and override the
+# host-side localhost values that api and worker read from ../.env.
+# POSTGRES_PASSWORD and MINIO_ROOT_PASSWORD have no fallback: an empty one stops
+# postgres/minio from starting instead of running with a weak default.
+name: xstore
+
+x-api-build: &api-build
+  context: ..
+  dockerfile: apps/api/Dockerfile
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+      DL_DOMAIN: ${DL_DOMAIN:-dl.localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
+        NEXT_PUBLIC_TELEGRAM_URL: ${NEXT_PUBLIC_TELEGRAM_URL:-}
+    image: xstore-web
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: *api-build
+    image: xstore-api
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://xstore:${POSTGRES_PASSWORD}@postgres:5432/xstore
+      REDIS_URL: redis://redis:6379/0
+      SITE_URL: https://${SITE_DOMAIN:-localhost}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/api/v1/health']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    image: xstore-worker
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://xstore:${POSTGRES_PASSWORD}@postgres:5432/xstore
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  migrate:
+    build: *api-build
+    image: xstore-api
+    restart: 'no'
+    command: ['pnpm', '--filter', '@xstore/db', 'migrate:deploy']
+    environment:
+      DATABASE_URL: postgresql://xstore:${POSTGRES_PASSWORD}@postgres:5432/xstore
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: xstore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: xstore
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U xstore -d xstore']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    # Chainguard build of MinIO (minio/minio is gone from Docker Hub), pinned by digest.
+    image: cgr.dev/chainguard/minio@sha256:3c60a2a8c4d33409a9bc7a623a7fcbfb4605adc3d89422d2f53b3f673a6e5597
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-xstore}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      # The image has no wget/curl; `mc ready` polls /minio/health/cluster until it is up.
+      test: ['CMD-SHELL', 'MC_HOST_local=http://localhost:9000 timeout 4 mc ready local']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  caddydata:
