@@ -21,6 +21,18 @@ test('header matches the reference values (desktop)', async ({ page }) => {
   );
 });
 
+test('6px tint strip sits fixed at the very top', async ({ page }) => {
+  await page.goto('/');
+  const tint = page.locator('header > div[aria-hidden="true"]');
+  await expect(tint).toHaveCount(1);
+  expect(await css(tint, 'position')).toBe('fixed');
+  expect(await css(tint, 'height')).toBe('6px');
+  expect(await css(tint, 'background-color')).toBe('rgb(12, 69, 183)');
+  const box = await tint.boundingBox();
+  expect(box?.y).toBe(0);
+  expect(box?.height).toBe(6);
+});
+
 test('auth header fits at 768px', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto('/dev/ui?auth=1&path=/devices');
