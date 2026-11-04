@@ -8,6 +8,7 @@ import type { AppConfig } from './config/config.js';
 import { APP_CONFIG } from './config/tokens.js';
 import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
+import { isHealthCheck } from './health/is-health-check.js';
 import { PrismaService } from './infra/prisma.service.js';
 import { REDIS, redisProvider } from './infra/redis.provider.js';
 
@@ -24,6 +25,7 @@ export class AppModule implements OnApplicationShutdown {
             level: config.logLevel,
             genReqId: (req, res) => resolveRequestId(req, res),
             redact: ['req.headers.authorization', 'req.headers.cookie'],
+            autoLogging: { ignore: (req) => isHealthCheck(req) },
           },
         }),
       ],
