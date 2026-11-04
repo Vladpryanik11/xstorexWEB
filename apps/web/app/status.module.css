@@ -1,0 +1,39 @@
+/* 404 and error pages: a short message under the header, sized like the home hero title. */
+
+.status {
+  box-sizing: content-box;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding: 2.5rem var(--x-gutter) 3.5rem;
+}
+
+.title {
+  max-width: 20.5rem;
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.19;
+  letter-spacing: -0.0103125rem;
+  text-wrap: balance;
+}
+
+.text {
+  max-width: var(--x-column);
+  margin: 0.75rem 0 1.5rem;
+  color: var(--x-text-2);
+  font-size: 1rem;
+  line-height: 1.36;
+}
+
+@media (min-width: 48em) {
+  .status {
+    padding-block: 4rem 5rem;
+  }
+
+  .title {
+    max-width: 34rem;
+    font-size: 2.75rem;
+    line-height: 1.14;
+    letter-spacing: -0.015rem;
+  }
+}
