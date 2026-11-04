@@ -64,4 +64,4 @@ Production: `docker compose -f infra/docker-compose.yml --env-file .env up -d --
 
 CI (`.github/workflows/ci.yml`): `check`, `integration`, `e2e`, `docker` на pull request и push в `main`.
 
-Windows: CLI Docker Desktop может не быть в PATH (`C:\Program Files\Docker\Dockeresourcesin`); работающий dev-сервер API блокирует движок Prisma, остановите его перед `pnpm build` и `pnpm typecheck`; `infra/smoke.sh` запускается в Git Bash.
+Windows: CLI Docker Desktop может не быть в PATH (`C:\Program Files\Docker\Docker\resources\bin`); работающий dev-сервер API блокирует движок Prisma, остановите его перед `pnpm build` и `pnpm typecheck`; `infra/smoke.sh` запускается в Git Bash.
