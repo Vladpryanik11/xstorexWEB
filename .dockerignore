@@ -10,9 +10,9 @@
 packages/db/src/generated
 
 # Secrets and local state never enter an image.
-.env
-.env.*
-!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 **/*.p8
 **/*.p12
 **/*.pem

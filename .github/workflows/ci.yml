@@ -7,14 +7,14 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A new push cancels a running pull request check; a running check on main is never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
-env:
-  # prisma generate runs during the build and needs the variable to be set.
-  DATABASE_URL: postgresql://xstore:xstore@localhost:5432/xstore_test
+# No workflow-wide DATABASE_URL: prisma generate does not connect (prisma.config.ts falls back to a
+# placeholder URL), and the integration job sets the *_TEST URLs that its tests use.
 
 jobs:
   check:
