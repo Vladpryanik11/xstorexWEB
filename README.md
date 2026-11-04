@@ -37,9 +37,20 @@ pnpm dev           # web, api и worker
 | `pnpm infra:up` / `pnpm infra:down` | хранилища для разработки |
 | `pnpm db:migrate` | миграции базы разработки |
 
-Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. Тот же набор гоняет CI (`.github/workflows/ci.yml`: `check`, `integration`, `e2e`, `docker`) на pull request и на push в `main`.
+Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. CI (`.github/workflows/ci.yml`) на pull request и на push в `main` проверяет почти то же. Job `check` вместо `pnpm lint` (`biome check .`) запускает `pnpm biome ci .`: те же правила Biome в режиме CI, только чтение. Затем идут `pnpm typecheck` и `pnpm test`. `integration` запускает `pnpm test:int`, `e2e` запускает `pnpm test:e2e`, `docker` собирает образы api, worker и web; локальный набор образы не собирает.
 
 Первый запуск Playwright: `pnpm --filter @xstore/web exec playwright install webkit chromium`. Сборка web берёт шрифты из Google Fonts, нужен интернет.
+
+### Витрина `/dev/ui`
+
+Страница `/dev/ui` показывает шапку и компоненты `@xstore/ui`. Она открывается, только когда задана переменная `XSTORE_DEV_PAGES=1`, иначе отдаёт 404. Turbo пропускает переменную в задачу `dev`.
+
+```bash
+XSTORE_DEV_PAGES=1 pnpm dev                 # Git Bash
+$env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
+```
+
+Адрес: http://localhost:3000/dev/ui. Параметры: `?auth=1` показывает шапку вошедшего пользователя, `&path=/devices` подсвечивает пункт меню, `&w=hero` включает прозрачный вариант шапки для главной. E2E-тесты включают переменную сами (`apps/web/playwright.config.ts`).
 
 ## Production-стек
 

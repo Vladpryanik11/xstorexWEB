@@ -44,7 +44,8 @@
     "dev": {
       "dependsOn": ["^build"],
       "persistent": true,
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["XSTORE_DEV_PAGES"]
     }
   }
 }
