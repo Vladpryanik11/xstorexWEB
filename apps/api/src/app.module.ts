@@ -11,6 +11,8 @@ import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
 import { InfraModule } from './infra/infra.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
+import { StorageModule } from './storage/storage.module.js';
+import { UploadsModule } from './uploads/uploads.module.js';
 
 @Module({})
 // biome-ignore lint/complexity/noStaticOnlyClass: Nest dynamic modules are configured through a static forRoot
@@ -37,6 +39,8 @@ export class AppModule {
         AuditModule,
         RateLimitModule,
         AuthModule,
+        StorageModule,
+        UploadsModule,
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],

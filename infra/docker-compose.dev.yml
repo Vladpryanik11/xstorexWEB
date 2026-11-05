@@ -37,6 +37,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-xstore}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-xstore-dev-secret}
+      # Browsers PUT upload parts straight to MinIO from the site origin.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${SITE_URL:-http://localhost:3000}
     ports:
       - '127.0.0.1:9000:9000'
       - '127.0.0.1:9001:9001'

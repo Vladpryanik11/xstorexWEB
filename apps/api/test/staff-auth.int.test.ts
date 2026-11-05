@@ -1,5 +1,3 @@
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import type { INestApplication } from '@nestjs/common';
 import { createPrismaClient } from '@xstore/db';
 import { resetDatabase } from '@xstore/db/testing';
@@ -11,9 +9,7 @@ import { hashPassword } from '../src/auth/password.js';
 import { SessionService } from '../src/auth/session.service.js';
 import { currentTotp } from '../src/auth/totp.js';
 import { loadConfig } from '../src/config/config.js';
-
-const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
-if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+import { testEnv } from './test-env.js';
 
 const SITE = 'http://localhost:3000';
 const SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
@@ -37,9 +33,7 @@ const login = (agent: ReturnType<typeof request.agent>, body: object) =>
   agent.post('/api/v1/auth/staff/login').set('Origin', SITE).send(body);
 
 beforeAll(async () => {
-  app = await createApp(
-    loadConfig({ DATABASE_URL: dbUrl, REDIS_URL: redisUrl, SITE_URL: SITE, LOG_LEVEL: 'error' }),
-  );
+  app = await createApp(loadConfig(testEnv({ SITE_URL: SITE })));
   pwHash = await hashPassword('pw');
 });
 
