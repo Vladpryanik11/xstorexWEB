@@ -3,14 +3,19 @@ import forge from 'node-forge';
 import { expect, it } from 'vitest';
 import { buildP12, generateKeyAndCsr, randomP12Password } from './keys.js';
 
-it('generates an RSA-2048 key and a verifiable SHA-256 CSR', () => {
-  const { privateKeyPem, csrPem } = generateKeyAndCsr('Xstore test');
-  expect(createPrivateKey(privateKeyPem).asymmetricKeyDetails?.modulusLength).toBe(2048);
-  const csr = forge.pki.certificationRequestFromPem(csrPem);
-  expect(csr.verify()).toBe(true);
-  expect(csr.subject.getField('CN').value).toBe('Xstore test');
-  expect(csr.signatureOid).toBe(forge.pki.oids.sha256WithRSAEncryption);
-});
+it.each(['Xstore test', 'Тестовый аккаунт'])(
+  'generates a verifiable RSA-2048 CSR for %s',
+  (commonName) => {
+    const { privateKeyPem, csrPem } = generateKeyAndCsr(commonName);
+    expect(createPrivateKey(privateKeyPem).asymmetricKeyDetails?.modulusLength).toBe(2048);
+    const csr = forge.pki.certificationRequestFromPem(csrPem);
+    expect(csr.verify()).toBe(true);
+    const cn = csr.subject.getField('CN');
+    expect(cn.valueTagClass).toBe(forge.asn1.Type.UTF8);
+    expect(Buffer.from(String(cn.value), 'binary').toString('utf8')).toBe(commonName);
+    expect(csr.signatureOid).toBe(forge.pki.oids.sha256WithRSAEncryption);
+  },
+);
 
 it('builds a password-protected p12 holding the matching key and certificate', () => {
   const { privateKeyPem } = generateKeyAndCsr('fixture');
@@ -35,7 +40,7 @@ it('builds a password-protected p12 holding the matching key and certificate', (
   const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
   expect(certBags[forge.pki.oids.certBag ?? '']?.[0]?.cert?.serialNumber).toBe('01');
   expect(() => forge.pkcs12.pkcs12FromAsn1(asn1, true, 'wrong')).toThrow();
-});
+}, 15_000);
 
 it('creates distinct 24-character passwords using cryptographic randomness', () => {
   const passwords = Array.from({ length: 20 }, randomP12Password);

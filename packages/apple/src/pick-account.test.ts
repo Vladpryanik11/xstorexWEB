@@ -26,6 +26,17 @@ const account = (
 });
 
 describe('account selection', () => {
+  it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])(
+    'fails closed on invalid membership windows: %s',
+    (minMembershipDays) => {
+      expect(
+        pickAccount(
+          [account('expired', 99, { membershipExpiresAt: new Date(now.getTime() - 6 * 3600_000) })],
+          { ...want, minMembershipDays },
+        ),
+      ).toBeNull();
+    },
+  );
   it('fills the fullest eligible account first without mutating the input', () => {
     const accounts = [account('a', 40), account('b', 99), account('c', 100)];
     expect(pickAccount(accounts, want)).toBe('b');

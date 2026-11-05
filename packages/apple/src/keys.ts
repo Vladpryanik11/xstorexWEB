@@ -8,7 +8,14 @@ export function generateKeyAndCsr(commonName: string): { privateKeyPem: string; 
   csr.publicKey = forge.pki.publicKeyFromPem(
     pair.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
   );
-  csr.setSubject([{ name: 'commonName', value: commonName }]);
+  // Forge expects a universal tag number here; its declarations incorrectly use the Class enum.
+  csr.setSubject([
+    {
+      name: 'commonName',
+      value: commonName,
+      valueTagClass: forge.asn1.Type.UTF8 as number as forge.asn1.Class,
+    },
+  ]);
   csr.sign(forge.pki.privateKeyFromPem(privateKeyPem), forge.md.sha256.create());
   return { privateKeyPem, csrPem: forge.pki.certificationRequestToPem(csr) };
 }

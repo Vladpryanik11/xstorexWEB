@@ -115,12 +115,31 @@ export function createAscClient(opts: AscClientOptions): AscClient {
     return cachedToken.token;
   }
 
-  async function request(url: URL, method = 'GET', body?: unknown): Promise<unknown> {
+  async function operation<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        reject(new AscError('other', 0));
+      }, 30_000);
+    });
+    try {
+      return await Promise.race([run(controller.signal), deadline]);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function request(
+    signal: AbortSignal,
+    url: URL,
+    method = 'GET',
+    body?: unknown,
+  ): Promise<unknown> {
     try {
       const bearer = await token();
-      controller.signal.throwIfAborted();
+      signal.throwIfAborted();
       const response = await fetchImpl(url, {
         method,
         headers: {
@@ -129,14 +148,24 @@ export function createAscClient(opts: AscClientOptions): AscClient {
           ...(body ? { 'Content-Type': 'application/json' } : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
-        signal: controller.signal,
+        signal,
         redirect: 'error',
       });
       if (response.ok && method === 'DELETE' && response.status === 204) return undefined;
+      if ([401, 403, 404, 429].includes(response.status)) {
+        void response.body?.cancel().catch(() => {});
+        throw new AscError(
+          classifyAscError(response.status, null),
+          response.status,
+          retryAfter(response.headers.get('retry-after'), now()),
+        );
+      }
       let payload: unknown;
       try {
         payload = await response.json();
-      } catch {
+      } catch (error) {
+        if (response.ok && (signal.aborted || !(error instanceof SyntaxError)))
+          throw new AscError('other', 0);
         throw new AscError(
           classifyAscError(response.status, null),
           response.ok ? 502 : response.status,
@@ -153,12 +182,11 @@ export function createAscClient(opts: AscClientOptions): AscClient {
     } catch (error) {
       if (error instanceof AscError) throw error;
       throw new AscError('other', 0);
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
   async function list<T>(
+    signal: AbortSignal,
     type: string,
     fields: string[],
     filters: Record<string, string> = {},
@@ -181,7 +209,7 @@ export function createAscClient(opts: AscClientOptions): AscClient {
       )
         return invalidResponse();
       seen.add(url.href);
-      const payload = await request(url);
+      const payload = await request(signal, url);
       if (!record(payload) || !Array.isArray(payload.data)) return invalidResponse();
       for (const data of payload.data) items.push(resource<T>(data, type, fields));
       const links = payload.links;
@@ -200,12 +228,13 @@ export function createAscClient(opts: AscClientOptions): AscClient {
   }
 
   async function create<T>(
+    signal: AbortSignal,
     type: string,
     attributes: Record<string, unknown>,
     fields: string[],
     relationships?: unknown,
   ): Promise<AscResource<T>> {
-    const payload = await request(new URL(`/v1/${type}`, base), 'POST', {
+    const payload = await request(signal, new URL(`/v1/${type}`, base), 'POST', {
       data: { type, attributes, ...(relationships ? { relationships } : {}) },
     });
     if (!record(payload)) return invalidResponse();
@@ -213,53 +242,83 @@ export function createAscClient(opts: AscClientOptions): AscClient {
   }
 
   return {
-    listDevices: () => list<DeviceAttributes>('devices', ['udid', 'name']),
-    findDeviceByUdid: async (udid) =>
-      (await list<DeviceAttributes>('devices', ['udid', 'name'], { udid })).find(
-        (device) => device.attributes.udid === udid,
-      ) ?? null,
+    listDevices: () =>
+      operation((signal) => list<DeviceAttributes>(signal, 'devices', ['udid', 'name'])),
+    findDeviceByUdid: (udid) =>
+      operation(async (signal) => {
+        const normalized = udid.replace(/-/g, '').toUpperCase();
+        return (
+          (await list<DeviceAttributes>(signal, 'devices', ['udid', 'name'])).find(
+            (device) => device.attributes.udid.replace(/-/g, '').toUpperCase() === normalized,
+          ) ?? null
+        );
+      }),
     registerDevice: (input) =>
-      create<DeviceAttributes>('devices', { ...input, platform: 'IOS' }, ['udid', 'name']),
-    listCertificates: () => list<CertificateAttributes>('certificates', ['certificateType']),
+      operation((signal) =>
+        create<DeviceAttributes>(
+          signal,
+          'devices',
+          { name: input.name, udid: input.udid, platform: 'IOS' },
+          ['udid', 'name'],
+        ),
+      ),
+    listCertificates: () =>
+      operation((signal) =>
+        list<CertificateAttributes>(signal, 'certificates', ['certificateType']),
+      ),
     createCertificate: (csrPem) =>
-      create<CertificateAttributes>(
-        'certificates',
-        { csrContent: csrPem, certificateType: 'DISTRIBUTION' },
-        ['certificateType', 'certificateContent', 'expirationDate', 'serialNumber'],
+      operation((signal) =>
+        create<CertificateAttributes>(
+          signal,
+          'certificates',
+          { csrContent: csrPem, certificateType: 'DISTRIBUTION' },
+          ['certificateType', 'certificateContent', 'expirationDate', 'serialNumber'],
+        ),
       ),
-    findBundleId: async (identifier) =>
-      (await list<BundleAttributes>('bundleIds', ['identifier', 'name'], { identifier })).find(
-        (bundle) => bundle.attributes.identifier === identifier,
-      ) ?? null,
+    findBundleId: (identifier) =>
+      operation(
+        async (signal) =>
+          (
+            await list<BundleAttributes>(signal, 'bundleIds', ['identifier', 'name'], {
+              identifier,
+            })
+          ).find((bundle) => bundle.attributes.identifier === identifier) ?? null,
+      ),
     createWildcardBundleId: (identifier = '*') =>
-      create<BundleAttributes>(
-        'bundleIds',
-        { identifier, name: 'Xstore Wildcard', platform: 'IOS' },
-        ['identifier', 'name'],
+      operation((signal) =>
+        create<BundleAttributes>(
+          signal,
+          'bundleIds',
+          { identifier, name: 'Xstore Wildcard', platform: 'IOS' },
+          ['identifier', 'name'],
+        ),
       ),
-    createAdHocProfile: async (input) => {
-      const profile = await create<{ profileContent: string; expirationDate: string }>(
-        'profiles',
-        { name: input.name, profileType: 'IOS_APP_ADHOC' },
-        ['profileContent', 'expirationDate'],
-        {
-          bundleId: { data: { type: 'bundleIds', id: input.bundleIdAscId } },
-          certificates: { data: [{ type: 'certificates', id: input.certificateAscId }] },
-          devices: { data: input.deviceAscIds.map((id) => ({ type: 'devices', id })) },
-        },
-      );
-      const expiresAt = new Date(profile.attributes.expirationDate);
-      const profileContent = Buffer.from(profile.attributes.profileContent, 'base64');
-      if (
-        !Number.isFinite(expiresAt.getTime()) ||
-        !profileContent.length ||
-        profileContent.toString('base64') !== profile.attributes.profileContent
-      )
-        return invalidResponse();
-      return { ascProfileId: profile.id, profileContent, expiresAt };
-    },
-    deleteProfile: async (id) => {
-      await request(new URL(`/v1/profiles/${encodeURIComponent(id)}`, base), 'DELETE');
-    },
+    createAdHocProfile: (input) =>
+      operation(async (signal) => {
+        const profile = await create<{ profileContent: string; expirationDate: string }>(
+          signal,
+          'profiles',
+          { name: input.name, profileType: 'IOS_APP_ADHOC' },
+          ['profileContent', 'expirationDate'],
+          {
+            bundleId: { data: { type: 'bundleIds', id: input.bundleIdAscId } },
+            certificates: { data: [{ type: 'certificates', id: input.certificateAscId }] },
+            devices: { data: input.deviceAscIds.map((id) => ({ type: 'devices', id })) },
+          },
+        );
+        const expiresAt = new Date(profile.attributes.expirationDate);
+        const profileContent = Buffer.from(profile.attributes.profileContent, 'base64');
+        if (
+          !Number.isFinite(expiresAt.getTime()) ||
+          !profileContent.length ||
+          profileContent.toString('base64') !== profile.attributes.profileContent
+        )
+          return invalidResponse();
+        return { ascProfileId: profile.id, profileContent, expiresAt };
+      }),
+    deleteProfile: (id) =>
+      operation(async (signal) => {
+        await request(signal, new URL(`/v1/profiles/${encodeURIComponent(id)}`, base), 'DELETE');
+      }),
   };
 }

@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import { decodeJwt, decodeProtectedHeader } from 'jose';
+import { createFakeAuthority } from './fake-crypto.ts';
 
 type Failure = 'auth' | 'rate_limited' | 'no_slots' | 'cert_limit';
 interface Resource {
@@ -15,18 +17,33 @@ interface SeedDevice {
 }
 export interface FakeAsc {
   url: string;
-  seedDevices(devices: SeedDevice[]): void;
-  failNext(kind: Failure): void;
+  seedDevices(devices: SeedDevice[], identity?: { keyId: string; issuerId: string }): void;
+  failNext(kind: Failure, identity?: { keyId: string; issuerId: string }): void;
   close(): Promise<void>;
 }
 
-// Synthetic responses for local tests. This service never contacts Apple and never accepts real keys.
+// Synthetic responses for local tests. This service never contacts Apple or trusts real certificates.
 export async function startFakeAsc(port: number): Promise<FakeAsc> {
-  const devices: Resource[] = [];
-  const certificates: Resource[] = [];
-  const bundles: Resource[] = [];
-  const profiles: Resource[] = [];
-  const failures: Failure[] = [];
+  const accounts = new Map<
+    string,
+    {
+      devices: Resource[];
+      certificates: Resource[];
+      bundles: Resource[];
+      profiles: Resource[];
+      failures: Failure[];
+    }
+  >();
+  const account = (identity = { keyId: 'TESTKEY', issuerId: 'test-issuer' }) => {
+    const key = JSON.stringify([identity.issuerId, identity.keyId]);
+    let state = accounts.get(key);
+    if (!state) {
+      state = { devices: [], certificates: [], bundles: [], profiles: [], failures: [] };
+      accounts.set(key, state);
+    }
+    return state;
+  };
+  let authority: ReturnType<typeof createFakeAuthority> | undefined;
   let nextId = 1;
   let origin = '';
   const server = createServer(async (req, res) => {
@@ -54,6 +71,18 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
       fail(401, 'Missing token');
       return;
     }
+    let state: ReturnType<typeof account>;
+    try {
+      const jwt = req.headers.authorization.slice('Bearer '.length);
+      const keyId = decodeProtectedHeader(jwt).kid;
+      const issuerId = decodeJwt(jwt).iss;
+      if (!keyId || !issuerId) throw new Error();
+      state = account({ keyId, issuerId });
+    } catch {
+      fail(401, 'Invalid synthetic identity');
+      return;
+    }
+    const { devices, certificates, bundles, profiles, failures } = state;
     const forced = failures.shift();
     if (forced) {
       const detail = {
@@ -95,7 +124,10 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
         nextUrl.searchParams.set('offset', String(offset + limit));
         reply(200, {
           data: page,
-          links: { self: url.href, next: offset + limit < items.length ? nextUrl.href : null },
+          links: {
+            self: url.href,
+            next: offset + limit < items.length ? `${nextUrl.pathname}${nextUrl.search}` : null,
+          },
           meta: { paging: { total: items.length, limit } },
         });
         return;
@@ -154,10 +186,12 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
           fail(400, 'Invalid CSR');
           return;
         }
+        authority ??= createFakeAuthority();
+        const issued = authority.issueCertificate(attributes.csrContent);
         delete attributes.csrContent;
-        attributes.certificateContent = Buffer.from('FAKE-CERT').toString('base64');
+        attributes.certificateContent = issued.content;
         attributes.expirationDate = '2027-11-05T00:00:00Z';
-        attributes.serialNumber = '01';
+        attributes.serialNumber = issued.serial;
       }
       if (
         collection === 'bundleIds' &&
@@ -192,7 +226,17 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
           fail(400, 'Invalid profile relationships');
           return;
         }
-        attributes.profileContent = Buffer.from('FAKE-PROFILE').toString('base64');
+        authority ??= createFakeAuthority();
+        const selectedCertificate = certificates.find((c) => c.id === certs[0]?.id);
+        const selectedBundle = bundles.find((b) => b.id === bundle.id);
+        attributes.profileContent = authority.profile({
+          name: String(attributes.name),
+          identifier: String(selectedBundle?.attributes.identifier),
+          certificateBase64: String(selectedCertificate?.attributes.certificateContent),
+          udids: ds.map((d) =>
+            String(devices.find((device) => device.id === d.id)?.attributes.udid),
+          ),
+        });
         attributes.expirationDate = '2027-11-05T00:00:00Z';
       }
       const resource = { ...data, id: `fake-${nextId++}` };
@@ -214,8 +258,8 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
   origin = `http://127.0.0.1:${address.port}`;
   return {
     url: origin,
-    seedDevices: (input) => {
-      devices.push(
+    seedDevices: (input, identity) => {
+      account(identity).devices.push(
         ...input.map(({ id, ...attributes }) => ({
           type: 'devices',
           id,
@@ -223,8 +267,8 @@ export async function startFakeAsc(port: number): Promise<FakeAsc> {
         })),
       );
     },
-    failNext: (kind) => {
-      failures.push(kind);
+    failNext: (kind, identity) => {
+      account(identity).failures.push(kind);
     },
     close: () =>
       new Promise<void>((resolve, reject) => {

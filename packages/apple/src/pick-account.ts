@@ -17,6 +17,7 @@ export interface AccountWant {
   exclude?: string[];
 }
 export function pickAccount(accounts: PickableAccount[], want: AccountWant): string | null {
+  if (!Number.isFinite(want.minMembershipDays) || want.minMembershipDays < 0) return null;
   const threshold = want.now.getTime() + want.minMembershipDays * 86_400_000;
   const used = (account: PickableAccount) =>
     want.deviceClass === 'IPAD' ? account.usedIpadSlots : account.usedIphoneSlots;
