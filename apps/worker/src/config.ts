@@ -8,6 +8,12 @@ const envSchema = z.object({
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(4),
   /** Scratch space for downloaded IPAs; needs room for the largest upload (10 GiB). */
   TMP_DIR: z.string().min(1).optional(),
+  SMTP_URL: z.url({ protocol: /^smtps?$/ }).default('smtp://localhost:1025'),
+  MAIL_FROM: z
+    .string()
+    .min(1)
+    .refine((value) => !/[\r\n]/.test(value))
+    .default('Xstore <noreply@xstorex.ru>'),
   S3_ENDPOINT: z.url({ protocol: /^https?$/ }),
   S3_REGION: z.string().min(1).default('us-east-1'),
   S3_ACCESS_KEY: z.string().min(1),
@@ -32,6 +38,8 @@ export type WorkerConfig = {
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   concurrency: number;
   tmpDir: string;
+  smtpUrl: string;
+  mailFrom: string;
   s3: WorkerS3Config;
 };
 
@@ -48,6 +56,8 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
     logLevel: e.LOG_LEVEL,
     concurrency: e.WORKER_CONCURRENCY,
     tmpDir: e.TMP_DIR ?? tmpdir(),
+    smtpUrl: e.SMTP_URL,
+    mailFrom: e.MAIL_FROM,
     s3: {
       endpoint: e.S3_ENDPOINT.replace(/\/$/, ''),
       region: e.S3_REGION,

@@ -62,7 +62,7 @@
   - `deviceModelName(product: string): string` — table for iPhone XS (`iPhone11,2`) through current models and common iPads; unknown products return the input.
   - `DeviceView = { id, name, model, status, statusLabel, registeredAt: string | null, createdAt: string }`; `deviceStatusLabel: Record<DeviceStatus, string>` = Новое / Ожидает регистрации / Регистрируется в Apple (до 72 часов) / Активно / Заблокировано / Срок истёк.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('accepts both UDID formats', () => {
@@ -77,10 +77,10 @@ it('normalizes email', () => { expect(normalizeEmail(' Ivan@Mail.RU ')).toBe('iv
 it('a UDID belongs to one device only', async () => { /* second create → P2002 */ });
 ```
 
-- [ ] **Step 2: Run them to verify they fail** — Run: `pnpm --filter @xstore/shared test && pnpm --filter @xstore/db test:int`. Expected: FAIL.
-- [ ] **Step 3: Implement the schema (`pnpm db:migrate --name m2_devices`) and the shared module.**
-- [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
-- [ ] **Step 5: Commit** — `git commit -m "feat(db): devices, enrollment sessions and device contracts"`
+- [x] **Step 2: Run them to verify they fail** — Run: `pnpm --filter @xstore/shared test && pnpm --filter @xstore/db test:int`. Expected: FAIL.
+- [x] **Step 3: Implement the schema (`pnpm db:migrate --name m2_devices`) and the shared module.**
+- [x] **Step 4: Run them to verify they pass.** Expected: PASS.
+- [x] **Step 5: Commit** — `git commit -m "feat(db): devices, enrollment sessions and device contracts"`
 
 ---
 
@@ -101,7 +101,7 @@ it('a UDID belongs to one device only', async () => { /* second create → P2002
   - `NotifyService.send(job: NotificationJob): Promise<void>` (API) — adds the job with `removeOnComplete: true` and `removeOnFail: 100` so codes do not linger in Redis.
   - Worker `createNotificationsWorker(deps)` sends with nodemailer (pool off, 10 s timeouts); SMTP errors are retried by the default job options.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('renders the code email with escaping', () => {
@@ -116,10 +116,10 @@ it('delivers an email through SMTP', async () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm infra:up && pnpm --filter @xstore/worker test && pnpm --filter @xstore/worker test:int`. Expected: FAIL.
-- [ ] **Step 3: Implement the queue, templates, mailer, API service and Mailpit wiring.**
-- [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
-- [ ] **Step 5: Commit** — `git commit -m "feat(notifications): mail queue with SMTP delivery and Mailpit for development"`
+- [x] **Step 2: Run them to verify they fail.** Run: `pnpm infra:up && pnpm --filter @xstore/worker test && pnpm --filter @xstore/worker test:int`. Expected: FAIL.
+- [x] **Step 3: Implement the queue, templates, mailer, API service and Mailpit wiring.**
+- [x] **Step 4: Run them to verify they pass.** Expected: PASS.
+- [x] **Step 5: Commit** — `git commit -m "feat(notifications): mail queue with SMTP delivery and Mailpit for development"`
 
 ---
 

@@ -2,6 +2,7 @@ import { pino } from 'pino';
 import { loadWorkerConfig } from './config.js';
 import { closeWorkerDeps, createWorkerDeps } from './deps.js';
 import { createIpaWorker } from './queues/ipa.js';
+import { createNotificationsWorker } from './queues/notifications.js';
 import { createSystemWorker } from './queues/system.js';
 
 const config = loadWorkerConfig(process.env);
@@ -11,6 +12,7 @@ const deps = createWorkerDeps(config, logger);
 const workers = [
   createSystemWorker(deps.connection, { concurrency: config.concurrency }),
   createIpaWorker(deps),
+  createNotificationsWorker(deps),
 ];
 for (const worker of workers) {
   worker.on('failed', (job, err) =>

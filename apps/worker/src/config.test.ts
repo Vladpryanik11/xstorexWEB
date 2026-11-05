@@ -28,6 +28,8 @@ describe('loadWorkerConfig', () => {
       logLevel: 'info',
       concurrency: 4,
       tmpDir: tmpdir(),
+      smtpUrl: 'smtp://localhost:1025',
+      mailFrom: 'Xstore <noreply@xstorex.ru>',
       s3: {
         endpoint: 'http://minio:9000',
         region: 'us-east-1',
