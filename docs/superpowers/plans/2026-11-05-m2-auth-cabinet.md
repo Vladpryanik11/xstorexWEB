@@ -125,6 +125,12 @@ it('delivers an email through SMTP', async () => {
 
 ### Task 3: Signed enrollment profile
 
+**Parallel implementation scope (approved 2026-11-05):** branch `codex/m2-enrollment-core` implements only the standalone profile builder, CMS signing/verification and PEM identity loader, with tests. This keeps the work independent of M1 and the M3 core libraries. Task 3 as a whole and milestone M2 remain open: the endpoint, enrollment persistence, session hand-off, environment/Docker wiring, development certificate command and real-iPhone check belong to the later integration.
+
+**Standalone contract:** `SigningIdentity = { certificate: Certificate; chain: Certificate[]; privateKey: CryptoKey }`, where `certificate` is the leaf and `chain` excludes the leaf. The loader accepts leaf-first certificate-chain PEM and RSA PKCS#1/PKCS#8 or ECDSA P-256 SEC1/PKCS#8 private keys, checks that the key matches the leaf, imports it as non-extractable and caches successful loads for one hour. A failed renewal fails closed and may be retried immediately after repair. CMS verification requires caller-supplied trust anchors; embedded certificates never establish trust by themselves. Domain certificates used to sign the outgoing profile and Apple trust anchors used to verify a device response are separate inputs at integration.
+
+**Verification of the standalone scope:** API unit tests cover RSA/ECDSA, intermediate chains, certificate dates, corrupted content/signatures, untrusted roots, malformed/ambiguous CMS, XML escaping and certificate renewal. When OpenSSL is available, tests independently verify generated signatures and read both DER and streaming BER signatures created by OpenSSL. This does not replace a real-device test or complete the HTTP flow.
+
 **Files:**
 - Create: `apps/api/src/enrollment/{enrollment.module,enrollment.controller,profile-builder,cms,signing-identity}.ts`
 - Create: `apps/api/scripts/dev-certs.ts` (script `dev:certs`), git-ignored output `infra/dev-certs/`
