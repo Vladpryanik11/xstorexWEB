@@ -52,6 +52,3 @@ export const completeUploadSchema = z.object({
     .max(10_000),
 });
 export type CompleteUpload = z.infer<typeof completeUploadSchema>;
-
-/** Job payload of `ipa:inspect`. */
-export type IpaInspectJob = { uploadId: string };

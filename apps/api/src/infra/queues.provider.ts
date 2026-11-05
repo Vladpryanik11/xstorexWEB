@@ -1,5 +1,5 @@
 import type { Provider } from '@nestjs/common';
-import { QueueName } from '@xstore/shared';
+import { defaultJobOptions, QueueName } from '@xstore/shared';
 import { type JobsOptions, Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import type { AppConfig } from '../config/config.js';
@@ -11,12 +11,7 @@ export const QUEUES = Symbol('QUEUES');
 export type Queues = Record<QueueName, Queue>;
 
 /** Defaults for every job the API enqueues (M1 plan, Global Constraints). */
-export const JOB_DEFAULTS: JobsOptions = {
-  attempts: 5,
-  backoff: { type: 'exponential', delay: 10_000 },
-  removeOnComplete: 1000,
-  removeOnFail: false,
-};
+export const JOB_DEFAULTS: JobsOptions = defaultJobOptions;
 
 export const queuesProvider: Provider = {
   provide: QUEUES,
