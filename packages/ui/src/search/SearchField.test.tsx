@@ -18,4 +18,11 @@ describe('SearchField', () => {
     fireEvent.submit(screen.getByRole('search'));
     expect(onSubmit).toHaveBeenCalledWith('банк');
   });
+
+  it('submits natively to the given action', () => {
+    render(<SearchField action="/search" />);
+    const form = screen.getByRole('search');
+    expect(form).toHaveAttribute('action', '/search');
+    expect(form).toHaveAttribute('method', 'get');
+  });
 });

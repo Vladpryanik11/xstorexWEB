@@ -1,0 +1,55 @@
+/* The header is transparent here (overHero): the hero slides under it and paints its colour. */
+.hero {
+  margin-top: -3.75rem;
+  padding: calc(3.75rem + 1.125rem) 0 1.6875rem;
+  background: var(--x-header-gradient);
+  color: var(--x-card);
+}
+
+.heroInner {
+  box-sizing: content-box;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding-inline: var(--x-gutter);
+}
+
+.title {
+  max-width: 20.5rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.19;
+  letter-spacing: -0.0103125rem;
+  text-wrap: balance;
+}
+
+.shelves {
+  box-sizing: content-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  /* children pad themselves by the gutter, like the header's inner box */
+  max-width: calc(var(--x-page-max) + 2 * var(--x-gutter));
+  margin-inline: auto;
+  /* room for the floating install banner */
+  padding: 1.5rem 0 6rem;
+}
+
+@media (min-width: 48em) {
+  .hero {
+    padding-top: calc(3.75rem + 2.5rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .title {
+    max-width: 34rem;
+    font-size: 2.75rem;
+    line-height: 1.14;
+    letter-spacing: -0.015rem;
+  }
+
+  .shelves {
+    gap: 2.5rem;
+    padding-top: 2rem;
+  }
+}

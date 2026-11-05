@@ -36,6 +36,7 @@ const CARD_SELECT = {
   subtitle: true,
   iconKey: true,
   bannerKey: true,
+  screenshotKeys: true,
   rating: true,
   ratingCount: true,
   category: { select: { slug: true, name: true } },
@@ -327,6 +328,9 @@ export class CatalogService {
       name: row.name,
       subtitle: row.subtitle ?? undefined,
       iconUrl: row.iconKey ? this.storage.mediaUrl(row.iconKey) : undefined,
+      screenshotUrl: row.screenshotKeys[0]
+        ? this.storage.mediaUrl(row.screenshotKeys[0])
+        : undefined,
       rating: row.rating ?? undefined,
       ratingCount: row.ratingCount ?? undefined,
       category: row.category ?? undefined,

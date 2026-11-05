@@ -8,6 +8,8 @@ export type SearchFieldProps = {
   defaultValue?: string;
   name?: string;
   onSubmit?: (q: string) => void;
+  /** Where the native GET submit goes, e.g. `/search`; the current URL when left out. */
+  action?: string;
   tone?: 'glass' | 'page';
 };
 
@@ -16,6 +18,7 @@ export function SearchField({
   defaultValue,
   name = 'q',
   onSubmit,
+  action,
   tone = 'glass',
 }: SearchFieldProps) {
   // Without an onSubmit handler the form submits natively (GET with the field name).
@@ -28,7 +31,13 @@ export function SearchField({
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: <search> needs iOS 17+, form[role=search] works everywhere
-    <form role="search" className={`${styles.field} ${styles[tone]}`} onSubmit={handleSubmit}>
+    <form
+      role="search"
+      action={action}
+      method="get"
+      className={`${styles.field} ${styles[tone]}`}
+      onSubmit={handleSubmit}
+    >
       <svg
         className={styles.icon}
         width="18"
