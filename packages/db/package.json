@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "test:int": "vitest run test"
+    "test:int": "vitest run test",
+    "seed:e2e": "node prisma/seed-e2e.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
@@ -33,6 +34,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "3.1161.0",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
     "prisma": "7.10.1",

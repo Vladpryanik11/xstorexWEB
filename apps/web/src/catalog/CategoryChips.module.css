@@ -1,0 +1,29 @@
+.chips {
+  /* chips cast a soft shadow; the padding keeps it from being clipped by the scroller */
+  margin-block: -0.75rem;
+}
+
+.list {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem var(--x-gutter);
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.list > li {
+  flex: none;
+}
+
+@media (min-width: 48em) {
+  .list {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
