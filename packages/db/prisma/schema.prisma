@@ -153,7 +153,7 @@ model App {
   accessLevel         String           @default("free")
   status              AppStatus        @default(draft)
   hiddenReason        String?
-  /// Imported from iTunes.
+  /// Filled in by the admin (no iTunes import, owner decision 2026-11-05).
   rating              Float?
   ratingCount         Int?
   languages           String[]

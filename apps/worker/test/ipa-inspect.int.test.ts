@@ -78,7 +78,7 @@ async function inspect(body: Buffer) {
   const row = await deps.db.ipaUpload.create({
     data: {
       ownerId,
-      purpose: 'catalog',
+      purpose: 'signer',
       bucket: deps.s3.bucket('originals'),
       key: '',
       fileName: 'test.ipa',

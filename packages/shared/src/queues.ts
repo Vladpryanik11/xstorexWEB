@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const QueueName = { system: 'system', ipa: 'ipa', catalog: 'catalog' } as const;
+export const QueueName = { system: 'system', ipa: 'ipa' } as const;
 export type QueueName = (typeof QueueName)[keyof typeof QueueName];
 
 export type SystemPingResult = { pong: true; at: string };
@@ -8,10 +8,6 @@ export type SystemPingResult = { pong: true; at: string };
 /** Payload of `ipa:inspect`. */
 export const ipaInspectJob = z.object({ uploadId: z.string().min(1) });
 export type IpaInspectJob = z.infer<typeof ipaInspectJob>;
-
-/** Payload of `catalog:importMetadata`. */
-export const catalogImportJob = z.object({ appId: z.string().min(1) });
-export type CatalogImportJob = z.infer<typeof catalogImportJob>;
 
 /** Defaults for every job (M1 plan, Global Constraints); structurally a BullMQ `JobsOptions`. */
 export const defaultJobOptions = {

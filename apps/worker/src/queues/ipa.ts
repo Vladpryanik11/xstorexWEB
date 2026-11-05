@@ -5,6 +5,7 @@ import { inspectIpa } from '@xstore/ios';
 import { type IpaInspect, ipaInspectJob, QueueName } from '@xstore/shared';
 import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import sharp from 'sharp';
+import { attachToCatalog, uploadIconKeys } from '../catalog/attach.js';
 import type { WorkerDeps } from '../deps.js';
 import { UnknownJobError } from './system.js';
 
@@ -17,7 +18,6 @@ async function storeIcons(
   uploadId: string,
   icon: Buffer,
 ): Promise<{ icon512Key: string; icon57Key: string } | null> {
-  const prefix = `uploads/${uploadId}`;
   let icon512: Buffer;
   let icon57: Buffer;
   try {
@@ -29,8 +29,7 @@ async function storeIcons(
     return null;
   }
   const media = deps.s3.bucket('media');
-  const icon512Key = `${prefix}/icon-512.png`;
-  const icon57Key = `${prefix}/icon-57.png`;
+  const { icon512Key, icon57Key } = uploadIconKeys(uploadId);
   await deps.s3.put(media, icon512Key, icon512, PNG);
   await deps.s3.put(media, icon57Key, icon57, PNG);
   return { icon512Key, icon57Key };
@@ -38,8 +37,9 @@ async function storeIcons(
 
 /**
  * `ipa:inspect`: downloads the original to a private temp dir, inspects it and records the
- * result on the `IpaUpload`. Repeated runs for an upload that is already `ready` or `rejected`
- * change nothing. Infrastructure failures throw so BullMQ retries; the temp dir is always removed.
+ * result on the `IpaUpload`; a catalog upload is then attached to the catalog (`attachToCatalog`).
+ * A repeated run for a `ready` catalog upload only finishes attaching it; other inspected uploads
+ * are left alone. Infrastructure failures throw so BullMQ retries; the temp dir is always removed.
  */
 export async function inspectUpload(deps: WorkerDeps, uploadId: string): Promise<InspectOutcome> {
   const { db, logger } = deps;
@@ -48,6 +48,8 @@ export async function inspectUpload(deps: WorkerDeps, uploadId: string): Promise
     data: { status: 'inspecting' },
   });
   if (claimed.count === 0) {
+    const done = await db.ipaUpload.findUnique({ where: { id: uploadId } });
+    if (done?.status === 'ready' && done.purpose === 'catalog') return attach(deps, done);
     logger.info({ uploadId }, 'upload is missing or not awaiting inspection');
     return { status: 'skipped' };
   }
@@ -76,7 +78,7 @@ export async function inspectUpload(deps: WorkerDeps, uploadId: string): Promise
       icon512Key: icons?.icon512Key ?? null,
       icon57Key: icons?.icon57Key ?? null,
     };
-    await db.ipaUpload.update({
+    const ready = await db.ipaUpload.update({
       where: { id: uploadId },
       data: { status: 'ready', rejectCode: null, inspect },
     });
@@ -84,10 +86,19 @@ export async function inspectUpload(deps: WorkerDeps, uploadId: string): Promise
       { uploadId, bundleId: inspect.bundleId, encrypted: inspect.encrypted },
       'ipa inspected',
     );
+    if (ready.purpose === 'catalog') return attach(deps, ready);
     return { status: 'ready' };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+async function attach(
+  deps: WorkerDeps,
+  upload: Parameters<typeof attachToCatalog>[1],
+): Promise<InspectOutcome> {
+  const result = await attachToCatalog(deps, upload);
+  return { status: result.status === 'duplicate' ? 'rejected' : 'ready' };
 }
 
 async function processIpaJob(deps: WorkerDeps, job: Job): Promise<InspectOutcome> {

@@ -17,6 +17,7 @@ export const ErrorCode = {
   IPA_MANY_APPS: 'IPA_MANY_APPS',
   IPA_BAD_PLIST: 'IPA_BAD_PLIST',
   IPA_NO_BINARY: 'IPA_NO_BINARY',
+  DUPLICATE_VERSION: 'DUPLICATE_VERSION',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -39,6 +40,7 @@ export const errorMessages: Record<ErrorCode, string> = {
   IPA_MANY_APPS: 'В архиве больше одного приложения',
   IPA_BAD_PLIST: 'Не удалось прочитать Info.plist или в нём нет обязательных полей',
   IPA_NO_BINARY: 'В приложении нет исполняемого файла iOS',
+  DUPLICATE_VERSION: 'Эта версия уже загружена',
 };
 
 export const apiErrorSchema = z.object({
