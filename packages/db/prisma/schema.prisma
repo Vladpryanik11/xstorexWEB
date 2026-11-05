@@ -7,8 +7,105 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PublicationStatus {
+  draft
+  published
+  hidden
+}
+
+enum CollectionLayout {
+  grid3
+  icons
+  screenshots
+  banner
+}
+
+enum CollectionSource {
+  manual
+  top_downloads
+  trending
+  top_rated
+  recently_updated
+}
+
 model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  icon      String?
+  sort      Int      @default(0)
+  apps      App[]
+}
+
+model App {
+  id                  String            @id @default(cuid())
+  slug                String            @unique
+  name                String
+  subtitle            String?
+  description         String?
+  developer           String
+  categoryId          String
+  category            Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  iconKey             String?
+  screenshotKeys      String[]          @default([])
+  removedFromAppStore Boolean           @default(false)
+  rightsBasis         String            @default("")
+  accessLevel         String            @default("free")
+  status              PublicationStatus @default(draft)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  versions            AppVersion[]
+  collectionItems     CollectionItem[]
+
+  @@index([categoryId, status])
+  @@index([status, createdAt])
+}
+
+model AppVersion {
+  id          String            @id @default(cuid())
+  appId       String
+  app         App               @relation(fields: [appId], references: [id], onDelete: Restrict)
+  version     String
+  build       String
+  bundleId    String
+  minIos      String?
+  sizeBytes   BigInt
+  sha256      String
+  ipaKey      String
+  encrypted   Boolean           @default(false)
+  changelog   String?
+  status      PublicationStatus @default(draft)
+  publishedAt DateTime?
+
+  @@unique([appId, bundleId, version, build])
+  @@index([bundleId])
+  @@index([appId, status, publishedAt])
+}
+
+model Collection {
+  id     String            @id @default(cuid())
+  slug   String            @unique
+  title  String
+  layout CollectionLayout
+  source CollectionSource  @default(manual)
+  sort   Int               @default(0)
+  items  CollectionItem[]
+}
+
+model CollectionItem {
+  collectionId String
+  appId        String
+  sort         Int
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+  app          App        @relation(fields: [appId], references: [id], onDelete: Restrict)
+
+  @@id([collectionId, appId])
+  @@unique([collectionId, sort])
+  @@index([appId])
 }

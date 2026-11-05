@@ -62,14 +62,18 @@ describe('M1 catalog persistence', () => {
     expect(app.screenshotKeys).toEqual([]);
     expect(app.removedFromAppStore).toBe(false);
     expect(app.rightsBasis).toBe('');
-    expect((await db.category.findUniqueOrThrow({ where: { id: category.id }, include: { apps: true } })).apps)
-      .toHaveLength(1);
+    expect(
+      (await db.category.findUniqueOrThrow({ where: { id: category.id }, include: { apps: true } }))
+        .apps,
+    ).toHaveLength(1);
   });
 
   it('enforces unique application and category slugs', async () => {
     const category = await createCategory('unique');
     await createApp(category.id, 'unique-app');
-    await expect(db.category.create({ data: { slug: category.slug, name: 'Дубль' } })).rejects.toThrow();
+    await expect(
+      db.category.create({ data: { slug: category.slug, name: 'Дубль' } }),
+    ).rejects.toThrow();
     await expect(createApp(category.id, 'unique-app')).rejects.toThrow();
   });
 
@@ -147,7 +151,9 @@ describe('M1 catalog persistence', () => {
       db.collectionItem.create({ data: { collectionId: collection.id, appId: first.id, sort: 1 } }),
     ).rejects.toThrow();
     await expect(
-      db.collectionItem.create({ data: { collectionId: collection.id, appId: second.id, sort: 0 } }),
+      db.collectionItem.create({
+        data: { collectionId: collection.id, appId: second.id, sort: 0 },
+      }),
     ).rejects.toThrow();
     await db.collectionItem.create({
       data: { collectionId: collection.id, appId: second.id, sort: 1 },
