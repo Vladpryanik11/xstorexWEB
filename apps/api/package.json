@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
     "test:int": "vitest run --config vitest.int.config.ts test/",
-    "admin:create": "node dist/cli/create-admin.js"
+    "admin:create": "node dist/cli/create-admin.js",
+    "dev:certs": "node scripts/dev-certs.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1161.0",

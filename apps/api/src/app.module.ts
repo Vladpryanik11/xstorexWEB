@@ -8,6 +8,7 @@ import { CatalogModule } from './catalog/catalog.module.js';
 import { ApiExceptionFilter } from './common/api-exception.filter.js';
 import { resolveRequestId } from './common/request-id.js';
 import type { AppConfig } from './config/config.js';
+import { EnrollmentModule } from './enrollment/enrollment.module.js';
 import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
@@ -42,6 +43,7 @@ export class AppModule {
         AuditModule,
         RateLimitModule,
         AuthModule,
+        EnrollmentModule,
         StorageModule,
         UploadsModule,
         CatalogModule,

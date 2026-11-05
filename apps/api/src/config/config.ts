@@ -1,4 +1,8 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 
 /** An http(s) origin without a trailing slash, path, query or fragment. */
 const origin = z
@@ -12,6 +16,8 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   SITE_URL: z.url(),
+  ENROLL_CERT_PATH: z.string().min(1).optional(),
+  ENROLL_KEY_PATH: z.string().min(1).optional(),
   S3_ENDPOINT: origin,
   S3_PUBLIC_URL: origin,
   S3_REGION: z.string().min(1).default('us-east-1'),
@@ -40,6 +46,7 @@ export type AppConfig = {
   port: number;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   siteUrl: string;
+  enrollment: { certPath: string; keyPath: string };
   s3: S3Config;
 };
 
@@ -56,6 +63,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     port: e.API_PORT,
     logLevel: e.LOG_LEVEL,
     siteUrl: e.SITE_URL,
+    enrollment: {
+      certPath: resolve(repoRoot, e.ENROLL_CERT_PATH ?? 'infra/dev-certs/enroll.crt'),
+      keyPath: resolve(repoRoot, e.ENROLL_KEY_PATH ?? 'infra/dev-certs/enroll.key'),
+    },
     s3: {
       endpoint: e.S3_ENDPOINT,
       publicUrl: e.S3_PUBLIC_URL,

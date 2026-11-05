@@ -148,7 +148,7 @@ it('delivers an email through SMTP', async () => {
   - `loadSigningIdentity(certPath, keyPath): Promise<SigningIdentity>` — cached for 1 hour, so a renewed Caddy certificate is picked up.
   - `GET /enrollment/profile?next=&link=1` → creates `EnrollmentSession` (nonce = 32 random bytes base64url, `userId` set only when `link=1` and a user session exists, `next` kept only when it starts with `/` and not `//`) and returns the signed profile.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('builds a Profile Service payload pointing at the callback', () => {
@@ -166,10 +166,10 @@ it('rejects a signer outside the anchors', async () => { /* other CA → CmsErro
 it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -inform DER` exits 0 when openssl is on PATH; skipped otherwise */ });
 ```
 
-- [ ] **Step 2: Run them to verify they fail** — `pnpm --filter @xstore/api test`. Expected: FAIL.
-- [ ] **Step 3: Implement `profile-builder.ts`, `cms.ts` (`signCms` and `verifyCms`), `signing-identity.ts`, the profile endpoint and `dev:certs`.**
-- [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
-- [ ] **Step 5: Commit** — `git commit -m "feat(enrollment): signed Profile Service mobileconfig"`
+- [x] **Step 2: Run them to verify they fail** — `pnpm --filter @xstore/api test`. Expected: FAIL.
+- [x] **Step 3: Implement `profile-builder.ts`, `cms.ts` (`signCms` and `verifyCms`), `signing-identity.ts`, the profile endpoint and `dev:certs`.**
+- [x] **Step 4: Run them to verify they pass.** Expected: PASS.
+- [x] **Step 5: Commit** — `git commit -m "feat(enrollment): signed Profile Service mobileconfig"`
 
 ---
 
