@@ -1,0 +1,36 @@
+.root {
+  position: relative;
+}
+
+.text {
+  margin: 0;
+  color: var(--x-text);
+  font: 400 15px / 1.45 var(--x-font);
+  white-space: pre-line;
+}
+
+.text[data-expanded="false"] {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines);
+  line-clamp: var(--lines);
+}
+
+.more {
+  position: absolute;
+  inset-inline-end: 0;
+  bottom: 0;
+  padding: 0 0 0 2.5rem;
+  border: 0;
+  background: linear-gradient(to right, transparent, var(--x-page) 2rem);
+  color: var(--x-link);
+  font: 500 15px / 1.45 var(--x-font);
+  cursor: pointer;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}

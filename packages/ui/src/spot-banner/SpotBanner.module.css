@@ -1,0 +1,60 @@
+.banner {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: min(22rem, calc(100vw - 2 * var(--x-gutter)));
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--x-radius-card);
+  background: var(--x-header-gradient);
+  color: var(--x-card);
+  text-decoration: none;
+  transition: transform 0.16s var(--x-ease);
+}
+
+.banner:active {
+  transform: scale(0.98);
+}
+
+.banner:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 3px;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.caption {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 3rem 1.25rem 1.25rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+}
+
+.title {
+  font: 700 22px / 1.2 var(--x-system);
+}
+
+.subtitle {
+  font: 500 14px / 1.3 var(--x-font);
+  opacity: 0.85;
+}
+
+@media (min-width: 48em) {
+  .banner {
+    width: 26rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    transition: none;
+  }
+}

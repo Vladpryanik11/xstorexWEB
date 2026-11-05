@@ -55,3 +55,10 @@
 body {
   background: var(--x-page);
 }
+
+/* component tokens (design skill «Components») */
+:root {
+  --x-star: #8e8e91;
+  --x-cover-ring: inset 0 0 0 0.5px rgba(6, 34, 96, 0.12);
+  --x-radius-cover: 0.875rem;
+}
