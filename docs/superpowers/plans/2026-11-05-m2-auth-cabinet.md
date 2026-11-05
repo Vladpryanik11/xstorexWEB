@@ -244,7 +244,7 @@ it('the hand-off token works once', async () => { /* second complete → 400 */ 
   - `POST /auth/email/verify { email, code }` → user by email or a new one (`role user`), user session, cookie, 204; wrong → 400 `CODE_INVALID`; blocked user → 403 `ACCOUNT_BLOCKED`.
   - `POST /profile/email/request { email }` and `POST /profile/email/verify { email, code }` (signed in) → sets `User.email`; email of another user → 409 `EMAIL_TAKEN`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('signs in with the emailed code', async () => {
@@ -259,10 +259,10 @@ it('rate-limits the fourth request per email', async () => { /* 429 */ });
 it('refuses an email that belongs to another user', async () => { /* EMAIL_TAKEN */ });
 ```
 
-- [ ] **Step 2: Run them to verify they fail.** Expected: FAIL.
-- [ ] **Step 3: Implement the service and controllers.**
-- [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
-- [ ] **Step 5: Commit** — `git commit -m "feat(auth): email code sign-in and email linking"`
+- [x] **Step 2: Run them to verify they fail.** Expected: FAIL.
+- [x] **Step 3: Implement the service and controllers.**
+- [x] **Step 4: Run them to verify they pass.** Expected: PASS.
+- [x] **Step 5: Commit** — `git commit -m "feat(auth): email code sign-in and email linking"`
 
 ---
 

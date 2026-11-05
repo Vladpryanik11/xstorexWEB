@@ -9,6 +9,11 @@ export function normalizeEmail(raw: string): string {
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
+export const emailRequestSchema = z.object({ email: emailSchema });
+export const emailVerifySchema = emailRequestSchema.extend({ code: z.string().regex(/^\d{6}$/) });
+export type EmailRequest = z.infer<typeof emailRequestSchema>;
+export type EmailVerify = z.infer<typeof emailVerifySchema>;
+
 export const staffLoginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1).max(256),

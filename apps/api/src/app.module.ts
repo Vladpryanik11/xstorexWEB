@@ -14,6 +14,7 @@ import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
 import { InfraModule } from './infra/infra.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { ProfileModule } from './profile/profile.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
@@ -48,6 +49,7 @@ export class AppModule {
         RateLimitModule,
         AuthModule,
         EnrollmentModule,
+        ProfileModule,
         StorageModule,
         UploadsModule,
         CatalogModule,

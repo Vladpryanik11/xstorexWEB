@@ -12,6 +12,7 @@ export function testEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   const env = process.env;
   return {
     DATABASE_URL: env.DATABASE_URL_TEST,
+    AUTH_SECRET: env.AUTH_SECRET ?? Buffer.alloc(32, 't').toString('base64'),
     REDIS_URL: env.REDIS_URL_TEST,
     SITE_URL: 'http://localhost:3000',
     LOG_LEVEL: 'error',

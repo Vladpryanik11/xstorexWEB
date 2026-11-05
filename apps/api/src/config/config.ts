@@ -16,6 +16,7 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   SITE_URL: z.url(),
+  AUTH_SECRET: z.base64().refine((value) => Buffer.from(value, 'base64').length >= 32),
   ENROLL_CERT_PATH: z.string().min(1).optional(),
   ENROLL_KEY_PATH: z.string().min(1).optional(),
   ENROLL_TRUST_ANCHORS_PATH: z.string().min(1).optional(),
@@ -47,6 +48,7 @@ export type AppConfig = {
   port: number;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   siteUrl: string;
+  authSecret: Buffer;
   enrollment: { certPath: string; keyPath: string; anchorsPath: string };
   s3: S3Config;
 };
@@ -64,6 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     port: e.API_PORT,
     logLevel: e.LOG_LEVEL,
     siteUrl: e.SITE_URL,
+    authSecret: Buffer.from(e.AUTH_SECRET, 'base64'),
     enrollment: {
       certPath: resolve(repoRoot, e.ENROLL_CERT_PATH ?? 'infra/dev-certs/enroll.crt'),
       keyPath: resolve(repoRoot, e.ENROLL_KEY_PATH ?? 'infra/dev-certs/enroll.key'),
