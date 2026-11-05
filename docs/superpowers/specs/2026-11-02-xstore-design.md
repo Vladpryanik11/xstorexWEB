@@ -1,6 +1,6 @@
 # Xstore (xstorex.ru) — спецификация, этап 1
 
-Дата: 2026-11-02 · Статус: на согласовании
+Дата: 2026-11-02 · Обновлено: 2026-11-05 · Статус: утверждена
 
 ## 1. Цель
 
@@ -130,39 +130,43 @@ xstore/
 
 **Пользователи**
 - `User`: id, email (уникальный, необязательный), role, passwordHash и totpSecret (только для staff), createdAt.
-- `Session`: id, userId, expiresAt, ip, userAgent.
-- `EnrollmentSession`: nonce, status, deviceId, expiresAt.
-- `Device`: id, userId, udid (уникальный), product, iosVersion, name, status (`new | pending | processing | active | blocked | expired`), appleAccountId, registeredAt.
+- `Session`: id (SHA-256 токена из cookie), userId, kind (`user | staff`), deviceId (устройство, с которого выполнен вход по UDID), expiresAt, ip, userAgent, lastSeenAt.
+- `EnrollmentSession`: nonce, status, userId (при привязке устройства к уже вошедшему пользователю), deviceId, next, expiresAt.
+- `Device`: id, userId, udid (уникальный), product, iosVersion, name, status (`new | pending | processing | active | blocked | expired`), appleAccountId, ascDeviceId, includedInRevision (первая ревизия профиля аккаунта, в которую попало устройство), tierWanted, registeredAt.
 
 **Apple**
-- `AppleAccount`: id, title, teamId, tier (`standard | reliable`), status, membershipExpiresAt, deviceLimit (≤ 100), ascKeyId, ascIssuerId, ascPrivateKeyEnc.
-- `AppleCertificate`: id, accountId, serial, p12Enc, p12PasswordEnc, expiresAt, ocspStatus, checkedAt.
-- `ProvisioningProfile`: id, accountId, revision, profileBlob, udids[], expiresAt.
+- `AppleAccount`: id, title, teamId, tier (`standard | reliable`), status (`active | auth_error | blocked`), membershipExpiresAt (вводит админ, ASC API её не отдаёт), deviceLimit (≤ 100, отдельно для каждого класса устройств), usedIphoneSlots, usedIpadSlots, ascKeyId, ascIssuerId, ascPrivateKeyEnc, wildcardBundleAscId, lastRevokedAt.
+- `AppleCertificate`: id, accountId, ascCertificateId, serial, p12Enc, p12PasswordEnc, expiresAt, status (`active | rotated | revoked | expired`), ocspStatus, checkedAt, lastGoodCheckAt.
+- `ProvisioningProfile`: id, accountId, revision, ascProfileId, certificateId, profileBlob, udids[], expiresAt.
 
 **Каталог**
-- `App`: id, slug, name, subtitle, description, developer, categoryId, iconKey, screenshotKeys[], removedFromAppStore, rightsBasis, accessLevel (`free | addon:<code>`), status (`draft | published | hidden`), timestamps.
-- `AppVersion`: id, appId, version, build, bundleId, minIos, sizeBytes, sha256, ipaKey, encrypted, changelog, status, publishedAt.
+- `App`: id, slug, name, subtitle, description, developer, categoryId, iconKey, screenshotKeys[], bannerKey, removedFromAppStore, rightsBasis, accessLevel (`free | addon:<code>`), status (`draft | published | hidden`), hiddenReason, rating, ratingCount (из iTunes, для подборки «Самый рейтинговый»), languages[], itunesId, timestamps.
+- `AppVersion`: id, appId, version, build, bundleId, minIos, sizeBytes, sha256, ipaKey, icon57Key, encrypted, changelog, status, publishedAt. Сочетание bundleId × version × build уникально.
 - `Category`: slug, name, icon, sort.
-- `Collection` + `CollectionItem`: slug, title, layout (`grid3 | icons | screenshots | banner`), source (`manual | top_downloads | trending | top_rated | recently_updated`), sort.
+- `Collection` + `CollectionItem`: slug, title, layout (`grid3 | icons | screenshots | banner`), source (`manual | top_downloads | trending | top_rated | recently_updated`), sort, limit, onHome; у элемента подборки position и pinned.
+
+**Загрузки**
+- `IpaUpload`: id, ownerId, purpose (`catalog | signer`), bucket, key, s3UploadId, fileName, sizeBytes, partSize, status (`uploading | uploaded | inspecting | ready | rejected | expired`), rejectCode, inspect (результат `ipa.inspect`), appVersionId, expiresAt. Отслеживает загрузку частями с докачкой и в админке, и в Signer.
 
 **Подпись и установка**
-- `UserUpload`: id, userId, ipaKey, разобранные метаданные, sizeBytes, expiresAt.
-- `UserCertificate`: id, userId, p12Enc, passwordEnc, profileBlob, udids[], expiresAt.
-- `SigningJob`: id, userId, deviceId, source (appVersion или userUpload), certificate source, options, status, progress, errorCode.
-- `SignedBuild`: id, sourceKey, certificateId, profileRevision, ipaKey, sizeBytes, createdAt, lastUsedAt.
-- `InstallToken`: token, userId, deviceId, signedBuildId, expiresAt, usedAt.
+- `UserUpload`: id, userId, uploadId (→ `IpaUpload`), разобранные метаданные (name, bundleId, version, build), sizeBytes, iconKey, expiresAt.
+- `UserCertificate`: id, userId, title, teamId, certSerial, p12Enc, passwordEnc, profileBlob, profileName, appIdPattern, udids[], expiresAt.
+- `SigningJob`: id, userId, deviceId, source (appVersion или userUpload), certificate source, options, queueJobId, status, progress, errorCode, signedBuildId.
+- `SignedBuild`: id, sourceKey, accountId, certificateId, profileRevision, ipaKey, sizeBytes, createdAt, lastUsedAt.
+- `InstallToken`: token (хранится SHA-256), userId, deviceId, signedBuildId или buildKey (сборка Signer), данные для манифеста (title, bundleId, bundleVersion, иконки), expiresAt, usedAt, usedIp, usedUa.
 - `InstallEvent`: appId, deviceId, createdAt.
 
 **Оплата**
 - `Plan`: id, code, title, kind (`device | addon`), tier, durationDays, priceRub, features (JSON: `signer`, `uploadLimitMb`, `warrantyDays`), active, sort. Доступ к платным наборам задаётся только через `App.accessLevel = addon:<Plan.code>`.
-- `Order`: id, userId, deviceId, planIds, amountRub, status (`created | pending | paid | failed | expired | refunded`), provider, providerPaymentId.
-- `PaymentEvent`: id, provider, eventKey (уникальный), payload, processedAt.
-- `Entitlement`: id, deviceId, planId, kind, startsAt, expiresAt, orderId.
+- `Order`: id, userId, deviceId, planIds, items (состав и цены на момент заказа), amountRub, status (`created | pending | paid | failed | expired | refunded`), provider, providerPaymentId, redirectUrl, paidAt, expiresAt.
+- `PaymentEvent`: id, provider, eventKey (уникальный), payload, result, processedAt.
+- `Entitlement`: id, deviceId, planId, planCode, kind, startsAt, expiresAt, orderId, grantedById (ручная выдача), revokedAt.
 
 **Контент и сервис**
 - `Article`, `FaqItem`, `Page`.
 - `AuditLog`: actorId, action, entity, entityId, diff, ip, createdAt.
-- `NotificationLog`.
+- `Alert`: kind, severity (`info | warning | critical`), title, details, dedupeKey (уникальный), createdAt, resolvedAt. Алерты админу: мало слотов, ошибки ASC, отзыв сертификата, конец членства, сбои подписи, оплаты и бэкапов.
+- `NotificationLog`: template, to, subject, status, error, createdAt.
 - `Setting`: ключ–значение для порогов и лимитов.
 
 Правила:
@@ -280,8 +284,8 @@ SSR всех публичных страниц, `sitemap.xml`, `robots.txt`, Ope
 | Веха | Содержание |
 |---|---|
 | M0 | Монорепо, Docker, CI, токены и UI-кит, шапка и футер в точности по эталону |
-| M1 | Каталог и публичные страницы, админка каталога, загрузка IPA через админку и `ipa.inspect` |
-| M2 | Вход по UDID и по почте, сессии, кабинет «Ваши устройства» и «Профиль» |
+| M1 | Вход админов (пароль + TOTP) и сессии, каталог и публичные страницы, админка каталога, загрузка IPA через админку и `ipa.inspect` |
+| M2 | Вход по UDID и по почте, пользовательские сессии, кабинет «Ваши устройства» и «Профиль» |
 | M3 | Пул аккаунтов Apple, ASC API, регистрация устройств, сертификаты, профили, OCSP |
 | M4 | Подпись и OTA-установка из каталога, кэш сборок |
 | M5 | Тарифы, Platega, заказы, права |
@@ -305,3 +309,7 @@ SSR всех публичных страниц, `sitemap.xml`, `robots.txt`, Ope
 - Аккаунты Apple Developer с ключами App Store Connect API, роль Admin (к M3).
 - Мерчант Platega: ключ API и секрет вебхука (к M5).
 - SMTP для писем (к M7).
+
+## 14. История изменений
+
+- 2026-11-05 — спецификация утверждена владельцем. По итогам планирования M1–M7 (`docs/superpowers/plans/2026-11-05-*.md`): вход админов перенесён из M2 в M1, в модель данных добавлены `IpaUpload` и `Alert`, поля рейтинга, языков, баннера и скрытия у `App`, раздельные слоты iPhone/iPad у аккаунта Apple, служебные поля подписи, установки и оплаты.
