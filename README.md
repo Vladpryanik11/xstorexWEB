@@ -65,7 +65,7 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 ## Production-стек
 
-`infra/docker-compose.yml` поднимает web, api, worker, Postgres, Redis, MinIO и Caddy; наружу публикует порты 80 и 443 только Caddy. Конфигурация берётся из `.env` (домены `SITE_DOMAIN` и `DL_DOMAIN`, пароли `POSTGRES_PASSWORD` и `MINIO_ROOT_PASSWORD`; на сервере задайте настоящие значения).
+`infra/docker-compose.yml` поднимает web, api, worker, Postgres, Redis, MinIO и Caddy; наружу публикует порты 80 и 443 только Caddy. Конфигурация берётся из `.env` (домены `SITE_DOMAIN` и `DL_DOMAIN`, пароли `POSTGRES_PASSWORD` и `MINIO_ROOT_PASSWORD`; на сервере задайте настоящие значения). API и воркер ходят в MinIO с учётными данными `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, presigned-ссылки выдаются на `https://DL_DOMAIN`; при старте API создаёт недостающие бакеты (`S3_BUCKET_PREFIX` + `originals`, `media`, `signed`, `uploads`).
 
 ```bash
 docker compose -f infra/docker-compose.yml --env-file .env up -d --build

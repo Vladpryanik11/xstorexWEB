@@ -9,6 +9,7 @@ export const ErrorCode = {
   RATE_LIMITED: 'RATE_LIMITED',
   CONFLICT: 'CONFLICT',
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  UPLOAD_TOO_LARGE: 'UPLOAD_TOO_LARGE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -23,6 +24,7 @@ export const errorMessages: Record<ErrorCode, string> = {
   INTERNAL: 'Внутренняя ошибка сервера',
   CONFLICT: 'Конфликт данных',
   INVALID_CREDENTIALS: 'Неверная почта, пароль или код',
+  UPLOAD_TOO_LARGE: 'Файл больше допустимого размера',
 };
 
 export const apiErrorSchema = z.object({

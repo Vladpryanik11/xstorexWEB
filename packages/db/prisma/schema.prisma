@@ -33,6 +33,7 @@ model User {
   blockedAt    DateTime?
   createdAt    DateTime  @default(now())
   sessions     Session[]
+  uploads      IpaUpload[]
 }
 
 model Session {
@@ -61,4 +62,44 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
+}
+
+enum UploadPurpose {
+  catalog
+  signer
+}
+
+enum UploadStatus {
+  uploading
+  uploaded
+  inspecting
+  ready
+  rejected
+  expired
+}
+
+/// A multipart upload straight to S3 (admin catalog uploads in M1, Signer uploads in M6).
+model IpaUpload {
+  id           String        @id @default(cuid())
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  purpose      UploadPurpose
+  bucket       String
+  key          String
+  /// S3 multipart upload id; null until the multipart upload is created.
+  s3UploadId   String?
+  fileName     String
+  sizeBytes    BigInt
+  partSize     Int
+  status       UploadStatus  @default(uploading)
+  rejectCode   String?
+  /// Result of `ipa:inspect`.
+  inspect      Json?
+  appVersionId String?
+  expiresAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
 }
