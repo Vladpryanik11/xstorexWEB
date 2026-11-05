@@ -25,15 +25,17 @@ enum SessionKind {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  email        String?     @unique
-  role         Role        @default(user)
+  id           String              @id @default(cuid())
+  email        String?             @unique
+  role         Role                @default(user)
   passwordHash String?
   totpSecret   String?
   blockedAt    DateTime?
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime            @default(now())
   sessions     Session[]
   uploads      IpaUpload[]
+  devices      Device[]
+  enrollments  EnrollmentSession[]
 }
 
 model Session {
@@ -47,8 +49,59 @@ model Session {
   userAgent  String?
   createdAt  DateTime    @default(now())
   lastSeenAt DateTime    @default(now())
+  deviceId   String?
+  device     Device?     @relation(fields: [deviceId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+}
+
+enum DeviceStatus {
+  new
+  pending
+  processing
+  active
+  blocked
+  expired
+}
+
+enum EnrollmentStatus {
+  pending
+  completed
+  failed
+  expired
+}
+
+model Device {
+  id             String              @id @default(cuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  udid           String              @unique
+  product        String
+  iosVersion     String
+  name           String
+  status         DeviceStatus        @default(new)
+  appleAccountId String?
+  registeredAt   DateTime?
+  createdAt      DateTime            @default(now())
+  sessions       Session[]
+  enrollments    EnrollmentSession[]
+  installEvents  InstallEvent[]
+
+  @@index([userId])
+}
+
+model EnrollmentSession {
+  nonce     String           @id
+  status    EnrollmentStatus @default(pending)
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId  String?
+  device    Device?          @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  next      String?
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([expiresAt])
 }
 
 model AuditLog {
@@ -233,8 +286,8 @@ model InstallEvent {
   id        String   @id @default(cuid())
   appId     String
   app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
-  /// Relation to `Device` arrives in M2.
   deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
 
   @@index([appId, createdAt])

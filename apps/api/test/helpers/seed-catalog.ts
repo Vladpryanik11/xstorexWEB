@@ -131,7 +131,23 @@ export async function seedInstalls(
   now = new Date(),
 ): Promise<void> {
   const createdAt = new Date(now.getTime() - daysAgo * 86_400_000);
+  const owner = await db.user.upsert({
+    where: { id: 'catalog-install-owner' },
+    create: { id: 'catalog-install-owner' },
+    update: {},
+  });
+  const device = await db.device.upsert({
+    where: { udid: 'b'.repeat(40) },
+    update: {},
+    create: {
+      userId: owner.id,
+      udid: 'b'.repeat(40),
+      product: 'iPhone15,2',
+      iosVersion: '22B83',
+      name: 'Тест',
+    },
+  });
   await db.installEvent.createMany({
-    data: Array.from({ length: count }, (_, i) => ({ appId, deviceId: `dev-${i}`, createdAt })),
+    data: Array.from({ length: count }, () => ({ appId, deviceId: device.id, createdAt })),
   });
 }

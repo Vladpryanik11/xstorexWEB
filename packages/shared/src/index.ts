@@ -2,6 +2,7 @@ export * from './admin-catalog.js';
 export * from './auth.js';
 export * from './catalog.js';
 export * from './client.js';
+export * from './devices.js';
 export * from './errors.js';
 export * from './health.js';
 export * from './queues.js';

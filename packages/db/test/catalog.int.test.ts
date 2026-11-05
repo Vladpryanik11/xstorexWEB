@@ -98,7 +98,16 @@ describe('catalog schema', () => {
     });
     expect(col).toMatchObject({ limit: 12, onHome: true });
     await db.collectionItem.create({ data: { collectionId: col.id, appId: app.id, position: 0 } });
-    await db.installEvent.create({ data: { appId: app.id, deviceId: 'device-1' } });
+    const device = await db.device.create({
+      data: {
+        udid: 'a'.repeat(40),
+        product: 'iPhone15,2',
+        iosVersion: '22B83',
+        name: 'Тест',
+        user: { create: {} },
+      },
+    });
+    await db.installEvent.create({ data: { appId: app.id, deviceId: device.id } });
     await db.app.delete({ where: { id: app.id } });
     expect(await db.appVersion.count()).toBe(0);
     expect(await db.collectionItem.count()).toBe(0);
