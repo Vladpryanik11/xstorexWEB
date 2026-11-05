@@ -21,6 +21,7 @@
     "@nestjs/platform-express": "12.3.2",
     "@node-rs/argon2": "2.2.2",
     "@xstore/db": "workspace:*",
+    "@xstore/ios": "workspace:*",
     "@xstore/shared": "workspace:*",
     "asn1js": "3.1.0",
     "bullmq": "6.5.4",

@@ -199,6 +199,9 @@ importers:
       '@xstore/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@xstore/ios':
+        specifier: workspace:*
+        version: link:../../packages/ios
       '@xstore/shared':
         specifier: workspace:*
         version: link:../../packages/shared

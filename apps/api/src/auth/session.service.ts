@@ -12,7 +12,7 @@ const TTL_MS: Record<SessionKind, number> = {
 const TOUCH_MS = 5 * 60 * 1000;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
-export type SessionMeta = { ip?: string; userAgent?: string };
+export type SessionMeta = { ip?: string; userAgent?: string; deviceId?: string };
 
 export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -37,6 +37,7 @@ export class SessionService {
         expiresAt,
         ip: meta.ip,
         userAgent: meta.userAgent?.slice(0, 512),
+        deviceId: meta.deviceId,
       },
     });
     return { token, expiresAt };

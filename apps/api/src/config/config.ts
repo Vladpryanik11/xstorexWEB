@@ -18,6 +18,7 @@ const envSchema = z.object({
   SITE_URL: z.url(),
   ENROLL_CERT_PATH: z.string().min(1).optional(),
   ENROLL_KEY_PATH: z.string().min(1).optional(),
+  ENROLL_TRUST_ANCHORS_PATH: z.string().min(1).optional(),
   S3_ENDPOINT: origin,
   S3_PUBLIC_URL: origin,
   S3_REGION: z.string().min(1).default('us-east-1'),
@@ -46,7 +47,7 @@ export type AppConfig = {
   port: number;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   siteUrl: string;
-  enrollment: { certPath: string; keyPath: string };
+  enrollment: { certPath: string; keyPath: string; anchorsPath: string };
   s3: S3Config;
 };
 
@@ -66,6 +67,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     enrollment: {
       certPath: resolve(repoRoot, e.ENROLL_CERT_PATH ?? 'infra/dev-certs/enroll.crt'),
       keyPath: resolve(repoRoot, e.ENROLL_KEY_PATH ?? 'infra/dev-certs/enroll.key'),
+      anchorsPath: resolve(
+        repoRoot,
+        e.ENROLL_TRUST_ANCHORS_PATH ?? 'apps/api/certs/AppleIPhoneDeviceCA.pem',
+      ),
     },
     s3: {
       endpoint: e.S3_ENDPOINT,

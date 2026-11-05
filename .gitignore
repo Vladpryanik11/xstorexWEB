@@ -16,6 +16,8 @@ test-results/
 *.p12
 *.mobileprovision
 *.pem
+!apps/api/certs/AppleIncRootCertificate.pem
+!apps/api/certs/AppleIPhoneDeviceCA.pem
 *.key
 
 .claude/settings.local.json

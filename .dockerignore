@@ -16,6 +16,8 @@ packages/db/src/generated
 **/*.p8
 **/*.p12
 **/*.pem
+!apps/api/certs/AppleIncRootCertificate.pem
+!apps/api/certs/AppleIPhoneDeviceCA.pem
 **/*.key
 **/*.mobileprovision
 

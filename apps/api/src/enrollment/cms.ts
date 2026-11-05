@@ -9,7 +9,7 @@ import {
   SignedData,
   SignerInfo,
 } from 'pkijs';
-import { verifyCertificatePath } from './certificate-path.js';
+import { verifyCertificatePath, verifyDeviceIssuer } from './certificate-path.js';
 import { enrollmentCrypto } from './crypto-engine.js';
 import type { SigningIdentity } from './signing-identity.js';
 
@@ -86,7 +86,7 @@ export async function signCms(content: Buffer, identity: SigningIdentity): Promi
 
 export async function verifyCms(
   der: Buffer,
-  opts: { anchors: Certificate[]; now?: Date },
+  opts: { anchors: Certificate[]; now?: Date; purpose?: 'apple-device' },
 ): Promise<{ content: Buffer; signer: Certificate }> {
   try {
     if (!opts.anchors.length) throw new CmsError();
@@ -95,6 +95,7 @@ export async function verifyCms(
     const envelope = new ContentInfo({ schema: decoded.result });
     if (envelope.contentType !== ContentInfo.SIGNED_DATA) throw new CmsError();
     const data = new SignedData({ schema: envelope.content });
+    if ((data.certificates?.length ?? 0) > 32) throw new CmsError();
     const attached = data.encapContentInfo.eContent;
     if (
       data.encapContentInfo.eContentType !== ContentInfo.DATA ||
@@ -128,15 +129,16 @@ export async function verifyCms(
     if (!result.signatureVerified || !result.signerCertificate) {
       throw new CmsError();
     }
-    if (
-      !(await verifyCertificatePath(
-        result.signerCertificate,
-        (data.certificates ?? []).filter((c): c is Certificate => c instanceof Certificate),
-        opts.anchors,
-        now,
-      ))
-    )
-      throw new CmsError();
+    const trusted =
+      opts.purpose === 'apple-device'
+        ? await verifyDeviceIssuer(result.signerCertificate, opts.anchors)
+        : await verifyCertificatePath(
+            result.signerCertificate,
+            (data.certificates ?? []).filter((c): c is Certificate => c instanceof Certificate),
+            opts.anchors,
+            now,
+          );
+    if (!trusted) throw new CmsError();
     return { content: Buffer.from(attached.getValue()), signer: result.signerCertificate };
   } catch {
     throw new CmsError();

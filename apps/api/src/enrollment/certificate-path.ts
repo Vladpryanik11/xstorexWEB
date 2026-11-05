@@ -20,6 +20,28 @@ const SUPPORTED_CRITICAL = new Set([
   '2.5.29.54',
 ]);
 
+/**
+ * Apple hardware identities are signed directly by a pinned Device CA. Apple's
+ * OTA protocol explicitly ignores validity dates for these identities; this
+ * exception never applies to the general-purpose certificate path verifier.
+ */
+export async function verifyDeviceIssuer(
+  signer: Certificate,
+  issuers: Certificate[],
+): Promise<boolean> {
+  if (issuers.length === 0 || issuers.length > MAX_CERTIFICATES) return false;
+  const leafConstraints = signer.extensions?.find((e) => e.extnID === '2.5.29.19')?.parsedValue;
+  if (leafConstraints instanceof BasicConstraints && leafConstraints.cA) return false;
+  for (const issuer of issuers) {
+    const ca = issuer.extensions?.find((e) => e.extnID === '2.5.29.19')?.parsedValue;
+    if (!(ca instanceof BasicConstraints) || !ca.cA || !signer.issuer.isEqual(issuer.subject))
+      continue;
+    if (!constraintsAllow([signer, issuer])) continue;
+    if (await signer.verify(issuer, enrollmentCrypto)) return true;
+  }
+  return false;
+}
+
 function fingerprint(certificate: Certificate): string {
   return Buffer.from(certificate.toSchema().toBER(false)).toString('hex');
 }

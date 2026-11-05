@@ -27,6 +27,22 @@ let ec: typeof rsa;
 const now = new Date('2026-11-05T00:00:00Z');
 const content = Buffer.from('hello — iPhone');
 
+it('supports expired hardware identities only when a dedicated device issuer is explicitly pinned', async () => {
+  const issuer = await createTestCa();
+  issuer.certificate.notBefore.value = new Date('2007-01-01T00:00:00Z');
+  issuer.certificate.notAfter.value = new Date('2014-01-01T00:00:00Z');
+  await issuer.certificate.sign(issuer.privateKey, 'SHA-256');
+  const leaf = await testIdentity('RSA', issuer);
+  leaf.certificate.notBefore.value = new Date('2010-01-01T00:00:00Z');
+  leaf.certificate.notAfter.value = new Date('2013-01-01T00:00:00Z');
+  await leaf.certificate.sign(issuer.privateKey, 'SHA-256');
+  const der = await signCms(content, leaf);
+  await expect(verifyCms(der, { anchors: [issuer.certificate] })).rejects.toBeInstanceOf(CmsError);
+  expect(
+    (await verifyCms(der, { anchors: [issuer.certificate], purpose: 'apple-device' })).content,
+  ).toEqual(content);
+});
+
 beforeAll(async () => {
   root = await createTestCa();
   otherRoot = await createTestCa();

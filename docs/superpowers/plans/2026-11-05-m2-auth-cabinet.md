@@ -183,7 +183,8 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 - Test: `apps/api/src/enrollment/device-response.test.ts`, `apps/api/test/enrollment.int.test.ts`
 
 **Interfaces:**
-- Env: `ENROLL_TRUST_ANCHORS_PATH` (default `apps/api/certs/AppleIncRootCertificate.pem`; tests point it at the fake iOS CA).
+- Env: `ENROLL_TRUST_ANCHORS_PATH` (default `apps/api/certs/AppleIPhoneDeviceCA.pem`; tests point it at the fake iOS CA).
+- Protocol correction (2026-11-05, official Apple Profile Service documentation): pin the dedicated Apple iPhone Device CA, not the general Apple Root CA. Device identities are verified directly against that issuer and cannot be CA certificates; dates are ignored only in this hardware-identity mode as Apple requires. Ordinary `verifyCms` remains date- and chain-validating. `AppleIncRootCertificate.pem` is retained as a public reference, never an automatic broad trust fallback. See `apps/api/certs/README.md` for sources and fingerprints. Unknown device hierarchies fail closed pending the real-device gate.
 - Consumes: `verifyCms` from Task 3.
 - Produces:
   - `parseDeviceResponse(content: Buffer): { udid: string; product: string; version: string; challenge: string }` — plist keys `UDID`, `PRODUCT`, `VERSION`, `CHALLENGE`; validates `udid` with `udidSchema`.
@@ -191,7 +192,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
   - `POST /enrollment/complete { token }` → `GETDEL`; creates a user session with `deviceId`; sets the cookie; returns `{ next: string }` (default `/devices`). Unknown token → 400 `ENROLLMENT_EXPIRED`.
   - `signDeviceResponse(fields, ca): Promise<Buffer>` test helper (fake device certificate issued by a test CA, signed with `signCms`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 // device-response.test.ts
@@ -220,10 +221,10 @@ it('refuses a device owned by someone else', async () => { /* link mode, UDID of
 it('the hand-off token works once', async () => { /* second complete → 400 */ });
 ```
 
-- [ ] **Step 2: Run them to verify they fail.** Expected: FAIL.
-- [ ] **Step 3: Implement `parseDeviceResponse`, `EnrollService`, the callback and complete endpoints, and the fake iOS helper.** `fixtures/ios/README.md` explains how to record a real response (Task 9) and that it must not be committed without the owner's consent.
-- [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
-- [ ] **Step 5: Commit** — `git commit -m "feat(enrollment): verify iOS responses and hand off sessions"`
+- [x] **Step 2: Run them to verify they fail.** Expected: FAIL.
+- [x] **Step 3: Implement `parseDeviceResponse`, `EnrollService`, the callback and complete endpoints, and the fake iOS helper.** `fixtures/ios/README.md` explains how to record a real response (Task 9) and that it must not be committed without the owner's consent.
+- [x] **Step 4: Run them to verify they pass.** Expected: PASS.
+- [x] **Step 5: Commit** — `git commit -m "feat(enrollment): verify iOS responses and hand off sessions"`
 
 ---
 

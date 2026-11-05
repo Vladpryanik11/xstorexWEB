@@ -13,6 +13,7 @@ export async function createApp(config: AppConfig): Promise<INestApplication> {
   // Caddy (and Next.js in dev) proxy from private networks; req.ip is the client's address.
   app.set('trust proxy', 'loopback, linklocal, uniquelocal');
   app.setGlobalPrefix('api/v1');
+  app.useBodyParser('raw', { type: 'application/pkcs7-signature', limit: 65536 });
   app.enableShutdownHooks();
   await app.init();
   return app;
