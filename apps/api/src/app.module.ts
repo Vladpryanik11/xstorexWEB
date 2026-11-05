@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 import { ApiExceptionFilter } from './common/api-exception.filter.js';
 import { resolveRequestId } from './common/request-id.js';
 import type { AppConfig } from './config/config.js';
@@ -41,6 +42,7 @@ export class AppModule {
         AuthModule,
         StorageModule,
         UploadsModule,
+        CatalogModule,
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],
