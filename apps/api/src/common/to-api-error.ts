@@ -1,18 +1,10 @@
 import { HttpException } from '@nestjs/common';
-import { type ApiError, ErrorCode } from '@xstore/shared';
+import { type ApiError, ErrorCode, errorMessages } from '@xstore/shared';
 import { ZodError } from 'zod';
-
-const messages: Record<ErrorCode, string> = {
-  NOT_FOUND: 'Не найдено',
-  UNAUTHORIZED: 'Требуется вход',
-  FORBIDDEN: 'Нет доступа',
-  RATE_LIMITED: 'Слишком много запросов, попробуйте позже',
-  VALIDATION: 'Некорректные данные',
-  INTERNAL: 'Внутренняя ошибка сервера',
-};
+import { DomainError } from './domain-error.js';
 
 function result(status: number, code: ErrorCode): { status: number; body: ApiError } {
-  return { status, body: { code, message: messages[code] } };
+  return { status, body: { code, message: errorMessages[code] } };
 }
 
 function codeForStatus(status: number): ErrorCode {
@@ -23,6 +15,8 @@ function codeForStatus(status: number): ErrorCode {
       return ErrorCode.FORBIDDEN;
     case 404:
       return ErrorCode.NOT_FOUND;
+    case 409:
+      return ErrorCode.CONFLICT;
     case 429:
       return ErrorCode.RATE_LIMITED;
     default:
@@ -31,6 +25,7 @@ function codeForStatus(status: number): ErrorCode {
 }
 
 export function toApiError(err: unknown): { status: number; body: ApiError } {
+  if (err instanceof DomainError) return result(err.status, err.code);
   if (err instanceof ZodError) return result(400, ErrorCode.VALIDATION);
   if (err instanceof HttpException) {
     const status = err.getStatus();

@@ -12,3 +12,53 @@ model Setting {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+enum Role {
+  user
+  support
+  admin
+}
+
+enum SessionKind {
+  user
+  staff
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String?   @unique
+  role         Role      @default(user)
+  passwordHash String?
+  totpSecret   String?
+  blockedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  /// sha256 hex of the cookie token; the token itself is never stored.
+  id         String      @id
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       SessionKind
+  expiresAt  DateTime
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+  lastSeenAt DateTime    @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  diff      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
