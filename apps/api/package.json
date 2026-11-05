@@ -9,16 +9,19 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
-    "test:int": "vitest run test/"
+    "test:int": "vitest run --config vitest.int.config.ts test/",
+    "admin:create": "node dist/cli/create-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "12.3.2",
     "@nestjs/core": "12.3.2",
     "@nestjs/platform-express": "12.3.2",
+    "@node-rs/argon2": "2.2.2",
     "@xstore/db": "workspace:*",
     "@xstore/shared": "workspace:*",
     "ioredis": "6.0.0",
     "nestjs-pino": "5.3.1",
+    "otpauth": "9.5.2",
     "pino": "10.4.0",
     "pino-http": "11.0.0",
     "reflect-metadata": "0.2.2",

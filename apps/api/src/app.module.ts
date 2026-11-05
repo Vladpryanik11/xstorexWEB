@@ -1,21 +1,20 @@
-import { type DynamicModule, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
+import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { Redis } from 'ioredis';
 import { LoggerModule } from 'nestjs-pino';
+import { AuditModule } from './audit/audit.module.js';
+import { AuthModule } from './auth/auth.module.js';
 import { ApiExceptionFilter } from './common/api-exception.filter.js';
 import { resolveRequestId } from './common/request-id.js';
 import type { AppConfig } from './config/config.js';
-import { APP_CONFIG } from './config/tokens.js';
 import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
-import { PrismaService } from './infra/prisma.service.js';
-import { REDIS, redisProvider } from './infra/redis.provider.js';
+import { InfraModule } from './infra/infra.module.js';
+import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 
 @Module({})
-export class AppModule implements OnApplicationShutdown {
-  constructor(@Inject(REDIS) private readonly redis: Redis) {}
-
+// biome-ignore lint/complexity/noStaticOnlyClass: Nest dynamic modules are configured through a static forRoot
+export class AppModule {
   static forRoot(config: AppConfig): DynamicModule {
     return {
       module: AppModule,
@@ -24,23 +23,23 @@ export class AppModule implements OnApplicationShutdown {
           pinoHttp: {
             level: config.logLevel,
             genReqId: (req, res) => resolveRequestId(req, res),
-            redact: ['req.headers.authorization', 'req.headers.cookie'],
+            redact: [
+              'req.headers.authorization',
+              'req.headers.cookie',
+              'req.body.password',
+              'req.body.totp',
+              'res.headers["set-cookie"]',
+            ],
             autoLogging: { ignore: (req) => isHealthCheck(req) },
           },
         }),
+        InfraModule.forRoot(config),
+        AuditModule,
+        RateLimitModule,
+        AuthModule,
       ],
       controllers: [HealthController],
-      providers: [
-        { provide: APP_CONFIG, useValue: config },
-        { provide: APP_FILTER, useClass: ApiExceptionFilter },
-        PrismaService,
-        redisProvider,
-        HealthService,
-      ],
+      providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],
     };
-  }
-
-  onApplicationShutdown(): void {
-    this.redis.disconnect();
   }
 }

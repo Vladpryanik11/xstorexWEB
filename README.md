@@ -41,6 +41,17 @@ pnpm dev           # web, api и worker
 
 Первый запуск Playwright: `pnpm --filter @xstore/web exec playwright install webkit chromium`. Сборка web берёт шрифты из Google Fonts, нужен интернет.
 
+### Учётная запись админа
+
+Админ входит по почте, паролю и коду из приложения-аутентификатора (TOTP). Создать админа или сбросить ему пароль и ключ TOTP:
+
+```bash
+pnpm --filter @xstore/api build
+pnpm --filter @xstore/api admin:create -- --email admin@xstorex.ru
+```
+
+Команда спросит пароль (не короче 12 символов, ввод не отображается; можно передать через stdin) и один раз выведет ссылку `otpauth://` для приложения-аутентификатора. При сбросе все сессии этого пользователя закрываются. В production: `docker compose -f infra/docker-compose.yml --env-file .env exec api node apps/api/dist/cli/create-admin.js --email <почта>`.
+
 ### Витрина `/dev/ui`
 
 Страница `/dev/ui` показывает шапку и компоненты `@xstore/ui`. Она открывается, только когда задана переменная `XSTORE_DEV_PAGES=1`, иначе отдаёт 404. Turbo пропускает переменную в задачу `dev`.
