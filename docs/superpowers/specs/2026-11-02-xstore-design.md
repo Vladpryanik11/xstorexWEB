@@ -57,7 +57,7 @@ xstore/
 | `enrollment` | Генерация подписанного `.mobileconfig` (Profile Service), приём ответа iOS, проверка CMS-подписи, выдача сессии |
 | `devices` | Устройства пользователя, их статусы, привязка к аккаунту Apple |
 | `apple` | Пул аккаунтов, клиент App Store Connect API (Devices, Certificates, Profiles, Bundle IDs), выпуск сертификатов по своему CSR, проверка OCSP |
-| `catalog` | Приложения, версии, категории, подборки, поиск, импорт метаданных из iTunes Search API |
+| `catalog` | Приложения, версии, категории, подборки, поиск |
 | `storage` | MinIO: presigned multipart upload, временные ссылки на скачивание, удаление |
 | `signing` | Задачи подписи, кэш подписанных сборок, своя подпись пользователя |
 | `install` | Одноразовые токены, OTA-манифесты, ссылки `itms-services://` |
@@ -104,7 +104,7 @@ xstore/
    - считает размер и sha256;
    - проверяет шифрование FairPlay (`cryptid` в `LC_ENCRYPTION_INFO`). Зашифрованный IPA помечается как непригодный к подписи, админ видит причину;
    - отбрасывает архивы с некорректной структурой и zip-бомбы.
-3. Если bundle id уже есть в каталоге, IPA становится новой версией этого приложения. Если нет — черновиком нового. Метаданные (описание, скриншоты, категория, разработчик) подтягиваются из iTunes Search API, админ правит их и публикует.
+3. Если bundle id уже есть в каталоге, IPA становится новой версией этого приложения. Если нет — черновиком нового. Название берётся из `Info.plist`, остальные метаданные (описание, скриншоты, категория, разработчик, рейтинг, языки) админ заполняет вручную и публикует. Импорта из iTunes нет: в каталоге есть приложения, удалённые из App Store. Повторная загрузка той же версии (bundle id, версия и сборка) отклоняется.
 4. Публикация новой версии сбрасывает «последнюю версию» в каталоге. Старые версии остаются доступными в истории.
 
 ### 4.5 Своя подпись (Signer)
@@ -140,7 +140,7 @@ xstore/
 - `ProvisioningProfile`: id, accountId, revision, ascProfileId, certificateId, profileBlob, udids[], expiresAt.
 
 **Каталог**
-- `App`: id, slug, name, subtitle, description, developer, categoryId, iconKey, screenshotKeys[], bannerKey, removedFromAppStore, rightsBasis, accessLevel (`free | addon:<code>`), status (`draft | published | hidden`), hiddenReason, rating, ratingCount (из iTunes, для подборки «Самый рейтинговый»), languages[], itunesId, timestamps.
+- `App`: id, slug, name, subtitle, description, developer, categoryId, iconKey, screenshotKeys[], bannerKey, removedFromAppStore, rightsBasis, accessLevel (`free | addon:<code>`), status (`draft | published | hidden`), hiddenReason, rating, ratingCount (заполняет админ, для подборки «Самый рейтинговый»), languages[], itunesId (необязательный id в App Store, заполняет админ), timestamps.
 - `AppVersion`: id, appId, version, build, bundleId, minIos, sizeBytes, sha256, ipaKey, icon57Key, encrypted, changelog, status, publishedAt. Сочетание bundleId × version × build уникально.
 - `Category`: slug, name, icon, sort.
 - `Collection` + `CollectionItem`: slug, title, layout (`grid3 | icons | screenshots | banner`), source (`manual | top_downloads | trending | top_rated | recently_updated`), sort, limit, onHome; у элемента подборки position и pinned.
@@ -219,7 +219,7 @@ xstore/
 
 **Админка `/admin`** — плотнее, с таблицами, на тех же токенах:
 - дашборд: выручка, новые устройства, свободные слоты, очереди, отозванные сертификаты, ошибки подписи;
-- приложения: загрузка IPA (4.4), версии, метаданные, импорт из iTunes, «основание для распространения», скрытие по жалобе;
+- приложения: загрузка IPA (4.4), версии, метаданные (вручную), «основание для распространения», скрытие по жалобе;
 - подборки и категории, порядок в подборках;
 - пользователи и устройства: поиск по UDID и email, выдача и продление прав вручную, блокировка;
 - аккаунты Apple: добавление по ключу ASC, уровень, лимит устройств, сертификаты и OCSP, профили, перенос устройств;
@@ -313,3 +313,4 @@ SSR всех публичных страниц, `sitemap.xml`, `robots.txt`, Ope
 ## 14. История изменений
 
 - 2026-11-05 — спецификация утверждена владельцем. По итогам планирования M1–M7 (`docs/superpowers/plans/2026-11-05-*.md`): вход админов перенесён из M2 в M1, в модель данных добавлены `IpaUpload` и `Alert`, поля рейтинга, языков, баннера и скрытия у `App`, раздельные слоты iPhone/iPad у аккаунта Apple, служебные поля подписи, установки и оплаты.
+- 2026-11-05 — по решению владельца убран импорт метаданных из iTunes Search API: в каталоге будут приложения, удалённые из App Store, карточку приложения заполняет админ. Поля `rating`, `ratingCount`, `languages`, `itunesId` остаются и заполняются вручную.
