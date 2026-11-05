@@ -9,6 +9,10 @@ const messages: Record<ErrorCode, string> = {
   RATE_LIMITED: 'Слишком много запросов, попробуйте позже',
   VALIDATION: 'Некорректные данные',
   INTERNAL: 'Внутренняя ошибка сервера',
+  CATALOG_CONFLICT: 'Конфликт данных каталога',
+  CATALOG_NOT_PUBLISHABLE: 'Приложение не готово к публикации',
+  IPA_ENCRYPTED: 'Этот IPA зашифрован и не может быть опубликован',
+  UPLOAD_TOO_LARGE: 'Размер файла превышает допустимый лимит',
 };
 
 function result(status: number, code: ErrorCode): { status: number; body: ApiError } {
