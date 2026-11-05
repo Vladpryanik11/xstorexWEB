@@ -52,3 +52,22 @@ export const completeUploadSchema = z.object({
     .max(10_000),
 });
 export type CompleteUpload = z.infer<typeof completeUploadSchema>;
+
+/** `IpaUpload.inspect`: what `ipa:inspect` found in an accepted IPA. */
+export const ipaInspectSchema = z.object({
+  name: z.string(),
+  bundleId: z.string(),
+  version: z.string(),
+  build: z.string(),
+  minIos: z.string().optional(),
+  deviceFamily: z.array(z.number().int()),
+  executable: z.string(),
+  /** FairPlay-encrypted IPAs cannot be signed (spec §4.4). */
+  encrypted: z.boolean(),
+  sizeBytes: z.number().int(),
+  sha256: z.string(),
+  /** Keys in the media bucket; `null` when the IPA has no usable icon. */
+  icon512Key: z.string().nullable(),
+  icon57Key: z.string().nullable(),
+});
+export type IpaInspect = z.infer<typeof ipaInspectSchema>;

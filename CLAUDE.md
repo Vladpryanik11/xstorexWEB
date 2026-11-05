@@ -46,7 +46,7 @@
 
 ## Структура и команды
 
-Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `infra/`. Требуется Node 24, pnpm 12.16.1, Docker Desktop. Подробнее для разработчика: `README.md`.
+Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA, только для Node), `infra/`. Требуется Node 24, pnpm 12.16.1, Docker Desktop. Подробнее для разработчика: `README.md`.
 
 Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль). Тестовый e2e-сервер web: 3100.
 
