@@ -10,3 +10,4 @@ allowBuilds:
   prisma: true
   '@swc/core': false
   msgpackr-extract: false
+  sharp: false

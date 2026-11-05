@@ -1,0 +1,28 @@
+.icon {
+  box-sizing: border-box;
+  display: block;
+  flex: none;
+  border-radius: 22.5%;
+  object-fit: cover;
+  background: var(--x-surface);
+  box-shadow: var(--x-cover-ring);
+}
+
+.placeholder {
+  background: var(--x-surface-2);
+}
+
+.s56 {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.s76 {
+  width: 4.75rem;
+  height: 4.75rem;
+}
+
+.s120 {
+  width: 7.5rem;
+  height: 7.5rem;
+}

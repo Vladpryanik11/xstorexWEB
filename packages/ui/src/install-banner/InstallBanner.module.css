@@ -1,0 +1,79 @@
+.banner {
+  position: fixed;
+  z-index: 30;
+  bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  left: 50%;
+  translate: -50% 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(22rem, calc(100vw - 2 * var(--x-gutter)));
+  padding: 0.625rem 0.625rem 0.625rem 0.75rem;
+  border-radius: 1.25rem;
+  background: var(--x-blue);
+  color: var(--x-card);
+  box-shadow:
+    inset 0 -1px 5px rgba(255, 255, 255, 0.4),
+    0 0 0 1px rgba(26, 110, 234, 0.18),
+    0 10px 24px -8px rgba(26, 110, 234, 0.55);
+}
+
+.mark {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+}
+
+.text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font: 700 15px / 1.2 var(--x-system);
+}
+
+.subtitle {
+  font: 500 13px / 1.3 var(--x-font);
+  opacity: 0.8;
+}
+
+.pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 1rem;
+  border-radius: 12.5rem;
+  background: var(--x-card);
+  color: var(--x-blue);
+  font: 600 14px var(--x-font);
+  text-decoration: none;
+  transition: transform 0.16s var(--x-ease);
+}
+
+/* Stretch the link's hit area over the whole card. */
+.pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1.25rem;
+}
+
+.banner:has(.pill:active) .pill {
+  transform: scale(0.97);
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--x-card);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill {
+    transition: none;
+  }
+}

@@ -1,6 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
+import { ErrorCode } from '@xstore/shared';
 import { expect, it } from 'vitest';
 import { z } from 'zod';
+import { DomainError } from './domain-error.js';
 import { toApiError } from './to-api-error.js';
 
 it('maps NotFoundException', () => {
@@ -19,5 +21,23 @@ it('hides unknown errors', () => {
   expect(toApiError(new Error('password=secret'))).toEqual({
     status: 500,
     body: { code: 'INTERNAL', message: 'Внутренняя ошибка сервера' },
+  });
+});
+
+it('maps DomainError to its code and shared message', () => {
+  expect(toApiError(new DomainError(ErrorCode.INVALID_CREDENTIALS, 401))).toEqual({
+    status: 401,
+    body: { code: 'INVALID_CREDENTIALS', message: 'Неверная почта, пароль или код' },
+  });
+});
+
+it('passes DomainError details through', () => {
+  expect(toApiError(new DomainError(ErrorCode.PUBLISH_BLOCKED, 409, ['NO_ICON']))).toEqual({
+    status: 409,
+    body: {
+      code: 'PUBLISH_BLOCKED',
+      message: 'Нельзя опубликовать: заполните обязательные поля',
+      details: ['NO_ICON'],
+    },
   });
 });

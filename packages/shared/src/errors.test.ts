@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { apiErrorSchema } from './errors.js';
+import { apiErrorSchema, ErrorCode, errorMessages } from './errors.js';
 
 it('accepts a known error', () => {
   expect(apiErrorSchema.parse({ code: 'NOT_FOUND', message: 'Не найдено' })).toEqual({
@@ -14,4 +14,25 @@ it('rejects an unknown code', () => {
 
 it('rejects an empty message', () => {
   expect(apiErrorSchema.safeParse({ code: 'INTERNAL', message: '' }).success).toBe(false);
+});
+
+it('has a Russian message for every code', () => {
+  for (const code of Object.values(ErrorCode)) {
+    expect(errorMessages[code]).toMatch(/[А-Яа-яЁё]/);
+  }
+  expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта, пароль или код');
+  expect(errorMessages.CONFLICT).toBe('Конфликт данных');
+  expect(errorMessages.DUPLICATE_VERSION).toBe('Эта версия уже загружена');
+  expect(errorMessages.IPA_ZIP_BOMB).toBe('Архив подозрительно сильно сжат и отклонён');
+});
+
+it('carries publish blockers in details', () => {
+  expect(errorMessages.PUBLISH_BLOCKED).toBe('Нельзя опубликовать: заполните обязательные поля');
+  expect(
+    apiErrorSchema.parse({
+      code: 'PUBLISH_BLOCKED',
+      message: errorMessages.PUBLISH_BLOCKED,
+      details: ['NO_ICON'],
+    }).details,
+  ).toEqual(['NO_ICON']);
 });

@@ -40,6 +40,7 @@ Spec: `docs/superpowers/specs/2026-11-02-xstore-design.md` (section 6).
   --x-ease: cubic-bezier(.23, 1, .32, 1);
   --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
 }
+/* component tokens: --x-star: #8e8e91; --x-cover-ring: inset 0 0 0 .5px rgba(6,34,96,.12); --x-radius-cover: .875rem */
 /* hairline: 1px; .5px at ≥1.5dppx; .3333px at ≥2.5dppx */
 ```
 

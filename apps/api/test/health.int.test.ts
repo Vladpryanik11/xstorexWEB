@@ -1,24 +1,15 @@
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { type AppConfig, loadConfig } from '../src/config/config.js';
-
-const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
-if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+import { testEnv } from './test-env.js';
 
 let config: AppConfig;
 let app: INestApplication;
 
 beforeAll(async () => {
-  config = loadConfig({
-    DATABASE_URL: process.env.DATABASE_URL_TEST,
-    REDIS_URL: process.env.REDIS_URL_TEST,
-    SITE_URL: 'http://localhost:3000',
-    LOG_LEVEL: 'error',
-  });
+  config = loadConfig(testEnv());
   app = await createApp(config);
 });
 

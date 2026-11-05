@@ -13,7 +13,7 @@
     "format": "biome format --write .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:int": "turbo run test:int",
+    "test:int": "turbo run test:int --concurrency=1",
     "test:e2e": "turbo run test:e2e",
     "infra:up": "docker compose -f infra/docker-compose.dev.yml up -d --wait",
     "infra:down": "docker compose -f infra/docker-compose.dev.yml down",

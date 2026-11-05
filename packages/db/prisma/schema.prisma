@@ -12,3 +12,230 @@ model Setting {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+enum Role {
+  user
+  support
+  admin
+}
+
+enum SessionKind {
+  user
+  staff
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String?     @unique
+  role         Role        @default(user)
+  passwordHash String?
+  totpSecret   String?
+  blockedAt    DateTime?
+  createdAt    DateTime    @default(now())
+  sessions     Session[]
+  uploads      IpaUpload[]
+}
+
+model Session {
+  /// sha256 hex of the cookie token; the token itself is never stored.
+  id         String      @id
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       SessionKind
+  expiresAt  DateTime
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+  lastSeenAt DateTime    @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  diff      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
+
+enum UploadPurpose {
+  catalog
+  signer
+}
+
+enum UploadStatus {
+  uploading
+  uploaded
+  inspecting
+  ready
+  rejected
+  expired
+}
+
+/// A multipart upload straight to S3 (admin catalog uploads in M1, Signer uploads in M6).
+model IpaUpload {
+  id           String        @id @default(cuid())
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  purpose      UploadPurpose
+  bucket       String
+  key          String
+  /// S3 multipart upload id; null until the multipart upload is created.
+  s3UploadId   String?
+  fileName     String
+  sizeBytes    BigInt
+  partSize     Int
+  status       UploadStatus  @default(uploading)
+  rejectCode   String?
+  /// Result of `ipa:inspect`.
+  inspect      Json?
+  appVersionId String?
+  expiresAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+enum AppStatus {
+  draft
+  published
+  hidden
+}
+
+enum VersionStatus {
+  draft
+  published
+  rejected
+}
+
+enum CollectionLayout {
+  grid3
+  icons
+  screenshots
+  banner
+}
+
+enum CollectionSource {
+  manual
+  top_downloads
+  trending
+  top_rated
+  recently_updated
+}
+
+/// A catalog app. Only `published` apps are visible outside `/admin`.
+/// Migration `m1_catalog` adds a GIN trigram index on `lower(name)` for search.
+model App {
+  id                  String           @id @default(cuid())
+  slug                String           @unique
+  name                String
+  subtitle            String?
+  description         String?
+  developer           String?
+  categoryId          String?
+  category            Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  iconKey             String?
+  screenshotKeys      String[]
+  /// Hero carousel image.
+  bannerKey           String?
+  removedFromAppStore Boolean          @default(false)
+  /// «Основание для распространения»; required before publishing.
+  rightsBasis         String?
+  /// `free` or `addon:<Plan.code>`.
+  accessLevel         String           @default("free")
+  status              AppStatus        @default(draft)
+  hiddenReason        String?
+  /// Filled in by the admin (no iTunes import, owner decision 2026-11-05).
+  rating              Float?
+  ratingCount         Int?
+  languages           String[]
+  itunesId            String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  versions            AppVersion[]
+  collectionItems     CollectionItem[]
+  installEvents       InstallEvent[]
+
+  @@index([status])
+  @@index([categoryId])
+}
+
+model AppVersion {
+  id          String        @id @default(cuid())
+  appId       String
+  app         App           @relation(fields: [appId], references: [id], onDelete: Cascade)
+  version     String
+  build       String
+  bundleId    String
+  minIos      String?
+  sizeBytes   BigInt
+  sha256      String
+  ipaKey      String
+  icon57Key   String?
+  encrypted   Boolean
+  changelog   String?
+  status      VersionStatus @default(draft)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@unique([bundleId, version, build])
+  @@index([bundleId])
+  @@index([appId, publishedAt])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+  icon String
+  sort Int
+  apps App[]
+
+  @@index([sort])
+}
+
+model Collection {
+  id     String           @id @default(cuid())
+  slug   String           @unique
+  title  String
+  layout CollectionLayout
+  source CollectionSource
+  sort   Int
+  limit  Int              @default(12)
+  onHome Boolean          @default(true)
+  items  CollectionItem[]
+
+  @@index([sort])
+}
+
+model CollectionItem {
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  appId        String
+  app          App        @relation(fields: [appId], references: [id], onDelete: Cascade)
+  position     Int
+  pinned       Boolean    @default(false)
+
+  @@id([collectionId, appId])
+  @@index([appId])
+}
+
+/// One install from the catalog; feeds «Самый загружаемый» and «Тенденции».
+model InstallEvent {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  /// Relation to `Device` arrives in M2.
+  deviceId  String
+  createdAt DateTime @default(now())
+
+  @@index([appId, createdAt])
+}
