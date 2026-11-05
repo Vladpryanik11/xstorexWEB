@@ -1,0 +1,16 @@
+.section {
+  display: grid;
+  /* minmax(0, …) keeps a rail scrolling inside the column instead of widening the page */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875rem;
+}
+
+.section > h2 {
+  margin-inline: var(--x-gutter);
+}
+
+.coverItem {
+  display: grid;
+  gap: 0.5rem;
+  width: min(20rem, calc(100vw - 3 * var(--x-gutter)));
+}

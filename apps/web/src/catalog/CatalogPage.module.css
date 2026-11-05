@@ -1,0 +1,69 @@
+.page {
+  box-sizing: content-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  /* children pad themselves by the gutter, like the header's inner box */
+  max-width: calc(var(--x-page-max) + 2 * var(--x-gutter));
+  margin-inline: auto;
+  padding: 1.5rem 0 3rem;
+}
+
+.head {
+  display: grid;
+  gap: 1rem;
+  padding-inline: var(--x-gutter);
+}
+
+/* category chips scroll edge to edge and pad themselves by the gutter */
+.head > nav {
+  margin-inline: calc(-1 * var(--x-gutter));
+}
+
+.title {
+  margin: 0;
+  font: 700 1.75rem / 1.15 var(--x-system);
+  letter-spacing: -0.01em;
+}
+
+.more {
+  margin: 0;
+  padding-inline: var(--x-gutter);
+  text-align: center;
+}
+
+.moreLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: 12.5rem;
+  background: var(--x-card);
+  color: var(--x-blue);
+  font: 600 15px / 1 var(--x-font);
+  text-decoration: none;
+  box-shadow: 0 0 0 var(--x-hairline) var(--x-hair);
+}
+
+.moreLink:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  padding: 2rem var(--x-gutter);
+  color: var(--x-text-2);
+  font: 400 15px / 1.4 var(--x-font);
+  text-align: center;
+}
+
+@media (min-width: 48em) {
+  .page {
+    padding-top: 2.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+}

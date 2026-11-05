@@ -36,6 +36,8 @@ export const appCardSchema = z.object({
   name: z.string(),
   subtitle: z.string().optional(),
   iconUrl: z.string().optional(),
+  /** First screenshot: the cover in a `screenshots` collection. */
+  screenshotUrl: z.string().optional(),
   rating: z.number().optional(),
   ratingCount: z.number().int().optional(),
   category: categoryRefSchema.optional(),
