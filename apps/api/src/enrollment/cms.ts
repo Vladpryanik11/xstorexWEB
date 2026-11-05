@@ -1,7 +1,7 @@
 import * as asn1js from 'asn1js';
 import {
   Attribute,
-  type Certificate,
+  Certificate,
   ContentInfo,
   EncapsulatedContentInfo,
   IssuerAndSerialNumber,
@@ -9,6 +9,7 @@ import {
   SignedData,
   SignerInfo,
 } from 'pkijs';
+import { verifyCertificatePath } from './certificate-path.js';
 import { enrollmentCrypto } from './crypto-engine.js';
 import type { SigningIdentity } from './signing-identity.js';
 
@@ -31,9 +32,15 @@ export async function signCms(content: Buffer, identity: SigningIdentity): Promi
         eContentType: ContentInfo.DATA,
         eContent: new asn1js.OctetString({ valueHex: Uint8Array.from(content) }),
       }),
-      certificates: [identity.certificate, ...identity.chain],
+      certificates: [identity.certificate, ...identity.chain].sort((a, b) =>
+        Buffer.compare(
+          Buffer.from(a.toSchema().toBER(false)),
+          Buffer.from(b.toSchema().toBER(false)),
+        ),
+      ),
       signerInfos: [
         new SignerInfo({
+          version: 1,
           sid: new IssuerAndSerialNumber({
             issuer: identity.certificate.issuer,
             serialNumber: identity.certificate.serialNumber,
@@ -55,8 +62,20 @@ export async function signCms(content: Buffer, identity: SigningIdentity): Promi
       ],
     });
     await data.sign(identity.privateKey, 0, 'SHA-256', undefined, enrollmentCrypto);
+    const schema = data.toSchema(true);
+    // PKIjs emits BER constructed OCTET STRINGs and drops primitive empty
+    // values. Encode the explicit attached eContent directly for strict DER.
+    schema.valueBlock.value[2] = new asn1js.Sequence({
+      value: [
+        new asn1js.ObjectIdentifier({ value: ContentInfo.DATA }),
+        new asn1js.Constructed({
+          idBlock: { tagClass: 3, tagNumber: 0 },
+          value: [new asn1js.OctetString({ valueHex: Uint8Array.from(content) })],
+        }),
+      ],
+    });
     return Buffer.from(
-      new ContentInfo({ contentType: ContentInfo.SIGNED_DATA, content: data.toSchema(true) })
+      new ContentInfo({ contentType: ContentInfo.SIGNED_DATA, content: schema })
         .toSchema()
         .toBER(false),
     );
@@ -101,20 +120,23 @@ export async function verifyCms(
     const result = await data.verify(
       {
         signer: 0,
-        checkChain: true,
-        trustedCerts: opts.anchors,
-        checkDate: now,
+        checkChain: false,
         extendedMode: true,
       },
       enrollmentCrypto,
     );
-    if (
-      !result.signatureVerified ||
-      !result.signerCertificateVerified ||
-      !result.signerCertificate
-    ) {
+    if (!result.signatureVerified || !result.signerCertificate) {
       throw new CmsError();
     }
+    if (
+      !(await verifyCertificatePath(
+        result.signerCertificate,
+        (data.certificates ?? []).filter((c): c is Certificate => c instanceof Certificate),
+        opts.anchors,
+        now,
+      ))
+    )
+      throw new CmsError();
     return { content: Buffer.from(attached.getValue()), signer: result.signerCertificate };
   } catch {
     throw new CmsError();

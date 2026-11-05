@@ -131,6 +131,8 @@ it('delivers an email through SMTP', async () => {
 
 **Verification of the standalone scope:** API unit tests cover RSA/ECDSA, intermediate chains, certificate dates, corrupted content/signatures, untrusted roots, malformed/ambiguous CMS, XML escaping and certificate renewal. When OpenSSL is available, tests independently verify generated signatures and read both DER and streaming BER signatures created by OpenSSL. This does not replace a real-device test or complete the HTTP flow.
 
+**Chain validation:** the standalone verifier bounds the certificate pool to 32 unique certificates, paths to 16 certificates and search to 128 steps. It builds simple signature-verified paths before calling the PKIjs policy validator on a fixed path, preventing PKIjs 3.x recursive issuer cycles. It also enforces CA path-length constraints, leaf signing key usage and rejection of unsupported critical extensions. Manufacturer-specific certificate purpose and device identity checks remain part of callback integration and real-device validation. Outgoing CMS uses primitive attached content (including zero bytes), DER-sorted certificates and `SignerInfo.version = 1`.
+
 **Files:**
 - Create: `apps/api/src/enrollment/{enrollment.module,enrollment.controller,profile-builder,cms,signing-identity}.ts`
 - Create: `apps/api/scripts/dev-certs.ts` (script `dev:certs`), git-ignored output `infra/dev-certs/`

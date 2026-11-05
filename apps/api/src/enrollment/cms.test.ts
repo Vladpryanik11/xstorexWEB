@@ -4,8 +4,14 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as asn1js from 'asn1js';
-import { ContentInfo, SignedData } from 'pkijs';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  BasicConstraints,
+  CertificateChainValidationEngine,
+  ContentInfo,
+  Extension,
+  SignedData,
+} from 'pkijs';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   certPem,
   createTestCa,
@@ -41,7 +47,120 @@ function encode(data: SignedData) {
   );
 }
 
+async function issuedCa(name: string, issuer: typeof root, pathLenConstraint?: number) {
+  const ca = await createTestCa();
+  const cn = ca.certificate.subject.typesAndValues[0];
+  if (!cn) throw new Error('Missing test CA name');
+  cn.value = new asn1js.Utf8String({ value: name });
+  ca.certificate.issuer = issuer.certificate.subject;
+  ca.certificate.extensions?.splice(
+    0,
+    1,
+    new Extension({
+      extnID: '2.5.29.19',
+      critical: true,
+      extnValue: new BasicConstraints({
+        cA: true,
+        ...(pathLenConstraint === undefined ? {} : { pathLenConstraint }),
+      })
+        .toSchema()
+        .toBER(false),
+    }),
+  );
+  await ca.certificate.sign(issuer.privateKey, 'SHA-256');
+  ca.chain = [issuer.certificate, ...issuer.chain];
+  return ca;
+}
+
 describe('enrollment CMS', () => {
+  it.each(['', 'abc'])(
+    'emits attached primitive DER content and CMS signer version 1: %j',
+    async (text) => {
+      const der = await signCms(Buffer.from(text), rsa);
+      const data = parse(der);
+      expect(data.signerInfos[0]?.version).toBe(1);
+      expect(data.encapContentInfo.eContent?.idBlock.isConstructed).toBe(false);
+      const certs = data.certificates?.map((c) => Buffer.from(c.toSchema().toBER(false))) ?? [];
+      expect(certs).toEqual([...certs].sort(Buffer.compare));
+      expect((await verifyCms(der, { anchors: [root.certificate], now })).content.toString()).toBe(
+        text,
+      );
+    },
+  );
+
+  it('rejects cyclic issuers without unbounded chain traversal', async () => {
+    const a = await issuedCa('A', root);
+    const b = await issuedCa('B', a);
+    a.certificate.issuer = b.certificate.subject;
+    await a.certificate.sign(b.privateKey, 'SHA-256');
+    const leaf = await testIdentity('RSA', b);
+    leaf.chain = [b.certificate, a.certificate];
+    const der = await signCms(content, leaf);
+    const original = CertificateChainValidationEngine.prototype.defaultFindIssuer;
+    let calls = 0;
+    const guard = vi
+      .spyOn(CertificateChainValidationEngine.prototype, 'defaultFindIssuer')
+      .mockImplementation(async function (this: CertificateChainValidationEngine, ...args) {
+        if (++calls > 20) throw new Error('Test traversal breaker');
+        return original.apply(this, args);
+      });
+    try {
+      await expect(verifyCms(der, { anchors: [root.certificate], now })).rejects.toThrow(CmsError);
+      expect(calls).toBeLessThan(20);
+    } finally {
+      guard.mockRestore();
+    }
+  });
+
+  it('rejects a subordinate CA below a path-length-zero CA', async () => {
+    const a = await issuedCa('A', root, 0);
+    const b = await issuedCa('B', a);
+    const leaf = await testIdentity('RSA', b);
+    await expect(
+      verifyCms(await signCms(content, leaf), { anchors: [root.certificate], now }),
+    ).rejects.toThrow(CmsError);
+  });
+
+  it('accepts a leaf issued directly by a path-length-zero CA', async () => {
+    const a = await issuedCa('A', root, 0);
+    const leaf = await testIdentity('RSA', a);
+    expect(
+      (await verifyCms(await signCms(content, leaf), { anchors: [root.certificate], now })).content,
+    ).toEqual(content);
+  });
+
+  it.each(['non-signing key usage', 'unknown critical extension'])(
+    'rejects a leaf with %s',
+    async (kind) => {
+      const leaf = await testIdentity('RSA', root);
+      if (kind === 'non-signing key usage') {
+        leaf.certificate.extensions?.splice(
+          1,
+          1,
+          new Extension({
+            extnID: '2.5.29.15',
+            critical: true,
+            extnValue: new asn1js.BitString({
+              unusedBits: 5,
+              valueHex: new Uint8Array([0x20]),
+            }).toBER(false),
+          }),
+        );
+      } else {
+        leaf.certificate.extensions?.push(
+          new Extension({
+            extnID: '1.2.3.4.5.6.7',
+            critical: true,
+            extnValue: new asn1js.Null().toBER(false),
+          }),
+        );
+      }
+      await leaf.certificate.sign(root.privateKey, 'SHA-256');
+      await expect(
+        verifyCms(await signCms(content, leaf), { anchors: [root.certificate], now }),
+      ).rejects.toThrow(CmsError);
+    },
+  );
   it.each(['RSA', 'ECDSA'] as const)(
     'signs and verifies %s with SHA-256 and the full chain',
     async (kind) => {
@@ -144,8 +263,10 @@ describe('enrollment CMS', () => {
   });
 
   it('rejects a missing intermediate', async () => {
-    const signed = parse(await signCms(content, rsa));
-    signed.certificates = [];
+    const intermediate = await issuedCa('Intermediate', root);
+    const leaf = await testIdentity('RSA', intermediate);
+    const signed = parse(await signCms(content, leaf));
+    signed.certificates = [leaf.certificate, root.certificate];
     await expect(verifyCms(encode(signed), { anchors: [root.certificate], now })).rejects.toThrow(
       CmsError,
     );
