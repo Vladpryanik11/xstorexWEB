@@ -55,7 +55,10 @@ export const catalogVersionInputSchema = z
       .min(3)
       .max(255)
       .regex(/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+$/, 'Недопустимый Bundle ID'),
-    minIos: z.string().regex(/^\d+(?:\.\d+){0,2}$/).optional(),
+    minIos: z
+      .string()
+      .regex(/^\d+(?:\.\d+){0,2}$/)
+      .optional(),
     sizeBytes: z.bigint().positive().max(maxIpaBytes),
     sha256: z.string().regex(/^[a-f0-9]{64}$/, 'Недопустимая контрольная сумма'),
     ipaKey: z.string().regex(/^catalog\/[a-zA-Z0-9_/-]+\.ipa$/, 'Недопустимый ключ IPA'),
