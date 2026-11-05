@@ -1,0 +1,8 @@
+.column {
+  display: grid;
+  gap: 0.625rem;
+  width: min(20rem, calc(100vw - 3 * var(--x-gutter)));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

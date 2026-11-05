@@ -19,7 +19,7 @@
   box-sizing: content-box;
   max-width: var(--x-page-max);
   margin-inline: auto;
-  padding: 1.5rem 0 3rem;
+  padding: 1.5rem 0 6rem; /* room for the floating install banner */
 }
 
 .section {
@@ -59,4 +59,10 @@
   color: var(--x-text-2);
   font-size: 0.8125rem;
   text-align: center;
+}
+
+.coverItem {
+  display: grid;
+  gap: 0.5rem;
+  width: min(20rem, calc(100vw - 3 * var(--x-gutter)));
 }

@@ -1,4 +1,23 @@
-import { Button, Chip, Rail, SearchField, SectionTitle } from '@xstore/ui';
+import {
+  AppIcon,
+  AppRow,
+  Button,
+  Chip,
+  Cover,
+  FactsStrip,
+  formatBytes,
+  formatRating,
+  IconTile,
+  InfoList,
+  InstallBanner,
+  MoreText,
+  Rail,
+  RowsGrid,
+  SearchField,
+  SectionTitle,
+  SpotBanner,
+  Stars,
+} from '@xstore/ui';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Footer } from '../../../src/shell/Footer';
@@ -23,6 +42,15 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
   const overHero = one(params.w) === 'hero';
   const forcedPath = one(params.path);
   const tiles = Array.from({ length: 10 }, (_, i) => `Приложение ${i + 1}`);
+  const apps = Array.from({ length: 9 }, (_, i) => ({
+    slug: `app-${i + 1}`,
+    name: i === 1 ? 'Приложение с очень длинным названием для проверки' : `Приложение ${i + 1}`,
+    subtitle: i % 2 ? 'Утилиты' : 'Игры',
+  }));
+  const description =
+    'Описание приложения для проверки сворачивания текста.\nВторая строка описания.\n' +
+    'Третья строка описания.\nЧетвёртая строка, которая видна только после нажатия «ещё».\n' +
+    'Пятая строка.';
 
   return (
     <>
@@ -75,8 +103,111 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
               ))}
             </Rail>
           </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Иконки приложений</SectionTitle>
+            <div className={styles.row}>
+              <AppIcon alt="Без картинки" size={56} />
+              <AppIcon src="/brand/mark.svg" alt="Xstore" size={76} />
+              <AppIcon src="/brand/mark.svg" alt="Xstore" size={120} />
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Баннеры</SectionTitle>
+            <Rail label="Баннеры">
+              {[
+                <SpotBanner
+                  key="a"
+                  href="/list/new"
+                  title="Новинки недели"
+                  subtitle="Свежие приложения"
+                />,
+                <SpotBanner key="b" href="/list/removed" title="Удалённые из App Store" />,
+              ]}
+            </Rail>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle href="/list/top">Сетка 3×N</SectionTitle>
+            <RowsGrid label="Сетка 3×N">
+              {apps.map((app) => (
+                <AppRow
+                  key={app.slug}
+                  href={`/app/${app.slug}`}
+                  name={app.name}
+                  subtitle={app.subtitle}
+                />
+              ))}
+            </RowsGrid>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle href="/list/trends">Иконки</SectionTitle>
+            <Rail label="Иконки">
+              {apps.map((app) => (
+                <IconTile key={app.slug} href={`/app/${app.slug}`} name={app.name} />
+              ))}
+            </Rail>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Обложки</SectionTitle>
+            <Rail label="Обложки">
+              {apps.slice(0, 4).map((app) => (
+                <div key={app.slug} className={styles.coverItem}>
+                  <Cover alt={`Скриншот: ${app.name}`} />
+                  <AppRow href={`/app/${app.slug}`} name={app.name} subtitle={app.subtitle} />
+                </div>
+              ))}
+            </Rail>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Рейтинг</SectionTitle>
+            <div className={styles.row}>
+              <Stars value={4.5} count={1234} />
+              <Stars value={3.2} />
+              <span>
+                {formatRating(4.46)} · {formatBytes(1_288_490_189)} · {formatBytes(850 * 1024 ** 2)}
+              </span>
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Факты</SectionTitle>
+            <FactsStrip
+              facts={[
+                { label: 'Категория', value: 'Игры' },
+                { label: 'Разработчик', value: 'Студия' },
+                { label: 'Язык', value: 'Русский' },
+                { label: 'Размер', value: formatBytes(1_288_490_189) },
+                { label: 'Версия', value: '2.4.1' },
+              ]}
+            />
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Описание</SectionTitle>
+            <div className={styles.pad}>
+              <MoreText text={description} />
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Информация</SectionTitle>
+            <InfoList
+              items={[
+                { label: 'Разработчик', value: 'Студия' },
+                { label: 'Размер', value: formatBytes(1_288_490_189) },
+                { label: 'Совместимость', value: 'iOS 15.0 и новее' },
+                { label: 'Версия', value: '2.4.1' },
+              ]}
+            />
+          </section>
         </div>
       </main>
+      <InstallBanner href="/install" />
       <Footer />
     </>
   );

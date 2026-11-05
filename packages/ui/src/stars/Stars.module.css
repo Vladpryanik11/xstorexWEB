@@ -1,0 +1,27 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--x-star);
+}
+
+.stars {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.star {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+}
+
+.empty {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.6;
+}
+
+.count {
+  font: 500 11px var(--x-font);
+}
