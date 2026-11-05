@@ -30,3 +30,14 @@ it('maps DomainError to its code and shared message', () => {
     body: { code: 'INVALID_CREDENTIALS', message: 'Неверная почта, пароль или код' },
   });
 });
+
+it('passes DomainError details through', () => {
+  expect(toApiError(new DomainError(ErrorCode.PUBLISH_BLOCKED, 409, ['NO_ICON']))).toEqual({
+    status: 409,
+    body: {
+      code: 'PUBLISH_BLOCKED',
+      message: 'Нельзя опубликовать: заполните обязательные поля',
+      details: ['NO_ICON'],
+    },
+  });
+});

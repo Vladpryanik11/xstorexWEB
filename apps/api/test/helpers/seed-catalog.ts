@@ -16,6 +16,7 @@ export type SeedVersion = {
   sizeBytes?: bigint;
   minIos?: string;
   changelog?: string;
+  encrypted?: boolean;
 };
 
 export type SeedApp = {
@@ -34,6 +35,8 @@ export type SeedApp = {
   ratingCount?: number;
   removedFromAppStore?: boolean;
   accessLevel?: string;
+  rightsBasis?: string;
+  hiddenReason?: string;
   /** Defaults to one published version 1.0. */
   versions?: SeedVersion[];
 };
@@ -59,7 +62,7 @@ export async function seedApp(db: Db, input: SeedApp): Promise<{ id: string; slu
             sizeBytes: v.sizeBytes ?? 1024n,
             sha256: 'a'.repeat(64),
             ipaKey: `originals/${seq}.ipa`,
-            encrypted: false,
+            encrypted: v.encrypted ?? false,
             minIos: v.minIos,
             changelog: v.changelog,
             status,

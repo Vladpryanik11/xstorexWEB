@@ -22,3 +22,4 @@ test-results/
 .DS_Store
 Thumbs.db
 packages/db/src/generated/
+dump.rdb

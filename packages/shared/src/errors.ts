@@ -18,6 +18,7 @@ export const ErrorCode = {
   IPA_BAD_PLIST: 'IPA_BAD_PLIST',
   IPA_NO_BINARY: 'IPA_NO_BINARY',
   DUPLICATE_VERSION: 'DUPLICATE_VERSION',
+  PUBLISH_BLOCKED: 'PUBLISH_BLOCKED',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -41,11 +42,14 @@ export const errorMessages: Record<ErrorCode, string> = {
   IPA_BAD_PLIST: 'Не удалось прочитать Info.plist или в нём нет обязательных полей',
   IPA_NO_BINARY: 'В приложении нет исполняемого файла iOS',
   DUPLICATE_VERSION: 'Эта версия уже загружена',
+  PUBLISH_BLOCKED: 'Нельзя опубликовать: заполните обязательные поля',
 };
 
 export const apiErrorSchema = z.object({
   code: z.enum(ErrorCode),
   message: z.string().min(1),
+  /** Machine-readable reasons, e.g. the blockers of `PUBLISH_BLOCKED`. */
+  details: z.array(z.string()).optional(),
 });
 
 export type ApiError = z.infer<typeof apiErrorSchema>;

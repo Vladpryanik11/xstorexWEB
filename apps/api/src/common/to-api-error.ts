@@ -25,7 +25,10 @@ function codeForStatus(status: number): ErrorCode {
 }
 
 export function toApiError(err: unknown): { status: number; body: ApiError } {
-  if (err instanceof DomainError) return result(err.status, err.code);
+  if (err instanceof DomainError) {
+    const out = result(err.status, err.code);
+    return err.details ? { ...out, body: { ...out.body, details: err.details } } : out;
+  }
   if (err instanceof ZodError) return result(400, ErrorCode.VALIDATION);
   if (err instanceof HttpException) {
     const status = err.getStatus();

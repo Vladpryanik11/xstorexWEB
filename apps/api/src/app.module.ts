@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { AdminCatalogModule } from './admin-catalog/admin-catalog.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
@@ -11,6 +12,7 @@ import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
 import { InfraModule } from './infra/infra.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
@@ -43,6 +45,8 @@ export class AppModule {
         StorageModule,
         UploadsModule,
         CatalogModule,
+        AdminCatalogModule,
+        JobsModule,
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],

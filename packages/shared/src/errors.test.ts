@@ -25,3 +25,14 @@ it('has a Russian message for every code', () => {
   expect(errorMessages.DUPLICATE_VERSION).toBe('Эта версия уже загружена');
   expect(errorMessages.IPA_ZIP_BOMB).toBe('Архив подозрительно сильно сжат и отклонён');
 });
+
+it('carries publish blockers in details', () => {
+  expect(errorMessages.PUBLISH_BLOCKED).toBe('Нельзя опубликовать: заполните обязательные поля');
+  expect(
+    apiErrorSchema.parse({
+      code: 'PUBLISH_BLOCKED',
+      message: errorMessages.PUBLISH_BLOCKED,
+      details: ['NO_ICON'],
+    }).details,
+  ).toEqual(['NO_ICON']);
+});
