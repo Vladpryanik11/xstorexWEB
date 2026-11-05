@@ -26,7 +26,7 @@
 
 - All M0–M6 Global Constraints hold.
 - Markdown: CommonMark + GFM tables and lists; raw HTML is dropped; links get `rel="noopener noreferrer nofollow"` when external; images only from `S3_PUBLIC_URL`.
-- Private routes are `noindex` and disallowed in `robots.txt`: `/admin`, `/api`, `/devices`, `/profile`, `/signer`, `/checkout`, `/enroll`, `/signin`, `/signout`, `/dev`.
+- Private routes are `noindex` and disallowed in `robots.txt`: `/admin`, `/api`, `/devices`, `/profile`, `/signer`, `/checkout`, `/enroll`, `/signin`, `/connect-device`, `/resume`, `/signout`, `/dev`.
 - Migrations are expand/contract: a release never drops or renames a column that the previous release still reads.
 - Backup schedule: `pg_dump -Fc` daily at 03:30 Europe/Moscow, 14 daily copies kept locally and remotely; originals bucket mirrored daily; restore check weekly.
 - Worker replicas: `WORKER_REPLICAS` (default 2). Every scheduled job uses `upsertJobScheduler` with a fixed id, so replicas never duplicate schedules.
@@ -132,7 +132,7 @@ it('drafts are not public', async () => { /* 404 */ });
   - `GET /admin/settings` (password shown as `{ set: true }` only), `PUT /admin/settings/:key` (admin, audited without secret values; `smtp.password` is encrypted with `encryptSecret` and stored as `passwordEnc`), `POST /admin/settings/smtp/test { to }` → sends `smtp-test`.
   - Worker mailer: SMTP from the `smtp` setting (password decrypted) or `SMTP_URL`; transport rebuilt when `Setting.updatedAt` changes.
   - Every send writes `NotificationLog`; the last failed attempt raises `smtp_failing` (dedupe per hour).
-  - Templates reviewed together for tone and consistency: `email-code`, `admin-alert`, `device-active`, `reinstall-apps`, `order-paid`, `right-expiring`, `right-expired`, `smtp-test`; one shared HTML layout (logo, blue header line, footer «Xstore · xstorex.ru»), plain-text part for each.
+  - Purchase revision: order-paid says «Подписка активна» with paid period dates even before UDID; device-active describes Apple readiness separately. Neither mail changes the paid period. Templates reviewed together for tone and consistency: `email-code`, `admin-alert`, `device-active`, `reinstall-apps`, `order-paid`, `right-expiring`, `right-expired`, `smtp-test`; one shared HTML layout (logo, blue header line, footer «Xstore · xstorex.ru»), plain-text part for each.
 
 - [ ] **Step 1: Write the failing tests** — `every template renders subject, text and escaped HTML` (table test over all templates), `smtp failure is logged, not fatal` (Mailpit stopped → order still paid, log `failed`, alert after last attempt), `settings never return the SMTP password`, `invalid setting values are refused`.
 - [ ] **Step 2: Run them to verify they fail.** Expected: FAIL.

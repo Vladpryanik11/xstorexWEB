@@ -14,6 +14,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-02-xstore-design.md` — §2 («Подпись»), §3.1 (`apple`, `devices`), §4.2 steps 3–5, §4.6, §5 (Apple models, `Enc` rule), §6.3 (admin «аккаунты Apple»), §7, §8 (ASC error kinds), §12 → M3. Builds on M2 (`Device`, notifications queue).
 
+**Purchase revision:** [2026-11-06 design](../specs/2026-11-06-purchase-and-activation-design.md). M5 grants subscription access immediately at payment, then uses M3 for physical registration. Apple readiness never starts or resets a subscription period.
+
 ## Owner decisions this plan depends on
 
 1. **Wildcard App ID `*`** (the identifier Xcode uses for its own wildcard), so every app keeps its bundle id. If ASC refuses `*` for an account, the fallback is `ru.xstorex.*`, which forces a bundle id change on every app (spec §12 limits stay the same).
@@ -25,6 +27,8 @@
 ## Global Constraints
 
 - All M0–M2 Global Constraints hold.
+- Device.status describes Apple registration, not subscription validity. M5 can have active paid access with no device or with processing Apple status; registration completion must never grant/re-date rights.
+- M3 does not import future billing API code. M5 reconciliation observes device/profile readiness and updates fulfillment independently.
 - Encrypted field format: `v<keyVersion>.<iv b64url>.<tag b64url>.<ciphertext b64url>`, AES-256-GCM, 12-byte IV. Keys: `MASTER_KEY_V<n>` (32 bytes, base64), current version `MASTER_KEY_CURRENT`. Missing key → the process refuses to start.
 - `@xstore/secrets/decrypt` may be imported only by `packages/apple`, `apps/worker/**` and `apps/api/src/apple/**`. Lint enforces it (Biome `noRestrictedImports` with overrides).
 - Secrets never leave the process: not in API responses, logs, job data, `AuditLog.diff` or error messages. Job payloads carry ids only.
@@ -235,19 +239,20 @@ it('raises one alert at the certificate limit', async () => { /* run twice → o
 **Interfaces:**
 - Produces:
   - Job `apple:registerDevice { deviceId, tier, excludeAccountIds?: string[] }`:
-    1. Device already `active` on a non-excluded account → done.
+    1. Device already `active` on a non-excluded healthy account of the requested tier with a usable current profile containing its UDID → done. A different paid tier must register/migrate rather than pass this check.
     2. `pickAccount` (tier, class, settings) → `null` → device `pending` + `tierWanted`, `low_slots` alert, done.
     3. Under the account lock: `findDeviceByUdid` or `registerDevice` (`already_exists` → find); `no_slots` → bump used slots to the limit, retry with the next account (`exclude` + this one).
     4. Store `appleAccountId`, `ascDeviceId`, `registeredAt`; update used slots; ASC status `ENABLED` → `regenerateProfile` (device becomes `active`), otherwise status `processing`.
     5. When the tier's free slots across active accounts fall below `devices.lowSlotsThreshold` → `low_slots:<tier>:<YYYY-MM-DD>` warning.
-  - Job `apple:pollProcessing` (every 30 min): devices in `processing` grouped by account → `listDevices` → ENABLED ones → one `regenerateProfile` per account → `device-active` email to the owner when an email exists («Устройство готово к установке приложений»).
+  - Job `apple:pollProcessing` (every 30 min): devices in `processing` grouped by account → `listDevices` → ENABLED ones → one `regenerateProfile` per account → `device-active` email to the owner when an email exists («Устройство зарегистрировано в Apple»; installation still requires active subscription rights).
   - After `setupAccount` succeeds, devices in `pending` with a matching `tierWanted` are re-enqueued (oldest first, at most the free slots).
-  - Admin API: `POST /admin/devices/:id/register { tier }` (audited). M5 enqueues the same job after payment.
+  - Admin API: `POST /admin/devices/:id/register { tier }` (audited). M5 enqueues the same job after payment when the subscription has an assigned device, or after its later assignment. The subscription dates already exist; this job never changes them.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 it('registers a device and includes it in a new profile', async () => { /* device active, includedInRevision 2, profile udids contain it */ });
+it('registration is not a subscription clock', async () => { /* M3 writes no billing dates; M5 integration asserts delayed readiness preserves paidAt windows */ });
 it('reuses an existing Apple device', async () => { /* FakeAsc already has the UDID → no POST /devices, used slots unchanged */ });
 it('moves on when Apple says the account is full', async () => { /* account A no_slots → registered on B */ });
 it('waits for a slot', async () => { /* no account → pending + low_slots alert; add account → setup → device active */ });
