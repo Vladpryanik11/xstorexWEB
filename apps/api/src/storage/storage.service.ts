@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   ListPartsCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
@@ -113,6 +114,38 @@ export class StorageService implements OnModuleInit, OnApplicationShutdown {
       }),
       { expiresIn: PRESIGN_TTL_SEC },
     );
+  }
+
+  /** URL for one browser `PUT` of a whole object; the request must send this `Content-Type`. */
+  presignPutObject(bucket: string, key: string, contentType: string): Promise<string> {
+    return getSignedUrl(
+      this.s3.presign,
+      new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+      { expiresIn: PRESIGN_TTL_SEC, signableHeaders: new Set(['content-type']) },
+    );
+  }
+
+  /** Size and type of an object, or `null` when it does not exist. */
+  async headObject(
+    bucket: string,
+    key: string,
+  ): Promise<{ size: number; contentType?: string } | null> {
+    try {
+      const res = await this.s3.internal.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+      return { size: res.ContentLength ?? 0, contentType: res.ContentType };
+    } catch (err) {
+      if (errorName(err) === 'NotFound' || httpStatus(err) === 404) return null;
+      throw err;
+    }
+  }
+
+  /** The first `length` bytes of an object (fewer when it is shorter). */
+  async readStart(bucket: string, key: string, length: number): Promise<Buffer> {
+    const res = await this.s3.internal.send(
+      new GetObjectCommand({ Bucket: bucket, Key: key, Range: `bytes=0-${length - 1}` }),
+    );
+    const bytes = await res.Body?.transformToByteArray();
+    return Buffer.from(bytes ?? []);
   }
 
   presignGet(
