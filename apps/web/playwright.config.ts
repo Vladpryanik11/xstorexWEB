@@ -62,7 +62,9 @@ export default defineConfig({
     },
     {
       command: `pnpm build && pnpm start -p ${port}`,
-      url: `http://localhost:${port}`,
+      // Not `/`: Playwright starts the servers before global setup migrates and seeds the test
+      // database, and every catalog page needs those tables. The dev showcase needs no API.
+      url: `http://localhost:${port}/dev/ui`,
       env: { XSTORE_DEV_PAGES: '1', API_INTERNAL_URL: `http://localhost:${apiPort}` },
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
