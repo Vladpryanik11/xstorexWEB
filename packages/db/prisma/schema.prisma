@@ -25,13 +25,13 @@ enum SessionKind {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String?   @unique
-  role         Role      @default(user)
+  id           String      @id @default(cuid())
+  email        String?     @unique
+  role         Role        @default(user)
   passwordHash String?
   totpSecret   String?
   blockedAt    DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime    @default(now())
   sessions     Session[]
   uploads      IpaUpload[]
 }
@@ -102,4 +102,140 @@ model IpaUpload {
 
   @@index([ownerId])
   @@index([status])
+}
+
+enum AppStatus {
+  draft
+  published
+  hidden
+}
+
+enum VersionStatus {
+  draft
+  published
+  rejected
+}
+
+enum CollectionLayout {
+  grid3
+  icons
+  screenshots
+  banner
+}
+
+enum CollectionSource {
+  manual
+  top_downloads
+  trending
+  top_rated
+  recently_updated
+}
+
+/// A catalog app. Only `published` apps are visible outside `/admin`.
+/// Migration `m1_catalog` adds a GIN trigram index on `lower(name)` for search.
+model App {
+  id                  String           @id @default(cuid())
+  slug                String           @unique
+  name                String
+  subtitle            String?
+  description         String?
+  developer           String?
+  categoryId          String?
+  category            Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  iconKey             String?
+  screenshotKeys      String[]
+  /// Hero carousel image.
+  bannerKey           String?
+  removedFromAppStore Boolean          @default(false)
+  /// «Основание для распространения»; required before publishing.
+  rightsBasis         String?
+  /// `free` or `addon:<Plan.code>`.
+  accessLevel         String           @default("free")
+  status              AppStatus        @default(draft)
+  hiddenReason        String?
+  /// Imported from iTunes.
+  rating              Float?
+  ratingCount         Int?
+  languages           String[]
+  itunesId            String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  versions            AppVersion[]
+  collectionItems     CollectionItem[]
+  installEvents       InstallEvent[]
+
+  @@index([status])
+  @@index([categoryId])
+}
+
+model AppVersion {
+  id          String        @id @default(cuid())
+  appId       String
+  app         App           @relation(fields: [appId], references: [id], onDelete: Cascade)
+  version     String
+  build       String
+  bundleId    String
+  minIos      String?
+  sizeBytes   BigInt
+  sha256      String
+  ipaKey      String
+  icon57Key   String?
+  encrypted   Boolean
+  changelog   String?
+  status      VersionStatus @default(draft)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@unique([bundleId, version, build])
+  @@index([bundleId])
+  @@index([appId, publishedAt])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+  icon String
+  sort Int
+  apps App[]
+
+  @@index([sort])
+}
+
+model Collection {
+  id     String           @id @default(cuid())
+  slug   String           @unique
+  title  String
+  layout CollectionLayout
+  source CollectionSource
+  sort   Int
+  limit  Int              @default(12)
+  onHome Boolean          @default(true)
+  items  CollectionItem[]
+
+  @@index([sort])
+}
+
+model CollectionItem {
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  appId        String
+  app          App        @relation(fields: [appId], references: [id], onDelete: Cascade)
+  position     Int
+  pinned       Boolean    @default(false)
+
+  @@id([collectionId, appId])
+  @@index([appId])
+}
+
+/// One install from the catalog; feeds «Самый загружаемый» and «Тенденции».
+model InstallEvent {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  /// Relation to `Device` arrives in M2.
+  deviceId  String
+  createdAt DateTime @default(now())
+
+  @@index([appId, createdAt])
 }
