@@ -52,9 +52,7 @@ describe('M1 catalog input contracts', () => {
       status: 'draft',
     };
     expect(catalogAppInputSchema.parse(draft).name).toBe('Моё приложение');
-    expect(
-      catalogAppInputSchema.safeParse({ ...draft, status: 'published' }).success,
-    ).toBe(false);
+    expect(catalogAppInputSchema.safeParse({ ...draft, status: 'published' }).success).toBe(false);
     expect(
       catalogAppInputSchema.safeParse({
         ...draft,
@@ -76,12 +74,10 @@ describe('M1 catalog input contracts', () => {
       status: 'draft',
     };
     expect(catalogVersionInputSchema.safeParse(version).success).toBe(true);
-    expect(
-      catalogVersionInputSchema.safeParse({ ...version, sizeBytes: BigInt(-1) }).success,
-    ).toBe(false);
-    expect(catalogVersionInputSchema.safeParse({ ...version, sha256: 'zzz' }).success).toBe(
+    expect(catalogVersionInputSchema.safeParse({ ...version, sizeBytes: BigInt(-1) }).success).toBe(
       false,
     );
+    expect(catalogVersionInputSchema.safeParse({ ...version, sha256: 'zzz' }).success).toBe(false);
     expect(
       catalogVersionInputSchema.safeParse({ ...version, encrypted: true, status: 'published' })
         .success,
