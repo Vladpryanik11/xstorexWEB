@@ -10,9 +10,11 @@ import { cache } from 'react';
  * Cached per request: `generateMetadata` and the page share one client.
  */
 export const serverApi = cache(async (): Promise<ApiClient> => {
+  // headers() first: it makes every catalog page dynamic, so `next build` never prerenders one
+  // (the Docker build has no API to call) and the URL is read at request time.
+  const cookie = (await headers()).get('cookie');
   const baseUrl = process.env.API_INTERNAL_URL;
   if (!baseUrl) throw new Error('API_INTERNAL_URL is not set');
-  const cookie = (await headers()).get('cookie');
   return createApiClient({ baseUrl, headers: cookie ? { cookie } : {} });
 });
 
