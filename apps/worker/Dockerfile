@@ -45,6 +45,8 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=prod-deps /app .
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
+COPY --from=builder /app/packages/db/dist packages/db/dist
+COPY --from=builder /app/packages/ios/dist packages/ios/dist
 COPY --from=builder /app/apps/worker/dist apps/worker/dist
 USER node
 CMD ["node", "apps/worker/dist/main.js"]

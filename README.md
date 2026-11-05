@@ -2,7 +2,7 @@
 
 Магазин IPA-приложений для iPhone с установкой из Safari: вход по UDID, регистрация устройств в пуле аккаунтов Apple Developer, серверная подпись (zsign), OTA-установка, тарифы и оплата через Platega, админка. Подробности: `docs/superpowers/specs/2026-11-02-xstore-design.md`.
 
-Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `infra/`.
+Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA, только для Node), `infra/`.
 
 ## Требования
 

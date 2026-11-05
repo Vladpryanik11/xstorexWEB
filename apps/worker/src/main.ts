@@ -1,18 +1,28 @@
-import { Redis } from 'ioredis';
 import { pino } from 'pino';
 import { loadWorkerConfig } from './config.js';
+import { closeWorkerDeps, createWorkerDeps } from './deps.js';
+import { createIpaWorker } from './queues/ipa.js';
 import { createSystemWorker } from './queues/system.js';
 
 const config = loadWorkerConfig(process.env);
 const logger = pino({ level: config.logLevel });
+const deps = createWorkerDeps(config, logger);
 
-// BullMQ workers require unlimited retries per request on their blocking connection.
-const connection = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
-connection.on('error', (err) => logger.error({ err: err.message }, 'redis connection error'));
-
-const worker = createSystemWorker(connection, { concurrency: config.concurrency });
-worker.on('failed', (job, err) => logger.warn({ job: job?.name, err: err.message }, 'job failed'));
-worker.on('error', (err) => logger.error({ err: err.message }, 'worker error'));
+const workers = [
+  createSystemWorker(deps.connection, { concurrency: config.concurrency }),
+  createIpaWorker(deps),
+];
+for (const worker of workers) {
+  worker.on('failed', (job, err) =>
+    logger.warn(
+      { queue: worker.name, job: job?.name, jobId: job?.id, err: err.message },
+      'job failed',
+    ),
+  );
+  worker.on('error', (err) =>
+    logger.error({ queue: worker.name, err: err.message }, 'worker error'),
+  );
+}
 
 let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {
@@ -20,8 +30,8 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   logger.info({ signal }, 'shutting down');
   try {
-    await worker.close();
-    await connection.quit();
+    await Promise.all(workers.map((worker) => worker.close()));
+    await closeWorkerDeps(deps);
     process.exit(0);
   } catch (err) {
     logger.error({ err: err instanceof Error ? err.message : String(err) }, 'shutdown failed');
@@ -31,5 +41,8 @@ async function shutdown(signal: string): Promise<void> {
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
 
-await worker.waitUntilReady();
-logger.info({ queue: worker.name, concurrency: config.concurrency }, 'worker started');
+await Promise.all(workers.map((worker) => worker.waitUntilReady()));
+logger.info(
+  { queues: workers.map((w) => w.name), concurrency: config.concurrency },
+  'worker started',
+);

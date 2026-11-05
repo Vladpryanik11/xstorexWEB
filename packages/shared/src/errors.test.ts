@@ -22,4 +22,5 @@ it('has a Russian message for every code', () => {
   }
   expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта, пароль или код');
   expect(errorMessages.CONFLICT).toBe('Конфликт данных');
+  expect(errorMessages.IPA_ZIP_BOMB).toBe('Архив подозрительно сильно сжат и отклонён');
 });
