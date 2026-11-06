@@ -51,7 +51,7 @@
 - Modify: `packages/db/prisma/schema.prisma` (+ migration `m2_devices`)
 - Modify: `packages/shared/src/auth.ts` (extend M1 auth contract); create `packages/shared/src/devices.ts`, `packages/shared/src/navigation.ts` (+ exports)
 - Modify: `packages/shared/src/errors.ts`
-- Test: `packages/shared/src/devices.test.ts`, `packages/shared/src/navigation.test.ts`, `packages/db/test/devices.int.test.ts`
+- Test: `packages/shared/src/devices.test.ts`, `packages/shared/src/navigation.test.ts`, `packages/db/test/devices.int.test.ts`, `packages/db/test/catalog.int.test.ts` (legacy event preservation and device deletion)
 
 **Interfaces:**
 - Produces (Prisma):
@@ -185,7 +185,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 - Consumes Task 3 `verifyCms`; `parseDeviceResponse(content: Buffer): { udid: string; product: string; version: string; challenge: string }` validates plist `UDID`, `PRODUCT`, `VERSION`, `CHALLENGE`; SERIAL is not stored.
 - `GET /enrollment/profile?next=<internal path>` requires a user session; captures `userId`, `sessionId` and server-validated `next` in the nonce before returning Task 3's signed profile.
 - `POST /enrollment/callback?s=<nonce>`: raw `application/pkcs7-signature`, ≤64 KB, Origin-exempt. Enrollment profile and completion endpoints are user-session-only via `@RequireUser()`; callback remains nonce- and source-session-bound. Verify nonce/TTL, source DB session, CMS/Apple chain and challenge. Under a nonce/session lock, reuse the same owner's device or create only a Device for the captured owner; foreign owner → `DEVICE_OWNED`, blocked owner → `ACCOUNT_BLOCKED`. Never create User or log in by UDID. Mark completed and store Redis `enroll:done:<sha256(token)> = { userId, sessionId, deviceId, next }`, EX 300; redirect `301 /enroll/done?t=<token>`. Errors redirect with code; failed/expired state is recorded.
-- `POST /enrollment/complete { token }` requires the same live originating user session, consumes `GETDEL`, rechecks DB session/owner, updates its `deviceId`, returns `{ next }` (default `/devices`). Expired/replayed token or revoked session → `ENROLLMENT_EXPIRED`; no new identity or session from hand-off alone.
+- `POST /enrollment/complete { token }` uses `@RequireUser()` and requires the same live originating user session, consumes `GETDEL`, rechecks DB session/owner, updates its `deviceId`, returns `{ next }` (default `/devices`). Expired/replayed token or revoked session → `ENROLLMENT_EXPIRED`; no new identity or session from hand-off alone.
 - `signDeviceResponse(fields, ca): Promise<Buffer>` produces fake signed iOS responses for tests.
 
 - [ ] **Step 1: Write failing tests** — `connects inside an existing owner session` asserts unchanged user id and one new Device; `guest cannot start enrollment` → 401/no User; `known UDID cannot log in`; `same device is idempotent`; `foreign owner is unchanged`; `tampered payload`, `challenge mismatch`, `expired nonce`, `nonce/token single use`; `revoked source rejects callback and complete`.

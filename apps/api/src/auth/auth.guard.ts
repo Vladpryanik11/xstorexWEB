@@ -8,7 +8,7 @@ import { REQUIRE_AUTH_KEY, REQUIRE_USER_KEY, ROLES_KEY } from './roles.decorator
 import { SessionService } from './session.service.js';
 import { readCookie, SESSION_COOKIE, sessionCookie } from './session-cookie.js';
 
-/** Decides access for a resolved session against `@RequireAuth()` / `@Roles()` metadata. */
+/** Decides access for a resolved session against `@RequireAuth()`, `@RequireUser()` and `@Roles()`. */
 export function checkAccess(
   auth: AuthContext | null,
   requireAuth: boolean,

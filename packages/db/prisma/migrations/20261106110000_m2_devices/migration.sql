@@ -79,3 +79,4 @@ WHERE NOT EXISTS (
 ALTER TABLE "InstallEvent"
   ADD CONSTRAINT "InstallEvent_deviceId_fkey"
   FOREIGN KEY ("deviceId") REFERENCES "Device"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+CREATE INDEX "InstallEvent_deviceId_idx" ON "InstallEvent"("deviceId");
