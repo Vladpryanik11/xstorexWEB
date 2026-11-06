@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+export const normalizeEmail = (raw: string): string => raw.trim().toLowerCase();
+
+export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+export const emailCodeRequestSchema = z.object({ email: emailSchema });
+export const emailCodeVerifySchema = z.object({
+  email: emailSchema,
+  code: z.string().regex(/^\d{6}$/),
+});
+export type EmailCodeRequest = z.infer<typeof emailCodeRequestSchema>;
+export type EmailCodeVerify = z.infer<typeof emailCodeVerifySchema>;
+
 export const roleSchema = z.enum(['user', 'support', 'admin']);
 export type Role = z.infer<typeof roleSchema>;
 
