@@ -47,6 +47,15 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: 'node dist/main.js',
+      cwd: '../worker',
+      env: { ...e2eApiEnv(), LOG_LEVEL: 'info' },
+      wait: { stdout: /"msg":"worker started"/ },
+      stdout: 'pipe',
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+      timeout: 60_000,
+    },
+    {
       // Built by turbo (`@xstore/web#test:e2e` depends on `@xstore/api#build`).
       command: 'node dist/main.js',
       cwd: '../api',

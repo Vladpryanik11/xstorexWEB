@@ -89,7 +89,19 @@ export class UploadsService {
   }
 
   async get(id: string): Promise<UploadView> {
-    return toUploadView(await this.find(id));
+    const row = await this.find(id);
+    const version = row.appVersionId
+      ? await this.prisma.client.appVersion.findUnique({
+          where: { id: row.appVersionId },
+          select: { appId: true },
+        })
+      : null;
+    return {
+      ...toUploadView(row),
+      // The worker's internal ready checkpoint precedes catalog attachment (and duplicate rejection).
+      status: row.status === 'ready' && !version ? 'inspecting' : row.status,
+      ...(version ? { appId: version.appId } : {}),
+    };
   }
 
   async presignParts(id: string, partNumbers: number[]): Promise<PresignedParts> {
@@ -120,8 +132,18 @@ export class UploadsService {
     // A retried complete (lost response) re-enqueues idempotently instead of failing.
     if (row.status === 'uploaded') {
       await this.enqueueInspect(row.id);
-      return toUploadView(row);
+      await this.audit.record({
+        actorId: actor.userId,
+        action: 'upload.complete',
+        entity: 'IpaUpload',
+        entityId: row.id,
+        diff: { recovered: true },
+        ip: actor.ip,
+      });
+      return this.get(row.id);
     }
+    // A lost complete response can be retried after the worker has already claimed the upload.
+    if (row.status === 'inspecting' || row.status === 'ready') return this.get(row.id);
     const upload = this.requireInProgress(row);
     let listed: Awaited<ReturnType<StorageService['listParts']>>;
     try {
@@ -157,7 +179,7 @@ export class UploadsService {
       entityId: upload.id,
       ip: actor.ip,
     });
-    return toUploadView(await this.find(upload.id));
+    return this.get(upload.id);
   }
 
   async remove(id: string, actor: Actor): Promise<void> {
@@ -185,7 +207,9 @@ export class UploadsService {
   }
 
   private async find(id: string): Promise<IpaUpload> {
-    const row = await this.prisma.client.ipaUpload.findFirst({ where: { id, purpose: 'catalog' } });
+    const row = await this.prisma.client.ipaUpload.findFirst({
+      where: { id, purpose: 'catalog' },
+    });
     if (!row) throw notFound();
     return row;
   }

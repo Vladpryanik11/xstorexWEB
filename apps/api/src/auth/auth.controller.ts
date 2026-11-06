@@ -67,6 +67,6 @@ export class AuthController {
       where: { id: auth.userId },
       select: { id: true, email: true, role: true },
     });
-    return { user };
+    return { user, kind: auth.kind };
   }
 }
