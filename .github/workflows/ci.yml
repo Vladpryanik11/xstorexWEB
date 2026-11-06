@@ -135,6 +135,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: docker build -f apps/api/Dockerfile .
-      - run: docker build -f apps/worker/Dockerfile .
-      - run: docker build -f apps/web/Dockerfile .
+      - name: Prepare isolated production smoke environment
+        run: cp .env.example .env
+      - name: Build and start production stack
+        run: docker compose -f infra/docker-compose.yml --env-file .env up -d --build --wait --wait-timeout 180
+      - name: Smoke test production stack
+        run: bash infra/smoke.sh
+      - name: Production stack diagnostics
+        if: failure()
+        run: |
+          docker compose -f infra/docker-compose.yml --env-file .env ps -a
+          docker compose -f infra/docker-compose.yml --env-file .env logs --no-color --tail 200
+      - name: Stop production smoke stack
+        if: always()
+        run: docker compose -f infra/docker-compose.yml --env-file .env down --volumes --remove-orphans
