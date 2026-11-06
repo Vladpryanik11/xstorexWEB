@@ -43,7 +43,7 @@ pnpm dev           # web, api и worker
 | `pnpm infra:up` / `pnpm infra:down` | хранилища для разработки |
 | `pnpm db:migrate` | миграции базы разработки |
 
-Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. CI (`.github/workflows/ci.yml`) на pull request и на push в `main` проверяет почти то же. Job `check` вместо `pnpm lint` (`biome check .`) запускает `pnpm biome ci .`: те же правила Biome в режиме CI, только чтение. Затем идут `pnpm typecheck` и `pnpm test`. `integration` запускает `pnpm test:int`, `e2e` запускает `pnpm test:e2e`, `docker` собирает образы api, worker и web; локальный набор образы не собирает.
+Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. CI (`.github/workflows/ci.yml`) на pull request и на push в `main` проверяет почти то же. Job `check` вместо `pnpm lint` (`biome check .`) запускает `pnpm biome ci .`: те же правила Biome в режиме CI, только чтение. Затем идут `pnpm typecheck` и `pnpm test`. `integration` запускает `pnpm test:int`, `e2e` запускает `pnpm test:e2e`, `docker` собирает production-стек через Compose, запускает его с миграциями и проверяет `infra/smoke.sh`, затем удаляет тестовые контейнеры и volumes. Проверка использует `.env.example` и localhost в изолированном runner; локальный набор образы не собирает.
 
 Первый запуск Playwright: `pnpm infra:up`, затем `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium` (установка системных библиотек Linux требует прав администратора). Сборка web берёт шрифты из Google Fonts, нужен интернет.
 
