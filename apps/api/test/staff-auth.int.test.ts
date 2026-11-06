@@ -6,7 +6,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/auth/password.js';
-import { SessionService } from '../src/auth/session.service.js';
+import { hashToken, SessionService } from '../src/auth/session.service.js';
 import { currentTotp } from '../src/auth/totp.js';
 import { loadConfig } from '../src/config/config.js';
 import { testEnv } from './test-env.js';
@@ -60,8 +60,8 @@ it('logs in with password and TOTP, then /auth/me returns the admin', async () =
   const me = await agent.get('/api/v1/auth/me');
   expect(me.status).toBe(200);
   expect(me.body).toEqual({
-    kind: 'staff',
     user: { id: expect.any(String), email: EMAIL, role: 'admin' },
+    session: { kind: 'staff', deviceId: null },
   });
 });
 
@@ -197,6 +197,47 @@ it('logout revokes the session and clears the cookie', async () => {
   expect(await db.session.count()).toBe(0);
   expect(await db.auditLog.count({ where: { action: 'auth.logout' } })).toBe(1);
   expect((await agent.get('/api/v1/auth/me')).status).toBe(401);
+});
+
+it('renews only user sessions and reissues a Secure cookie behind HTTPS proxy', async () => {
+  const user = await db.user.create({ data: { email: 'buyer@xstorex.ru', role: 'user' } });
+  const sessions = app.get(SessionService);
+  const userSession = await sessions.create(user.id, 'user', {});
+  const dayMs = 24 * 60 * 60 * 1000;
+  await db.session.update({
+    where: { id: hashToken(userSession.token) },
+    data: { expiresAt: new Date(Date.now() + 14 * dayMs) },
+  });
+
+  const userMe = await request(app.getHttpServer())
+    .get('/api/v1/auth/me')
+    .set('Cookie', `xs_session=${userSession.token}`)
+    .set('X-Forwarded-Proto', 'https');
+  expect(userMe.status).toBe(200);
+  expect(setCookie(userMe)).toMatch(/; Secure(?:;|$)/);
+  expect(userMe.body.session).toEqual({ kind: 'user', deviceId: null });
+  const renewedUserSession = await db.session.findUniqueOrThrow({
+    where: { id: hashToken(userSession.token) },
+  });
+  expect(renewedUserSession.expiresAt.getTime()).toBeGreaterThan(Date.now() + 29 * dayMs);
+  expect(renewedUserSession.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 30 * dayMs);
+
+  const admin = await db.user.findUniqueOrThrow({ where: { email: EMAIL } });
+  const staffSession = await sessions.create(admin.id, 'staff', {});
+  const staffExpiry = new Date(Date.now() + 14 * dayMs);
+  await db.session.update({
+    where: { id: hashToken(staffSession.token) },
+    data: { expiresAt: staffExpiry },
+  });
+  const staffMe = await request(app.getHttpServer())
+    .get('/api/v1/auth/me')
+    .set('Cookie', `xs_session=${staffSession.token}`);
+  expect(staffMe.status).toBe(200);
+  expect(staffMe.headers['set-cookie']).toBeUndefined();
+  const unchangedStaffSession = await db.session.findUniqueOrThrow({
+    where: { id: hashToken(staffSession.token) },
+  });
+  expect(unchangedStaffSession.expiresAt.toISOString()).toBe(staffExpiry.toISOString());
 });
 
 it('an expired session or a blocked user is not resolved', async () => {

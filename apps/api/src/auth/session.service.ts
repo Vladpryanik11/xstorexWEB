@@ -10,6 +10,7 @@ const TTL_MS: Record<SessionKind, number> = {
 };
 /** lastSeenAt is refreshed at most this often to keep reads cheap. */
 const TOUCH_MS = 5 * 60 * 1000;
+const RENEW_BELOW_MS = 15 * 24 * 60 * 60 * 1000;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
 export type SessionMeta = { ip?: string; userAgent?: string };
@@ -56,13 +57,32 @@ export class SessionService {
       return null;
     }
     if (session.user.blockedAt) return null;
-    if (now - session.lastSeenAt.getTime() > TOUCH_MS) {
-      await this.prisma.client.session.update({
-        where: { id },
-        data: { lastSeenAt: new Date(now) },
+    const shouldRenew =
+      session.kind === 'user' && session.expiresAt.getTime() - now < RENEW_BELOW_MS;
+    const shouldTouch = now - session.lastSeenAt.getTime() > TOUCH_MS;
+    let expiresAt = session.expiresAt;
+    if (shouldRenew || shouldTouch) {
+      const data: { lastSeenAt: Date; expiresAt?: Date } = { lastSeenAt: new Date(now) };
+      if (shouldRenew) {
+        expiresAt = new Date(now + TTL_MS.user);
+        data.expiresAt = expiresAt;
+      }
+      const updated = await this.prisma.client.session.updateMany({
+        where: { id, expiresAt: { gt: new Date(now) } },
+        data,
       });
+      // A concurrent logout or revocation wins over a request already in flight.
+      if (updated.count === 0) return null;
     }
-    return { userId: session.userId, role: session.user.role, sessionId: id, kind: session.kind };
+    return {
+      userId: session.userId,
+      role: session.user.role,
+      sessionId: id,
+      kind: session.kind,
+      deviceId: session.deviceId,
+      expiresAt,
+      renewed: shouldRenew,
+    };
   }
 
   async revoke(sessionId: string): Promise<void> {

@@ -19,6 +19,12 @@ export const ErrorCode = {
   IPA_NO_BINARY: 'IPA_NO_BINARY',
   DUPLICATE_VERSION: 'DUPLICATE_VERSION',
   PUBLISH_BLOCKED: 'PUBLISH_BLOCKED',
+  ENROLLMENT_EXPIRED: 'ENROLLMENT_EXPIRED',
+  ENROLLMENT_INVALID: 'ENROLLMENT_INVALID',
+  DEVICE_OWNED: 'DEVICE_OWNED',
+  ACCOUNT_BLOCKED: 'ACCOUNT_BLOCKED',
+  CODE_INVALID: 'CODE_INVALID',
+  EMAIL_TAKEN: 'EMAIL_TAKEN',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -43,6 +49,12 @@ export const errorMessages: Record<ErrorCode, string> = {
   IPA_NO_BINARY: 'В приложении нет исполняемого файла iOS',
   DUPLICATE_VERSION: 'Эта версия уже загружена',
   PUBLISH_BLOCKED: 'Нельзя опубликовать: заполните обязательные поля',
+  ENROLLMENT_EXPIRED: 'Время подключения истекло. Попробуйте ещё раз.',
+  ENROLLMENT_INVALID: 'Не удалось проверить ответ устройства. Попробуйте ещё раз.',
+  DEVICE_OWNED: 'Это устройство уже привязано к другому аккаунту. Войдите в него или напишите в поддержку.',
+  ACCOUNT_BLOCKED: 'Аккаунт заблокирован',
+  CODE_INVALID: 'Неверный или устаревший код',
+  EMAIL_TAKEN: 'Эта почта уже привязана к другому аккаунту',
 };
 
 export const apiErrorSchema = z.object({

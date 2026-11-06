@@ -98,11 +98,42 @@ describe('catalog schema', () => {
     });
     expect(col).toMatchObject({ limit: 12, onHome: true });
     await db.collectionItem.create({ data: { collectionId: col.id, appId: app.id, position: 0 } });
-    await db.installEvent.create({ data: { appId: app.id, deviceId: 'device-1' } });
+    const owner = await db.user.create({ data: { email: 'device-owner@xstorex.ru' } });
+    const device = await db.device.create({
+      data: {
+        userId: owner.id,
+        udid: '00008110-001A2B3C4D5E6F70',
+        product: 'iPhone15,2',
+        iosVersion: '17.0',
+        name: 'iPhone',
+      },
+    });
+    await db.installEvent.create({ data: { appId: app.id, deviceId: device.id } });
     await db.app.delete({ where: { id: app.id } });
     expect(await db.appVersion.count()).toBe(0);
     expect(await db.collectionItem.count()).toBe(0);
     expect(await db.installEvent.count()).toBe(0);
+  });
+
+  it('preserves catalog install counts when a device is deleted', async () => {
+    const app = await db.app.create({ data: { slug: 'device-history', name: 'Device history' } });
+    const owner = await db.user.create({ data: { email: 'device-owner@xstorex.ru' } });
+    const device = await db.device.create({
+      data: {
+        userId: owner.id,
+        udid: '00008110-001A2B3C4D5E6F70',
+        product: 'iPhone15,2',
+        iosVersion: '17.0',
+        name: 'iPhone',
+      },
+    });
+    const event = await db.installEvent.create({ data: { appId: app.id, deviceId: device.id } });
+
+    await db.device.delete({ where: { id: device.id } });
+
+    await expect(
+      db.installEvent.findUniqueOrThrow({ where: { id: event.id } }),
+    ).resolves.toMatchObject({ deviceId: null });
   });
 
   it('keeps one collection item per app in a collection', async () => {

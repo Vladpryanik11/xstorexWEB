@@ -3,6 +3,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { SessionRenewal } from '../src/auth/SessionRenewal';
 
 // Inter is only the fallback after Helvetica Neue/Helvetica (iPhone and most desktops never
 // reach it), so it is not preloaded: browsers fetch it only where it is actually used.
@@ -28,7 +29,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        <SessionRenewal />
+        {children}
+      </body>
     </html>
   );
 }

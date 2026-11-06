@@ -1,12 +1,21 @@
 import type { Role, SessionKind } from '@xstore/db';
 
-export type AuthContext = { userId: string; role: Role; sessionId: string; kind: SessionKind };
+export type AuthContext = {
+  userId: string;
+  role: Role;
+  sessionId: string;
+  kind: SessionKind;
+  deviceId?: string | null;
+  expiresAt?: Date;
+  renewed?: boolean;
+};
 
 /** The parts of the Express request and response this API relies on. */
 export type HttpReq = {
   method: string;
   originalUrl: string;
   ip?: string;
+  secure?: boolean;
   headers: Record<string, string | string[] | undefined>;
   auth?: AuthContext | null;
 };

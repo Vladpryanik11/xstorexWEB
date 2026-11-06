@@ -24,31 +24,95 @@ enum SessionKind {
   staff
 }
 
+enum DeviceStatus {
+  new
+  pending
+  processing
+  active
+  blocked
+  expired
+}
+
+enum EnrollmentStatus {
+  pending
+  completed
+  failed
+  expired
+}
+
 model User {
-  id           String      @id @default(cuid())
-  email        String?     @unique
-  role         Role        @default(user)
-  passwordHash String?
-  totpSecret   String?
-  blockedAt    DateTime?
-  createdAt    DateTime    @default(now())
-  sessions     Session[]
-  uploads      IpaUpload[]
+  id                 String              @id @default(cuid())
+  email              String?             @unique
+  isProvisional      Boolean             @default(false)
+  checkoutEmail      String?
+  role               Role                @default(user)
+  passwordHash       String?
+  totpSecret         String?
+  blockedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  sessions           Session[]
+  uploads            IpaUpload[]
+  devices            Device[]
+  enrollmentSessions EnrollmentSession[]
+
+  @@index([isProvisional, checkoutEmail])
 }
 
 model Session {
   /// sha256 hex of the cookie token; the token itself is never stored.
-  id         String      @id
-  userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind       SessionKind
-  expiresAt  DateTime
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime    @default(now())
-  lastSeenAt DateTime    @default(now())
+  id                  String              @id
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind                SessionKind
+  deviceId            String?
+  device              Device?             @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  expiresAt           DateTime
+  ip                  String?
+  userAgent           String?
+  createdAt           DateTime            @default(now())
+  lastSeenAt          DateTime            @default(now())
+  enrollmentSessions EnrollmentSession[]
 
   @@index([userId])
+  @@index([deviceId])
+}
+
+model Device {
+  id                 String              @id @default(cuid())
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  udid               String              @unique
+  product            String
+  iosVersion         String
+  name               String
+  status             DeviceStatus        @default(new)
+  appleAccountId     String?
+  registeredAt       DateTime?
+  createdAt          DateTime            @default(now())
+  sessions           Session[]
+  enrollmentSessions EnrollmentSession[]
+  installEvents      InstallEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model EnrollmentSession {
+  nonce     String           @id
+  status    EnrollmentStatus @default(pending)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  deviceId  String?
+  device    Device?          @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  next      String?
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status, expiresAt])
+  @@index([deviceId])
 }
 
 model AuditLog {
@@ -233,9 +297,10 @@ model InstallEvent {
   id        String   @id @default(cuid())
   appId     String
   app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
-  /// Relation to `Device` arrives in M2.
-  deviceId  String
+  deviceId  String?
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@index([appId, createdAt])
+  @@index([deviceId])
 }
