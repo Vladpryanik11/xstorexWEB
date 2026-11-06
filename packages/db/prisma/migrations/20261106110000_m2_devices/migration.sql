@@ -69,13 +69,13 @@ ALTER TABLE "EnrollmentSession"
   FOREIGN KEY ("deviceId") REFERENCES "Device"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 -- M1 created install events before Device existed. Keep their catalog-count rows,
 -- but remove device links that cannot be mapped to an M2 Device.
+ALTER TABLE "InstallEvent" ALTER COLUMN "deviceId" DROP NOT NULL;
+
 UPDATE "InstallEvent" e
 SET "deviceId" = NULL
 WHERE NOT EXISTS (
   SELECT 1 FROM "Device" d WHERE d."id" = e."deviceId"
 );
-
-ALTER TABLE "InstallEvent" ALTER COLUMN "deviceId" DROP NOT NULL;
 ALTER TABLE "InstallEvent"
   ADD CONSTRAINT "InstallEvent_deviceId_fkey"
   FOREIGN KEY ("deviceId") REFERENCES "Device"("id") ON DELETE SET NULL ON UPDATE CASCADE;
