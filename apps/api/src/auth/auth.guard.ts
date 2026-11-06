@@ -3,10 +3,10 @@ import { Reflector } from '@nestjs/core';
 import type { Role } from '@xstore/db';
 import { ErrorCode } from '@xstore/shared';
 import { DomainError } from '../common/domain-error.js';
-import { type AuthContext, type HttpReq, header } from '../common/http.js';
+import { type AuthContext, type HttpReq, type HttpRes, header } from '../common/http.js';
 import { REQUIRE_AUTH_KEY, ROLES_KEY } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
-import { readCookie, SESSION_COOKIE } from './session-cookie.js';
+import { readCookie, SESSION_COOKIE, sessionCookie } from './session-cookie.js';
 
 /** Decides access for a resolved session against `@RequireAuth()` / `@Roles()` metadata. */
 export function checkAccess(
@@ -32,8 +32,12 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<HttpReq>();
+    const res = ctx.switchToHttp().getResponse<HttpRes>();
     const token = readCookie(header(req, 'cookie'), SESSION_COOKIE);
     req.auth = token ? await this.sessions.resolve(token) : null;
+    if (token && req.auth?.renewed && req.auth.expiresAt) {
+      res.setHeader('Set-Cookie', sessionCookie(token, req.auth.expiresAt, req.secure === true));
+    }
     const targets = [ctx.getHandler(), ctx.getClass()];
     const requireAuth = this.reflector.getAllAndOverride<boolean | undefined>(
       REQUIRE_AUTH_KEY,
