@@ -48,7 +48,10 @@ export class AuthGuard implements CanActivate {
     // Reissue the database expiry on browser-facing requests too: an SSR /auth/me
     // call can renew the session before the browser receives its Set-Cookie header.
     if (token && req.auth?.role === 'user' && req.auth.kind === 'user' && req.auth.expiresAt) {
-      res.setHeader('Set-Cookie', sessionCookie(token, req.auth.expiresAt, this.secureCookie));
+      res.setHeader(
+        'Set-Cookie',
+        sessionCookie(token, req.auth.expiresAt, this.secureCookie || req.secure === true),
+      );
     }
     const targets = [ctx.getHandler(), ctx.getClass()];
     const requireAuth = this.reflector.getAllAndOverride<boolean | undefined>(
