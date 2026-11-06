@@ -81,14 +81,26 @@ function unfilter(filtered: Buffer, width: number, height: number): Buffer {
  */
 export function cgbiToPng(buf: Buffer): Buffer {
   const list = chunks(buf);
-  if (!list.some((c) => c.type === 'CgBI')) return buf;
-  const ihdr = list.find((c) => c.type === 'IHDR')?.data;
-  if (!ihdr || ihdr.length < 13) throw new Error('CgBI: no IHDR');
+  const headers = list.filter((c) => c.type === 'IHDR');
+  const ihdr = headers[0]?.data;
+  // pngjs accepts repeated IHDR chunks and uses the last dimensions. Refuse ambiguity
+  // so the size checked here is exactly the size subsequently decoded.
+  if (headers.length !== 1 || !ihdr || ihdr.length !== 13) throw new Error('PNG: invalid IHDR');
   const width = ihdr.readUInt32BE(0);
   const height = ihdr.readUInt32BE(4);
   const [bitDepth, colorType, , , interlace] = ihdr.subarray(8, 13);
   if (width === 0 || height === 0 || width > MAX_SIDE || height > MAX_SIDE)
-    throw new Error('CgBI: bad size');
+    throw new Error('PNG: bad size');
+  if (!list.some((c) => c.type === 'CgBI')) {
+    if (interlace === 1) {
+      // pngjs bounds ordinary scanlines but uses unbounded inflateSync for Adam7.
+      // Preflight the same stream: at most 8 bytes/pixel (16-bit RGBA), with a
+      // conservative allowance for padding/filter bytes across all seven passes.
+      const idat = Buffer.concat(list.filter((c) => c.type === 'IDAT').map((c) => c.data));
+      inflateSync(idat, { maxOutputLength: width * height * 8 + height * 8 + 64 });
+    }
+    return buf;
+  }
   if (bitDepth !== 8 || colorType !== 6 || interlace !== 0)
     throw new Error('CgBI: only 8-bit non-interlaced RGBA is supported');
   const idat = Buffer.concat(list.filter((c) => c.type === 'IDAT').map((c) => c.data));

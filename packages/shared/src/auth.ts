@@ -10,4 +10,7 @@ export const staffLoginSchema = z.object({
 });
 export type StaffLogin = z.infer<typeof staffLoginSchema>;
 
-export type MeResponse = { user: { id: string; email: string | null; role: Role } };
+export type MeResponse = {
+  user: { id: string; email: string | null; role: Role };
+  kind: 'user' | 'staff';
+};

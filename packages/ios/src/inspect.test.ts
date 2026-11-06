@@ -111,6 +111,27 @@ describe('inspectIpa', () => {
     expect(r.ok && r.iconPng && PNG.sync.read(r.iconPng).width).toBe(152);
   });
 
+  it('skips an oversized standard PNG and selects the safe fallback icon', async () => {
+    const oversized = makePng(
+      4097,
+      1,
+      Array.from({ length: 4097 }, () => [1, 2, 3, 255]),
+    );
+    const ipa = await buildIpa(
+      {
+        info: { ...defaultInfo, CFBundleIconFiles: ['Icon'] },
+        files: {
+          'Payload/Test.app/Icon@3x.png': oversized,
+          'Payload/Test.app/Icon.png': solid(16),
+        },
+      },
+      files,
+    );
+    const result = await inspectIpa(ipa, tmp);
+    if (!result.ok || !result.iconPng) throw new Error('expected safe fallback icon');
+    expect(PNG.sync.read(result.iconPng).width).toBe(16);
+  });
+
   it('keeps going without an icon when the icon is broken', async () => {
     const info = { ...defaultInfo, CFBundleIconFiles: ['Icon.png'] };
     const ipa = await buildIpa(

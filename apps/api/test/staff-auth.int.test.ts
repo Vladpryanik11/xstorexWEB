@@ -59,7 +59,10 @@ it('logs in with password and TOTP, then /auth/me returns the admin', async () =
   expect(setCookie(res)).not.toMatch(/Secure/);
   const me = await agent.get('/api/v1/auth/me');
   expect(me.status).toBe(200);
-  expect(me.body).toEqual({ user: { id: expect.any(String), email: EMAIL, role: 'admin' } });
+  expect(me.body).toEqual({
+    kind: 'staff',
+    user: { id: expect.any(String), email: EMAIL, role: 'admin' },
+  });
 });
 
 it('stores only the token hash and writes an audit row', async () => {

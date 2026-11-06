@@ -24,6 +24,8 @@ export const uploadViewSchema = z.object({
   status: uploadStatusSchema,
   rejectCode: z.string().optional(),
   inspect: z.unknown().optional(),
+  /** App attached by inspection; present after the upload becomes ready. */
+  appId: z.string().optional(),
 });
 export type UploadView = z.infer<typeof uploadViewSchema>;
 
@@ -46,10 +48,9 @@ export type UploadedPart = { partNumber: number; etag: string; size: number };
 export type UploadedParts = { parts: UploadedPart[] };
 
 export const completeUploadSchema = z.object({
-  parts: z
-    .array(z.object({ partNumber, etag: z.string().min(1).max(128) }))
-    .min(1)
-    .max(10_000),
+  // [] recovers enqueue for an already completed upload. Unfinished uploads still require
+  // their full manifest, validated against MinIO by UploadsService.complete.
+  parts: z.array(z.object({ partNumber, etag: z.string().min(1).max(128) })).max(10_000),
 });
 export type CompleteUpload = z.infer<typeof completeUploadSchema>;
 

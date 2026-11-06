@@ -1,0 +1,226 @@
+.shell {
+  min-height: 100dvh;
+  background: var(--x-page);
+}
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem var(--x-gutter);
+  background: var(--x-header-gradient);
+  color: var(--x-card);
+}
+.header a {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+}
+.header span {
+  flex: 1;
+  font-size: 0.875rem;
+}
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem var(--x-gutter);
+  border-bottom: 1px solid var(--x-hair);
+  background: var(--x-card);
+}
+.nav a {
+  padding: 0.75rem 1rem;
+  color: var(--x-ink);
+  border-radius: var(--x-radius-field);
+  text-decoration: none;
+}
+.nav a[aria-current] {
+  background: var(--x-surface);
+  font-weight: 600;
+}
+.main {
+  max-width: var(--x-page-max);
+  margin: auto;
+  padding: 1.5rem var(--x-gutter) 4rem;
+}
+.main h1 {
+  font-family: var(--x-system);
+  color: var(--x-ink);
+  font-size: 1.75rem;
+}
+.main a {
+  color: var(--x-blue);
+}
+.card,
+.login {
+  padding: 1.5rem;
+  background: var(--x-card);
+  border: 1px solid var(--x-hair);
+  border-radius: var(--x-radius-card);
+  margin-block: 1rem;
+  min-width: 0;
+}
+.login {
+  width: calc(100% - 2 * var(--x-gutter));
+  max-width: var(--x-column);
+  margin: 4rem auto;
+}
+.form {
+  display: grid;
+  gap: 1rem;
+}
+.fields {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.field input,
+.field textarea,
+.field select,
+.tools input,
+.tools select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--x-hair);
+  border-radius: var(--x-radius-field);
+  background: var(--x-card);
+  color: var(--x-text);
+  font: inherit;
+}
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+.shell button,
+.login button {
+  padding: 0.625rem 1rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--x-hair);
+  border-radius: var(--x-radius-field);
+  background: var(--x-blue);
+  color: var(--x-card);
+  font: inherit;
+  cursor: pointer;
+}
+.shell button:disabled,
+.login button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.tools {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+.tools > * {
+  min-width: 0;
+}
+.tools label {
+  flex: 1;
+}
+.tableScroll {
+  overflow-x: auto;
+  border-radius: var(--x-radius-field);
+  border: 1px solid var(--x-hair);
+  background: var(--x-card);
+  margin-block: 1rem;
+}
+.table {
+  border-collapse: collapse;
+  min-width: 36rem;
+  width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+}
+.table caption {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+}
+.table th,
+.table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--x-hair);
+  vertical-align: top;
+}
+.table th {
+  color: var(--x-text-2);
+  font-weight: 500;
+}
+.table td {
+  overflow-wrap: break-word;
+}
+.table button {
+  white-space: nowrap;
+}
+.muted {
+  color: var(--x-text-2);
+}
+.media {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-block: 1rem;
+}
+.media img {
+  width: 6rem;
+  height: 6rem;
+  object-fit: contain;
+  border-radius: var(--x-radius-field);
+  background: var(--x-surface);
+}
+.dropzone {
+  padding: 2rem 1rem;
+  border: 2px dashed var(--x-blue);
+  border-radius: var(--x-radius-card);
+  background: var(--x-surface);
+}
+.upload {
+  border-bottom: 1px solid var(--x-hair);
+  padding-block: 1rem;
+  overflow-wrap: anywhere;
+}
+.upload progress {
+  width: 100%;
+  accent-color: var(--x-blue);
+}
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.items li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--x-hair);
+}
+.items li > span {
+  flex: 1;
+  min-width: 8rem;
+}
+.shell :is(button, a, input, select, textarea):focus-visible,
+.login :is(button, a, input):focus-visible {
+  outline: 3px solid var(--x-blue-ring);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .login * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

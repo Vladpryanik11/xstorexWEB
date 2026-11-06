@@ -66,7 +66,7 @@
       "cache": false
     },
     "@xstore/web#test:e2e": {
-      "dependsOn": ["^build", "@xstore/api#build", "@xstore/db#build"],
+      "dependsOn": ["^build", "@xstore/api#build", "@xstore/db#build", "@xstore/worker#build"],
       "cache": false,
       "passThroughEnv": [
         "DATABASE_URL_TEST",

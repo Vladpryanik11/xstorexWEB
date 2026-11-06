@@ -80,6 +80,71 @@ afterAll(async () => {
 });
 
 describe('multipart upload', () => {
+  it('keeps reporting inspection until the catalog app is attached', async () => {
+    const created = await admin().post('/admin/uploads', {
+      fileName: 'pending.ipa',
+      sizeBytes: 1024,
+    });
+    await db.ipaUpload.update({ where: { id: created.body.id }, data: { status: 'ready' } });
+    const pending = await admin().get(`/admin/uploads/${created.body.id}`);
+    expect(pending.body.status).toBe('inspecting');
+    expect(pending.body.appId).toBeUndefined();
+    const completed = await admin().post(`/admin/uploads/${created.body.id}/complete`, {
+      parts: [],
+    });
+    expect(completed.status).toBe(200);
+    expect(completed.body.status).toBe('inspecting');
+  });
+
+  it('re-enqueues a completed upload after a lost enqueue, without uploading bytes again', async () => {
+    const created = await admin().post('/admin/uploads', { fileName: 'lost.ipa', sizeBytes: 1024 });
+    // The durable state after completing S3 and crashing before enqueue.
+    await db.ipaUpload.update({ where: { id: created.body.id }, data: { status: 'uploaded' } });
+    expect(await ipaQueue.getJob(`inspect-${created.body.id}`)).toBeUndefined();
+    const retry = await admin().post(`/admin/uploads/${created.body.id}/complete`, { parts: [] });
+    expect(retry.status).toBe(200);
+    expect(await ipaQueue.getJob(`inspect-${created.body.id}`)).toBeTruthy();
+  });
+
+  it('an empty parts list cannot complete an unfinished upload', async () => {
+    const created = await admin().post('/admin/uploads', {
+      fileName: 'unfinished.ipa',
+      sizeBytes: 1024,
+    });
+    const retry = await admin().post(`/admin/uploads/${created.body.id}/complete`, { parts: [] });
+    expect(retry.status).toBe(400);
+    expect(await ipaQueue.getJob(`inspect-${created.body.id}`)).toBeUndefined();
+  });
+  it('a ready upload points to its exact catalog app', async () => {
+    const created = await admin().post('/admin/uploads', {
+      fileName: 'ready.ipa',
+      sizeBytes: 1024,
+    });
+    const app = await db.app.create({ data: { name: 'Ready', slug: 'ready' } });
+    const version = await db.appVersion.create({
+      data: {
+        appId: app.id,
+        version: '1',
+        build: '1',
+        bundleId: 'ru.test.ready',
+        sizeBytes: 1024n,
+        sha256: 'a'.repeat(64),
+        ipaKey: 'ready.ipa',
+        encrypted: false,
+      },
+    });
+    await db.ipaUpload.update({
+      where: { id: created.body.id },
+      data: { status: 'ready', appVersionId: version.id },
+    });
+    const ready = await admin().get(`/admin/uploads/${created.body.id}`);
+    expect(ready.body.appId).toBe(app.id);
+    const completed = await admin().post(`/admin/uploads/${created.body.id}/complete`, {
+      parts: [],
+    });
+    expect(completed.status).toBe(200);
+    expect(completed.body).toMatchObject({ status: 'ready', appId: app.id });
+  });
   it('uploads two parts through presigned URLs and completes', async () => {
     const up = await admin().post('/admin/uploads', { fileName: 'Тест.ipa', sizeBytes: 70 * MiB });
     expect(up.status).toBe(201);

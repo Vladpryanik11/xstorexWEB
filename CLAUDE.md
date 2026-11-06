@@ -59,6 +59,9 @@
 - `pnpm lint` (Biome), `pnpm format`, `pnpm typecheck`.
 - `pnpm test` — модульные; `pnpm test:int` — интеграционные (нужны `pnpm infra:up`); `pnpm test:e2e` — Playwright.
 - Полный набор перед «готово»: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`.
+- M1: админка `/admin` (пароль + TOTP); создать сотрудника: `pnpm --filter @xstore/api admin:create -- --email <почта>` после сборки API. Поддержка читает только задания, редакторы доступны администратору.
+- Перед E2E: `pnpm infra:up`, `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium`. Playwright запускает API, web и воркер; использует `DATABASE_URL_TEST`, `REDIS_URL_TEST`, `S3_BUCKET_PREFIX_TEST`. Не запускать `test:int` и `test:e2e` одновременно — оба очищают тестовую базу.
+- M1 окружение: `API_INTERNAL_URL` для SSR и прокси `/api`; `S3_ENDPOINT` для сервера, `S3_PUBLIC_URL` для браузера, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET_PREFIX`. CORS MinIO разрешает origin сайта; все секреты — в `.env`. Подробности в `README.md` и `.env.example`.
 
 Production: `docker compose -f infra/docker-compose.yml --env-file .env up -d --build` (порты 80/443 публикует только Caddy), проверка `bash infra/smoke.sh`. Образы собираются из корня: `docker build -f apps/api/Dockerfile .`.
 
