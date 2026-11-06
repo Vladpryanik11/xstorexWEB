@@ -9,7 +9,7 @@
 **Architecture:**
 - API: new modules `enrollment` (authenticated device connection, CMS verification, session-bound hand-off), `devices`, `profile`; `auth` gains user sessions and email codes.
 - Mail goes through a new `notifications` BullMQ queue; the worker sends it over SMTP (Mailpit in development). M7 adds logging, templates for the remaining events and SMTP settings.
-- Web: the shell reads the session on the server; account pages live in an `(account)` route group whose layout redirects guests.
+- Web: the shell reads the session on the server; account pages live in an `(account)` route group whose layout redirects guests. `SessionRenewal` also calls same-origin `/api/v1/auth/me` from the browser on mount, on tab return and every 12 hours, because an SSR-internal `Set-Cookie` response cannot update the browser cookie.
 
 **Tech Stack:** M1 stack plus `pkijs` 3.x and `asn1js` 3.x (CMS sign and verify through WebCrypto, RSA and ECDSA keys), `nodemailer` 7.x (worker), Mailpit (`axllent/mailpit`, pinned by digest) for development and tests.
 
@@ -26,7 +26,7 @@
 
 - All M0 and M1 Global Constraints hold.
 - Enrollment session TTL: 15 minutes. One-time `/enroll/done` token TTL: 5 minutes, single use. Email code: 6 digits, TTL 10 minutes, 5 attempts.
-- User session TTL: 30 days, extended back to 30 days on use when fewer than 15 remain. Staff session TTL stays 12 hours.
+- User session TTL: 30 days, extended back to 30 days on use when fewer than 15 remain. `AuthGuard` reissues the current expiry on browser-visible user-session responses so an earlier SSR renewal cannot leave the browser cookie stale. Staff session TTL stays 12 hours.
 - `.mobileconfig`: `Content-Type: application/x-apple-aspen-config`, file name `xstore-connect.mobileconfig`, `PayloadType` `Profile Service`, `PayloadIdentifier` `ru.xstorex.enroll`, `PayloadDisplayName` «Xstore — подключение iPhone», `PayloadOrganization` «Xstore», `DeviceAttributes` `UDID, PRODUCT, VERSION, SERIAL`. `SERIAL` is requested by the spec but never stored.
 - Rate limits (Redis, from M1): profile download 10 per 10 min per IP; callback 20 per 10 min per IP; code request 3 per 15 min per email and 10 per hour per IP; code verify 10 per 10 min per IP.
 - Never log UDIDs in full outside the audit log: pino `redact` plus a `maskUdid(udid)` helper (`00008110-…A1B2`) for messages.
@@ -223,7 +223,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 
 **Files:**
 - Create: `apps/api/src/devices/{devices.module,devices.controller,devices.service}.ts`
-- Modify: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/auth/auth.controller.ts`, `apps/api/src/auth/auth.guard.ts`, `apps/api/src/auth/roles.decorator.ts`, `apps/api/src/auth/session.service.ts` (sliding expiry, `lastSeenAt`), `apps/web/src/auth/session.ts`, `packages/shared/src/client.ts`
+- Modify: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/auth/auth.controller.ts`, `apps/api/src/auth/auth.guard.ts`, `apps/api/src/auth/roles.decorator.ts`, `apps/api/src/auth/session.service.ts` (sliding expiry, `lastSeenAt`), `apps/web/src/auth/session.ts`, `apps/web/src/auth/SessionRenewal.tsx`, `apps/web/app/layout.tsx`, `packages/shared/src/client.ts`
 - Test: `apps/api/test/devices.int.test.ts`, `apps/api/test/profile.int.test.ts`
 
 **Interfaces:**
@@ -234,10 +234,10 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
   - `GET /profile` → `{ email: string | null; createdAt }`.
   - `GET /profile/sessions` → `{ id; createdAt; lastSeenAt; ip; userAgent; current: boolean }[]`; `DELETE /profile/sessions/:id`.
   - `GET /auth/me` now returns `{ user: { id, email, role }; session: { kind: SessionKind; deviceId: string | null } }`.
-  - `SessionService.resolve` extends user sessions per Global Constraints and updates `lastSeenAt` at most every 5 minutes; when extended, `AuthGuard` re-sets the cookie.
+  - `SessionService.resolve` extends user sessions per Global Constraints and updates `lastSeenAt` at most every 5 minutes. `AuthGuard` reissues the current expiry on each valid user-session API response, including when a prior SSR read already extended it. The root `SessionRenewal` client component calls same-origin `/api/v1/auth/me` on mount, tab return and every 12 hours so the refreshed `HttpOnly` cookie reaches the browser.
   - Client methods: `me()`, `devices()`, `renameDevice()`, `deviceInstalls()`, `profile()`, `sessions()`, `revokeSession()`, `requestEmailCode()`, `verifyEmailCode()`, `linkEmail*()`, `completeEnrollment()`, `logout()`.
 
-- [ ] **Step 1: Write the failing tests** — `staff session is rejected by user-only endpoints`, `/auth/me returns the shared nested contract for staff and user sessions`, `lists only my devices`, `rename validates length`, `cannot rename a foreign device (404)`, `revoking a session signs that browser out`, `user cookie renews when half-expired`, `staff expiry is unchanged`, `renewed cookie is Secure behind HTTPS proxy`.
+- [ ] **Step 1: Write the failing tests** — `staff session is rejected by user-only endpoints`, `/auth/me returns the shared nested contract for staff and user sessions`, `lists only my devices`, `rename validates length`, `cannot rename a foreign device (404)`, `revoking a session signs that browser out`, `user cookie renews when half-expired`, `staff expiry is unchanged`, `renewed cookie is Secure behind HTTPS proxy`, `an SSR renewal is followed by a browser-visible response with the DB expiry cookie`.
 - [ ] **Step 2: Run them to verify they fail.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them to verify they pass.** Expected: PASS.
