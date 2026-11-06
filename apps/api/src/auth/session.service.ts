@@ -79,6 +79,7 @@ export class SessionService {
       role: session.user.role,
       sessionId: id,
       kind: session.kind,
+      deviceId: session.deviceId,
       expiresAt,
       renewed: shouldRenew,
     };

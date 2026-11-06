@@ -5,6 +5,7 @@ export type AuthContext = {
   role: Role;
   sessionId: string;
   kind: SessionKind;
+  deviceId?: string | null;
   expiresAt?: Date;
   renewed?: boolean;
 };

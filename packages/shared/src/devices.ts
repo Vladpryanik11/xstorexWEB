@@ -86,7 +86,7 @@ export const deviceStatusLabel: Record<DeviceStatus, string> = {
 };
 
 export const renameDeviceSchema = z.object({
-  name: z.string().trim().min(1).max(60),
+  name: z.string().trim().min(1).max(40),
 });
 
 export type DeviceView = {

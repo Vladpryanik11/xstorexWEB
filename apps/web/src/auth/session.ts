@@ -18,7 +18,7 @@ export const getSession = cache(async (): Promise<MeResponse | null> => {
 
 export async function requireStaff(next: string, adminOnly = true): Promise<MeResponse> {
   const session = await getSession();
-  if (session?.kind !== 'staff' || !['admin', 'support'].includes(session.user.role))
+  if (session?.session.kind !== 'staff' || !['admin', 'support'].includes(session.user.role))
     redirect(`/admin/login?next=${encodeURIComponent(next)}`);
   if (adminOnly && session.user.role !== 'admin') redirect('/admin/jobs');
   return session;

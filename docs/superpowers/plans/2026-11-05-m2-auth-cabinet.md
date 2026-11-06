@@ -49,7 +49,7 @@
 
 **Files:**
 - Modify: `packages/db/prisma/schema.prisma` (+ migration `m2_devices`)
-- Create: `packages/shared/src/devices.ts`, `packages/shared/src/auth.ts`, `packages/shared/src/navigation.ts` (+ exports)
+- Modify: `packages/shared/src/auth.ts` (extend M1 auth contract); create `packages/shared/src/devices.ts`, `packages/shared/src/navigation.ts` (+ exports)
 - Modify: `packages/shared/src/errors.ts`
 - Test: `packages/shared/src/devices.test.ts`, `packages/shared/src/navigation.test.ts`, `packages/db/test/devices.int.test.ts`
 
@@ -60,14 +60,14 @@
   - `User.isProvisional Boolean @default(false)`, `User.checkoutEmail String?`, index `(isProvisional, checkoutEmail)`; CHECK `NOT isProvisional OR (email IS NULL AND checkoutEmail IS NOT NULL)`.
   - `EnrollmentSession { nonce String @id; status EnrollmentStatus @default(pending); userId String; sessionId String; deviceId String?; next String?; expiresAt; createdAt }`, originating session relation cascades on deletion. Identity comes from the authenticated request.
   - `Session.deviceId String?` → `Device` (`onDelete: SetNull`).
-  - `InstallEvent.deviceId` gets its relation to `Device`.
+  - `InstallEvent.deviceId String?` gets an optional relation to `Device` with `onDelete: SetNull`; migration nulls unmatchable M1 references so catalog event counts survive.
 - Produces (`@xstore/shared`):
   - Codes and messages: `ENROLLMENT_EXPIRED` «Время подключения истекло. Попробуйте ещё раз.», `ENROLLMENT_INVALID` «Не удалось проверить ответ устройства. Попробуйте ещё раз.», `DEVICE_OWNED` «Это устройство уже привязано к другому аккаунту. Войдите в него или напишите в поддержку.», `ACCOUNT_BLOCKED` «Аккаунт заблокирован», `CODE_INVALID` «Неверный или устаревший код», `EMAIL_TAKEN` «Эта почта уже привязана к другому аккаунту».
   - `safeNext(raw: string | undefined, fallback = '/devices'): string` in shared/navigation.ts: internal paths only; reject //, backslashes, controls and encoded external-origin bypasses. Both API and web import this one helper.
   - `normalizeEmail(raw: string): string`; `emailSchema = z.string().trim().toLowerCase().pipe(z.email())`.
   - `udidSchema = z.string().regex(/^([0-9a-f]{40}|[0-9A-F]{8}-[0-9A-F]{16})$/)` (pre-2018 40-hex and the newer 8-16 form); `maskUdid(udid: string): string`.
   - `deviceModelName(product: string): string` — table for iPhone XS (`iPhone11,2`) through current models and common iPads; unknown products return the input.
-  - `DeviceView = { id, name, model, status, statusLabel, registeredAt: string | null, createdAt: string }`; `deviceStatusLabel: Record<DeviceStatus, string>` = Новое / Ожидает регистрации / Регистрируется в Apple (до 72 часов) / Зарегистрировано в Apple / Заблокировано / Срок истёк. Subscription dates and validity are separate M5 fields; the legacy expired device state does not drive billing.
+  - `DeviceView = { id, name, model, udidMasked, status, statusLabel, registeredAt: string | null, createdAt: string }`; `renameDeviceSchema` accepts a trimmed 1–40 character name. `deviceStatusLabel: Record<DeviceStatus, string>` = Новое / Ожидает регистрации / Регистрируется в Apple (до 72 часов) / Зарегистрировано в Apple / Заблокировано / Срок истёк. Subscription dates and validity are separate M5 fields; the legacy expired device state does not drive billing.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -105,7 +105,7 @@ it('a UDID belongs to one device only', async () => { /* second create → P2002
 - Produces:
   - `notificationJob = z.discriminatedUnion('template', [z.object({ template: z.literal('email-code'), to: emailSchema, vars: z.object({ code: z.string().regex(/^\d{6}$/) }) })])`. M3–M7 add members to this union.
   - `renderEmail(job: NotificationJob): { subject: string; text: string; html: string }` — `email-code`: subject «Код для входа в Xstore», text «Ваш код: 123456. Он действует 10 минут. Если вы не запрашивали код, просто удалите это письмо.»; HTML escapes every variable.
-  - `NotifyService.send(job: NotificationJob): Promise<void>` (API) — adds the job with `removeOnComplete: true` and `removeOnFail: 100` so codes do not linger in Redis.
+  - `NotifyService.send(job: NotificationJob): Promise<void>` (API) — adds the job with `removeOnComplete: true` and `removeOnFail: true`; use bounded retries, then remove terminal failed jobs so auth codes do not remain in Redis.
   - Worker `createNotificationsWorker(deps)` sends with nodemailer (pool off, 10 s timeouts); SMTP errors are retried by the default job options.
 
 - [ ] **Step 1: Write the failing tests**
@@ -145,7 +145,7 @@ it('delivers an email through SMTP', async () => {
   - `signCms(content: Buffer, identity: SigningIdentity): Promise<Buffer>` — DER `SignedData`, attached content, SHA-256, signed attributes, every chain certificate included. Works with RSA and ECDSA P-256 keys.
   - `verifyCms(der: Buffer, opts: { anchors: Certificate[]; now?: Date }): Promise<{ content: Buffer; signer: Certificate }>` — checks the signed-attributes digest, the signature with the signer certificate, and the chain from the CMS certificate set to one of the anchors. Throws `CmsError`. Task 4 uses it for device responses.
   - `loadSigningIdentity(certPath, keyPath): Promise<SigningIdentity>` — cached for 1 hour, so a renewed Caddy certificate is picked up.
-  - `GET /enrollment/profile?next=<internal path>` requires a live user session and creates EnrollmentSession with 32 random bytes base64url nonce, captured userId/sessionId, and Task 1 shared safeNext. Returns the signed profile; guest →401, never a nullable owner or link-only mode.
+  - `GET /enrollment/profile?next=<internal path>` uses `@RequireUser()` and requires a live user session; it creates EnrollmentSession with 32 random bytes base64url nonce, captured userId/sessionId, and Task 1 shared safeNext. Returns the signed profile; guest →401, never a nullable owner or link-only mode.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -184,7 +184,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 - Env `ENROLL_TRUST_ANCHORS_PATH` defaults to the bundled Apple root; tests use a fake iOS CA.
 - Consumes Task 3 `verifyCms`; `parseDeviceResponse(content: Buffer): { udid: string; product: string; version: string; challenge: string }` validates plist `UDID`, `PRODUCT`, `VERSION`, `CHALLENGE`; SERIAL is not stored.
 - `GET /enrollment/profile?next=<internal path>` requires a user session; captures `userId`, `sessionId` and server-validated `next` in the nonce before returning Task 3's signed profile.
-- `POST /enrollment/callback?s=<nonce>`: raw `application/pkcs7-signature`, ≤64 KB, Origin-exempt. Verify nonce/TTL, source DB session, CMS/Apple chain and challenge. Under a nonce/session lock, reuse the same owner's device or create only a Device for the captured owner; foreign owner → `DEVICE_OWNED`, blocked owner → `ACCOUNT_BLOCKED`. Never create User or log in by UDID. Mark completed and store Redis `enroll:done:<sha256(token)> = { userId, sessionId, deviceId, next }`, EX 300; redirect `301 /enroll/done?t=<token>`. Errors redirect with code; failed/expired state is recorded.
+- `POST /enrollment/callback?s=<nonce>`: raw `application/pkcs7-signature`, ≤64 KB, Origin-exempt. Enrollment profile and completion endpoints are user-session-only via `@RequireUser()`; callback remains nonce- and source-session-bound. Verify nonce/TTL, source DB session, CMS/Apple chain and challenge. Under a nonce/session lock, reuse the same owner's device or create only a Device for the captured owner; foreign owner → `DEVICE_OWNED`, blocked owner → `ACCOUNT_BLOCKED`. Never create User or log in by UDID. Mark completed and store Redis `enroll:done:<sha256(token)> = { userId, sessionId, deviceId, next }`, EX 300; redirect `301 /enroll/done?t=<token>`. Errors redirect with code; failed/expired state is recorded.
 - `POST /enrollment/complete { token }` requires the same live originating user session, consumes `GETDEL`, rechecks DB session/owner, updates its `deviceId`, returns `{ next }` (default `/devices`). Expired/replayed token or revoked session → `ENROLLMENT_EXPIRED`; no new identity or session from hand-off alone.
 - `signDeviceResponse(fields, ca): Promise<Buffer>` produces fake signed iOS responses for tests.
 
@@ -209,7 +209,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 - `POST /auth/email/request { email }` → always 204. `POST /auth/email/verify { email, code }` → consume code → `claimProvisional` → new user cookie, 204. Invalid → `CODE_INVALID`; blocked or staff target → `ACCOUNT_BLOCKED`.
 - `claimProvisional(db, verifiedEmail: string): Promise<{ userId: string }>`: serializable transaction/advisory lock on normalized email. Resolve confirmed `role user` target, promote one matching provisional account or create a confirmed user. Lock eligible provisional accounts with the same checkoutEmail; transfer their devices and dependent ownership, retaining ids. Revoke source sessions/enrollment; retire source users by `blockedAt`; return target. Never merge confirmed accounts, staff, blocked users or different contact emails. Source Redis hand-offs also fail because their DB session is gone.
 - M2 owns device/session transfer. M4/M6 add their signing/upload ownership to this transaction; M5 adds subscription/order ownership. Recovery conflicts roll back completely and keep purchases available to their original owner/support.
-- `POST /profile/email/request|verify` remain authenticated. Ordinary occupied email → `EMAIL_TAKEN`; only verified recovery can claim provisional purchases. Changing checkout contact after a paid order requires a valid code to the new email (billing records added in M5).
+- `POST /profile/email/request|verify` use `@RequireUser()` and remain authenticated. Ordinary occupied email → `EMAIL_TAKEN`; only verified recovery can claim provisional purchases. Changing checkout contact after a paid order requires a valid code to the new email (billing records added in M5).
 
 - [ ] **Step 1: Write failing tests** — `code signs in`, `five failures invalidate code`, `one successful consumption`, `known/unknown request both 204`, `normalized email is one identity`; recovery assertions: only matching provisional data moves, ids survive, confirmed/staff/blocked records do not move, source sessions and in-flight enrollment fail, parallel recovery has one target, plain typed email gives no existing-account session.
 - [ ] **Step 2: Run** `pnpm --filter @xstore/api test:int`. Expected: FAIL on new behavior.
@@ -223,11 +223,11 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
 
 **Files:**
 - Create: `apps/api/src/devices/{devices.module,devices.controller,devices.service}.ts`
-- Modify: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/auth/session.service.ts` (sliding expiry, `lastSeenAt`), `packages/shared/src/client.ts`
+- Modify: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/auth/auth.controller.ts`, `apps/api/src/auth/auth.guard.ts`, `apps/api/src/auth/roles.decorator.ts`, `apps/api/src/auth/session.service.ts` (sliding expiry, `lastSeenAt`), `apps/web/src/auth/session.ts`, `packages/shared/src/client.ts`
 - Test: `apps/api/test/devices.int.test.ts`, `apps/api/test/profile.int.test.ts`
 
 **Interfaces:**
-- Produces (all `@RequireAuth()`, user sessions only):
+- Produces (all user endpoints use `@RequireUser()`; staff sessions are explicitly rejected):
   - `GET /devices` → `{ devices: DeviceView[]; currentDeviceId: string | null }` (`currentDeviceId` from the session).
   - `PATCH /devices/:id { name }` (1–40 chars, trimmed) → `DeviceView`; another user's device → 404.
   - `GET /devices/:id/installs` → `Page<{ app: AppCard; createdAt }>` (empty until M4).
@@ -237,7 +237,7 @@ it('openssl agrees', async () => { /* `openssl cms -verify -CAfile ca.pem -infor
   - `SessionService.resolve` extends user sessions per Global Constraints and updates `lastSeenAt` at most every 5 minutes; when extended, `AuthGuard` re-sets the cookie.
   - Client methods: `me()`, `devices()`, `renameDevice()`, `deviceInstalls()`, `profile()`, `sessions()`, `revokeSession()`, `requestEmailCode()`, `verifyEmailCode()`, `linkEmail*()`, `completeEnrollment()`, `logout()`.
 
-- [ ] **Step 1: Write the failing tests** — `lists only my devices`, `rename validates length`, `cannot rename a foreign device (404)`, `revoking a session signs that browser out`, `session is extended when half-expired`.
+- [ ] **Step 1: Write the failing tests** — `staff session is rejected by user-only endpoints`, `/auth/me returns the shared nested contract for staff and user sessions`, `lists only my devices`, `rename validates length`, `cannot rename a foreign device (404)`, `revoking a session signs that browser out`, `user cookie renews when half-expired`, `staff expiry is unchanged`, `renewed cookie is Secure behind HTTPS proxy`.
 - [ ] **Step 2: Run them to verify they fail.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them to verify they pass.** Expected: PASS.

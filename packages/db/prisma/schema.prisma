@@ -297,8 +297,8 @@ model InstallEvent {
   id        String   @id @default(cuid())
   appId     String
   app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
-  deviceId  String
-  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId  String?
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@index([appId, createdAt])

@@ -23,5 +23,5 @@ export type StaffLogin = z.infer<typeof staffLoginSchema>;
 
 export type MeResponse = {
   user: { id: string; email: string | null; role: Role };
-  kind: 'user' | 'staff';
+  session: { kind: 'user' | 'staff'; deviceId: string | null };
 };

@@ -35,3 +35,10 @@ it('checks the role', () => {
 it('requires a staff session for staff roles', () => {
   expect(status(() => checkAccess(ctx('admin', 'user'), false, ['admin']))).toBe(403);
 });
+
+it('restricts user-only routes to user sessions', () => {
+  expect(status(() => checkAccess(null, false, undefined, true))).toBe(401);
+  expect(status(() => checkAccess(ctx('user', 'user'), false, undefined, true))).toBeUndefined();
+  expect(status(() => checkAccess(ctx('admin', 'staff'), false, undefined, true))).toBe(403);
+  expect(status(() => checkAccess(ctx('user', 'staff'), false, undefined, true))).toBe(403);
+});

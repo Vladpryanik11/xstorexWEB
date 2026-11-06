@@ -4,7 +4,7 @@ import type { Role } from '@xstore/db';
 import { ErrorCode } from '@xstore/shared';
 import { DomainError } from '../common/domain-error.js';
 import { type AuthContext, type HttpReq, type HttpRes, header } from '../common/http.js';
-import { REQUIRE_AUTH_KEY, ROLES_KEY } from './roles.decorator.js';
+import { REQUIRE_AUTH_KEY, REQUIRE_USER_KEY, ROLES_KEY } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
 import { readCookie, SESSION_COOKIE, sessionCookie } from './session-cookie.js';
 
@@ -13,9 +13,12 @@ export function checkAccess(
   auth: AuthContext | null,
   requireAuth: boolean,
   roles: Role[] | undefined,
+  requireUser = false,
 ): void {
-  if (!requireAuth && !roles) return;
+  if (!requireAuth && !requireUser && !roles) return;
   if (!auth) throw new DomainError(ErrorCode.UNAUTHORIZED, 401);
+  if (requireUser && (auth.role !== 'user' || auth.kind !== 'user'))
+    throw new DomainError(ErrorCode.FORBIDDEN, 403);
   if (!roles) return;
   if (!roles.includes(auth.role)) throw new DomainError(ErrorCode.FORBIDDEN, 403);
   if (auth.role !== 'user' && auth.kind !== 'staff')
@@ -44,7 +47,11 @@ export class AuthGuard implements CanActivate {
       targets,
     );
     const roles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES_KEY, targets);
-    checkAccess(req.auth, requireAuth === true, roles);
+    const requireUser = this.reflector.getAllAndOverride<boolean | undefined>(
+      REQUIRE_USER_KEY,
+      targets,
+    );
+    checkAccess(req.auth, requireAuth === true, roles, requireUser === true);
     return true;
   }
 }
