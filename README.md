@@ -1,6 +1,12 @@
 # Xstore
 
-Магазин IPA-приложений для iPhone с установкой из Safari: вход по UDID, регистрация устройств в пуле аккаунтов Apple Developer, серверная подпись (zsign), OTA-установка, тарифы и оплата через Platega, админка. Подробности: `docs/superpowers/specs/2026-11-02-xstore-design.md`.
+Магазин IPA-приложений для iPhone с установкой из Safari: публичный каталог, подписки, подключение iPhone по UDID, регистрация устройств в пуле аккаунтов Apple Developer, серверная подпись (zsign), OTA-установка, тарифы и оплата через Platega, админка. Подробности: `docs/superpowers/specs/2026-11-02-xstore-design.md`.
+
+## План покупки и входа
+
+Обновлённые сценарии: [покупка подписки и подключение iPhone](docs/superpowers/specs/2026-11-06-purchase-and-activation-design.md). Первая покупка проходит без обязательного входа и UDID; подписка активируется сразу после подтверждения оплаты. Подключение устройства выполняется позже и не меняет оплаченный период. Вход и восстановление — по коду на почту.
+
+Три сценария и их проверки: [M5, задачи 7–9](docs/superpowers/plans/2026-11-05-m5-billing.md). Основа аккаунта и подключения: [M2](docs/superpowers/plans/2026-11-05-m2-auth-cabinet.md). Это план будущей реализации; текущий публичный каталог ещё не выполняет пользовательский checkout.
 
 Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA, только для Node), `infra/`.
 

@@ -13,6 +13,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-02-xstore-design.md` — §3.1 (`signing`, `install`, `storage`), §4.3, §4.6 step 2 («кэш SignedBuild аккаунта сбрасывается»), §5 («Подпись и установка»), §6.3 (`/app/[slug]` button, `/devices` history, admin «задачи подписи, панель очередей bull-board»), §7 (one-time tokens, 15-minute links, zsign limits), §8, §9 («Подпись» test) → M4. Builds on M1 (`AppVersion`, buckets), M2 (devices, sessions with `deviceId`), M3 (certificates, profiles, `includedInRevision`, `invalidateAccountBuilds` stub).
 
+**Purchase revision:** [2026-11-06 design](../specs/2026-11-06-purchase-and-activation-design.md). Final M5 behavior: guest Install opens a subscription offer; an active unassigned subscription opens device connection; ready subscribers install directly. Paid access starts before Apple readiness. M4 transitional behavior does not impose login/UDID as a permanent payment prerequisite.
+
 ## Owner decisions this plan depends on
 
 1. **Token reuse window.** iOS sometimes fetches the manifest twice. The token is consumed at the first fetch, and the same IP + User-Agent may fetch it again within 120 seconds. After that the link answers 410.
@@ -23,6 +25,8 @@
 ## Global Constraints
 
 - All M0–M3 Global Constraints hold.
+- Physical Apple readiness and subscription validity are separate. M5 scopes paid rights through Subscription.deviceId; neither User-wide rights nor a paid order alone authorize installation.
+- M2 verified recovery must transfer signing-job ownership for claimed provisional purchases and revoke outstanding install tokens belonging to retired source identities; it must not create UDID-only login.
 - Install token: 32 random bytes base64url; the DB stores its SHA-256; lifetime 1 hour; bound to user and device.
 - Presigned IPA links: `S3_PUBLIC_URL` host (`dl.xstorex.ru`), 15 minutes, `response-content-type=application/octet-stream`.
 - Manifest URL: `${SITE_URL}/api/v1/install/<token>/manifest.plist`; `itms-services://?action=download-manifest&url=<encodeURIComponent(manifestUrl)>`.
@@ -55,7 +59,7 @@
   - `SignedBuild { id; sourceKey String; accountId; certificateId; profileRevision Int; ipaKey; sizeBytes BigInt; createdAt; lastUsedAt }`, `@@unique([sourceKey, certificateId, profileRevision])`.
   - `InstallToken { tokenHash String @id; userId; deviceId; signedBuildId String?; buildKey String?; appVersionId String?; title String; bundleId String; bundleVersion String; icon57Url String?; icon512Url String?; expiresAt; usedAt DateTime?; usedIp String?; usedUa String? }` (`buildKey` and the copied metadata let M6 reuse tokens for Signer builds).
 - Produces (`@xstore/shared`):
-  - `canInstall(input: { device: { status: DeviceStatus }; app: { status: AppStatus; accessLevel: string }; version: { status: VersionStatus; encrypted: boolean } | null; entitlements: EntitlementLike[] ; now: Date }): { ok: true } | { ok: false; reason: InstallDenial }` with `InstallDenial = 'DEVICE_NOT_ACTIVE' | 'APP_NOT_AVAILABLE' | 'NOT_ENTITLED'`. M4 rule: device `active`; app `published` with a published, unencrypted version; `accessLevel` `free` passes, `addon:*` → `NOT_ENTITLED`. `EntitlementLike` is `{ kind: 'device' | 'addon'; planCode: string; expiresAt: Date }`; M5 changes the rule, not the signature.
+  - `canInstall(input: { device: { status: DeviceStatus }; app: { status: AppStatus; accessLevel: string }; version: { status: VersionStatus; encrypted: boolean } | null; entitlements: EntitlementLike[] ; now: Date }): { ok: true } | { ok: false; reason: InstallDenial }` with `InstallDenial = 'DEVICE_NOT_ACTIVE' | 'APP_NOT_AVAILABLE' | 'NOT_ENTITLED'`. M4 rule: device `active`; app `published` with a published, unencrypted version; `accessLevel` `free` passes, `addon:*` → `NOT_ENTITLED`. `EntitlementLike` is `{ kind: 'device' | 'addon'; planCode: string; expiresAt: Date }`; M5 changes the paid rule, not this signature; its caller loads only the selected device subscription rights, with startsAt/expiresAt.
   - Codes: `DEVICE_NOT_ACTIVE` «Устройство ещё не готово к установке», `APP_NOT_AVAILABLE` «Приложение сейчас недоступно», `NOT_ENTITLED` «Для этого приложения нужен тариф», `SIGNING_FAILED` «Не удалось подписать приложение, мы уже разбираемся», `INSTALL_LINK_EXPIRED` «Ссылка установки устарела», `INSTALL_LINK_USED` «Ссылка установки уже использована».
   - `SigningEvent = { type: 'progress'; percent: number } | { type: 'done' } | { type: 'failed'; code: ErrorCode; message: string }`.
 
@@ -226,7 +230,7 @@ it('active device can install', () => { /* → install */ });
 it('two active devices and no current one asks to pick', () => { /* InstallButton renders DevicePicker on tap */ });
 // e2e/install.spec.ts — seeded active device, fake ASC account, copy-script zsign
 test('install shows progress, then an itms-services link', async ({ page }) => {
-  // sign in by simulated iOS response, open an app, tap «Установить», see «Подписываем», then a link starting with itms-services://
+  // sign in by email, connect with simulated iOS response, open an app and tap «Установить»; assert progress then itms-services://
 });
 test('the manifest behind the link is valid', async ({ request }) => { /* fetch manifest URL from the link → plist with bundle-identifier */ });
 ```
@@ -237,6 +241,8 @@ test('the manifest behind the link is valid', async ({ request }) => { /* fetch 
 - [ ] **Step 5: Commit** — `git commit -m "feat(web): install button with signing progress and install history"`
 
 ---
+
+**M5 integration acceptance:** active subscription without a device shows «Подключить iPhone», not payment; processing device shows active subscription dates plus Apple status; missing/expired rights offer purchase/renewal; a current device cannot borrow another subscription. Scenario 3 tests live in M5 Task 9. Recheck rights when issuing the final install token after signing, including expiration during the job.
 
 ### Task 7: Admin signing jobs and bull-board
 
