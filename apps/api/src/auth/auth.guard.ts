@@ -1,10 +1,12 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Role } from '@xstore/db';
 import { ErrorCode } from '@xstore/shared';
 import { DomainError } from '../common/domain-error.js';
 import { type AuthContext, type HttpReq, type HttpRes, header } from '../common/http.js';
 import { REQUIRE_AUTH_KEY, REQUIRE_USER_KEY, ROLES_KEY } from './roles.decorator.js';
+import type { AppConfig } from '../config/config.js';
+import { APP_CONFIG } from '../config/tokens.js';
 import { SessionService } from './session.service.js';
 import { readCookie, SESSION_COOKIE, sessionCookie } from './session-cookie.js';
 
@@ -28,10 +30,15 @@ export function checkAccess(
 /** Global: resolves the session cookie into `req.auth`, then enforces route metadata. */
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly secureCookie: boolean;
+
   constructor(
+    @Inject(APP_CONFIG) config: AppConfig,
     private readonly reflector: Reflector,
     private readonly sessions: SessionService,
-  ) {}
+  ) {
+    this.secureCookie = config.siteUrl.startsWith('https:');
+  }
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<HttpReq>();
@@ -41,7 +48,7 @@ export class AuthGuard implements CanActivate {
     // Reissue the database expiry on browser-facing requests too: an SSR /auth/me
     // call can renew the session before the browser receives its Set-Cookie header.
     if (token && req.auth?.role === 'user' && req.auth.kind === 'user' && req.auth.expiresAt) {
-      res.setHeader('Set-Cookie', sessionCookie(token, req.auth.expiresAt, req.secure === true));
+      res.setHeader('Set-Cookie', sessionCookie(token, req.auth.expiresAt, this.secureCookie));
     }
     const targets = [ctx.getHandler(), ctx.getClass()];
     const requireAuth = this.reflector.getAllAndOverride<boolean | undefined>(
