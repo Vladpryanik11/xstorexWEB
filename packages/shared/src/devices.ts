@@ -13,9 +13,7 @@ export type DeviceStatus = z.infer<typeof deviceStatusSchema>;
 export const enrollmentStatusSchema = z.enum(['pending', 'completed', 'failed', 'expired']);
 export type EnrollmentStatus = z.infer<typeof enrollmentStatusSchema>;
 
-export const udidSchema = z
-  .string()
-  .regex(/^([0-9a-f]{40}|[0-9A-F]{8}-[0-9A-F]{16})$/);
+export const udidSchema = z.string().regex(/^([0-9a-f]{40}|[0-9A-F]{8}-[0-9A-F]{16})$/);
 
 export function maskUdid(udid: string): string {
   if (!udidSchema.safeParse(udid).success) return '••••';

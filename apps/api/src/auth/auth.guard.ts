@@ -4,9 +4,9 @@ import type { Role } from '@xstore/db';
 import { ErrorCode } from '@xstore/shared';
 import { DomainError } from '../common/domain-error.js';
 import { type AuthContext, type HttpReq, type HttpRes, header } from '../common/http.js';
-import { REQUIRE_AUTH_KEY, REQUIRE_USER_KEY, ROLES_KEY } from './roles.decorator.js';
 import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
+import { REQUIRE_AUTH_KEY, REQUIRE_USER_KEY, ROLES_KEY } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
 import { readCookie, SESSION_COOKIE, sessionCookie } from './session-cookie.js';
 
