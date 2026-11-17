@@ -134,3 +134,23 @@ test('install banner never covers the end of the page at 390px', async ({ page }
     }
   }
 });
+
+test('icon opens a morphing preview; Escape closes it and returns focus', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const trigger = page
+    .getByRole('button', { name: 'Быстрый просмотр: Тестовое приложение 1' })
+    .first();
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Подробнее' })).toHaveAttribute(
+    'href',
+    '/app/testovoe-prilozhenie-1',
+  );
+  await expect(dialog.getByRole('link', { name: 'Установить' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

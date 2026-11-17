@@ -1,0 +1,147 @@
+/* After Motion Primitives «Morphing Dialog» (https://motion-primitives.com/docs/morphing-dialog), MIT. */
+
+.trigger {
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 22.5%;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.icon,
+.bigIcon {
+  display: block;
+  line-height: 0;
+}
+
+.layer {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--x-gutter);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(242, 248, 253, 0.6);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.card {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  justify-items: center;
+  gap: 0.375rem;
+  width: min(22rem, 100%);
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: var(--x-radius-panel);
+  background: var(--x-white);
+  box-shadow: var(--x-shadow);
+  color: var(--x-text);
+  text-align: center;
+}
+
+.bigIcon {
+  margin-bottom: 0.625rem;
+}
+
+.name {
+  margin: 0;
+  font: 600 1.25rem / 1.25 var(--x-font);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--x-text-2);
+  font: 400 0.9375rem / 1.35 var(--x-font);
+}
+
+.actions {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+.install,
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  border-radius: var(--x-radius-pill);
+  font: 600 0.9375rem var(--x-font);
+  text-decoration: none;
+  transition:
+    background-color 0.16s,
+    transform 0.16s var(--x-ease);
+}
+
+.install {
+  background: var(--x-blue);
+  color: var(--x-white);
+  box-shadow: 0 6px 14px -6px var(--x-blue);
+}
+
+.more {
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+}
+
+.install:active,
+.more:active {
+  transform: scale(0.97);
+}
+
+.close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+  cursor: pointer;
+}
+
+.install:focus-visible,
+.more:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .install:hover {
+    background: var(--x-blue-deep);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install,
+  .more {
+    transition: none;
+  }
+
+  .install:active,
+  .more:active {
+    transform: none;
+  }
+}

@@ -9,13 +9,16 @@ export type AppRowProps = {
   subtitle?: string;
   /** Rendered next to the link, never inside it (no nested interactive elements). */
   action?: ReactNode;
+  /** Replaces the icon inside the link, e.g. a preview button; rendered before the link. */
+  iconSlot?: ReactNode;
 };
 
-export function AppRow({ href, iconSrc, name, subtitle, action }: AppRowProps) {
+export function AppRow({ href, iconSrc, name, subtitle, action, iconSlot }: AppRowProps) {
   return (
     <div className={styles.row}>
+      {iconSlot}
       <a href={href} className={styles.link}>
-        <AppIcon src={iconSrc} alt="" size={56} />
+        {iconSlot ? null : <AppIcon src={iconSrc} alt="" size={56} />}
         <span className={styles.text}>
           <span className={styles.name}>{name}</span>
           {subtitle ? <span className={styles.subtitle}>{subtitle}</span> : null}
