@@ -1,0 +1,47 @@
+/* After Magic UI «Border Beam» (https://magicui.design/docs/components/border-beam), MIT. */
+
+@property --beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.root {
+  position: relative;
+  border-radius: var(--x-radius-panel);
+}
+
+.beam {
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg,
+    transparent 280deg,
+    var(--x-sky-200) 320deg,
+    var(--x-blue) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+  animation: beam 4s linear infinite;
+}
+
+@keyframes beam {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    animation: none;
+  }
+}

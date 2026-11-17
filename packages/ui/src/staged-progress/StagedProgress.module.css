@@ -1,0 +1,53 @@
+/* After 21st.dev «Staged Progress Bar» (https://21st.dev/@dhxwhy/components/staged-progress-bar). */
+
+.root {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font: 500 0.875rem / 1.3 var(--x-font);
+}
+
+.stage {
+  color: var(--x-text);
+}
+
+.pct {
+  color: var(--x-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.segment {
+  position: relative;
+  flex: 1;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-50);
+}
+
+.segment::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--x-blue), var(--x-sky-400));
+  transform: scaleX(var(--fill));
+  transform-origin: left center;
+  transition: transform 0.4s var(--x-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment::after {
+    transition: none;
+  }
+}

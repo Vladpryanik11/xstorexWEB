@@ -1,5 +1,6 @@
 import '@xstore/ui/tokens.css';
 import './globals.css';
+import { Toaster } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <SessionRenewal />
         {children}
+        <Toaster />
       </body>
     </html>
   );
