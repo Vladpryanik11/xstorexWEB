@@ -1,6 +1,7 @@
 import {
   AppIcon,
   AppRow,
+  BorderBeam,
   Button,
   Chip,
   Cover,
@@ -15,14 +16,18 @@ import {
   RowsGrid,
   SearchField,
   SectionTitle,
+  SIGNING_STAGES,
   SpotBanner,
+  StagedProgress,
   Stars,
+  Stepper,
 } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Footer } from '../../../src/shell/Footer';
 import { Header } from '../../../src/shell/Header';
 import styles from './page.module.css';
+import { ToastDemo } from './ToastDemo';
 
 export const metadata: Metadata = { title: 'UI', robots: { index: false, follow: false } };
 
@@ -204,6 +209,30 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
                 { label: 'Версия', value: '2.4.1' },
               ]}
             />
+          </section>
+
+          <section className={styles.section}>
+            <SectionTitle>Установка и подключение</SectionTitle>
+            <BorderBeam className={styles.card}>
+              <StagedProgress stages={SIGNING_STAGES} value={60} />
+            </BorderBeam>
+            <div className={styles.card}>
+              <Stepper
+                label="Подключение iPhone"
+                current={1}
+                steps={[
+                  {
+                    title: 'Откройте сайт в Safari',
+                    description: 'Профиль ставится только из Safari.',
+                  },
+                  { title: 'Скачайте профиль', description: 'Он передаст UDID вашего iPhone.' },
+                  { title: 'Установите профиль', description: 'Настройки → Профиль загружен.' },
+                ]}
+              />
+            </div>
+            <div className={styles.row}>
+              <ToastDemo />
+            </div>
           </section>
         </div>
       </main>

@@ -1,0 +1,50 @@
+/* After Magic UI «Progressive Blur» (https://magicui.design/docs/components/progressive-blur), MIT. */
+
+.root {
+  --dir: to right;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  transition:
+    opacity 0.2s var(--x-ease),
+    visibility 0s linear 0s;
+}
+
+.root[data-side="start"] {
+  --dir: to left;
+  inset-inline-start: 0;
+}
+
+.root[data-side="end"] {
+  inset-inline-end: 0;
+}
+
+/* Hidden edges stop painting their backdrop once faded out. */
+.root[data-visible="false"] {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.2s var(--x-ease),
+    visibility 0s linear 0.2s;
+}
+
+.root span {
+  position: absolute;
+  inset: 0;
+}
+
+.root span {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask-image: linear-gradient(var(--dir), transparent 0%, #000 100%);
+  mask-image: linear-gradient(var(--dir), transparent 0%, #000 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
+}

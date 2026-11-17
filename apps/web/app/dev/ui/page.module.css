@@ -1,15 +1,14 @@
 /* Dev showcase layout only. */
 
 .hero {
-  margin-top: -3.75rem;
-  padding: calc(3.75rem + 1.125rem) var(--x-gutter) 1.6875rem;
-  background: linear-gradient(var(--x-ink), #0c45b7);
+  padding: calc(4.25rem + env(safe-area-inset-top, 0px) + 1.5rem) var(--x-gutter) 2rem;
+  background: linear-gradient(180deg, var(--x-sky-50), var(--x-ice));
 }
 
 .heroTitle {
   max-width: 20.5rem;
   margin: 0 0 1.5rem;
-  color: #fff;
+  color: var(--x-text);
   font-size: 1.875rem;
   font-weight: 500;
   line-height: 1.19;
@@ -19,7 +18,7 @@
   box-sizing: content-box;
   max-width: var(--x-page-max);
   margin-inline: auto;
-  padding: 1.5rem 0 6rem; /* room for the floating install banner */
+  padding: 1.5rem 0 2rem;
 }
 
 .section {
@@ -45,8 +44,16 @@
 .glassPanel {
   margin-inline: var(--x-gutter);
   padding: 1.5rem var(--x-gutter);
-  border-radius: var(--x-radius-card);
-  background: var(--x-header-gradient);
+  border-radius: var(--x-radius-panel);
+  background: var(--x-sky-50);
+}
+
+.card {
+  margin-inline: var(--x-gutter);
+  padding: 1.25rem;
+  border-radius: var(--x-radius-panel);
+  background: var(--x-white);
+  box-shadow: var(--x-shadow);
 }
 
 .tile {

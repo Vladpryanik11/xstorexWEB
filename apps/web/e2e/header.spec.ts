@@ -1,79 +1,117 @@
-import { expect, type Locator, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 
-const css = (loc: Locator, prop: string) =>
-  loc.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
+const css = (loc: Locator, prop: string, pseudo?: string) =>
+  loc.evaluate((el, [p, ps]) => getComputedStyle(el, ps ?? null).getPropertyValue(p as string), [
+    prop,
+    pseudo,
+  ] as const);
 
-test('header matches the reference values (desktop)', async ({ page }) => {
+const noHorizontalScroll = (page: Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+
+const pill = (page: Page) => page.locator('header').first().locator('> div').first();
+
+test('floating white glass pill (desktop)', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/dev/ui?auth=1&path=/devices');
   const header = page.locator('header').first();
-  expect((await header.boundingBox())?.height).toBe(60);
-  expect(await css(header, 'background-image')).toContain('linear-gradient(rgb(12, 69, 183) 0%');
+  const box = await pill(page).boundingBox();
+  expect(box?.y).toBeGreaterThanOrEqual(12);
+  expect(box?.height).toBe(56);
+  expect(await css(pill(page), 'border-radius')).toBe('999px');
+  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.78)');
+  expect(await css(header, 'background-image')).toBe('none');
+  await expect(page.locator('header [aria-hidden="true"][class*="tint"]')).toHaveCount(0);
+
   const active = page.getByRole('link', { name: 'Ваши устройства' });
-  expect(await css(active, 'background-color')).toBe('rgba(255, 255, 255, 0.2)');
-  expect(await css(active, 'font-size')).toBe('14px');
-  expect(await css(active, 'font-weight')).toBe('500');
-  expect(await css(page.getByRole('link', { name: 'Профиль' }), 'color')).toBe(
-    'rgb(230, 237, 251)',
+  await expect(active).toHaveAttribute('aria-current', 'page');
+  await expect(active).toHaveCSS('color', 'rgb(15, 95, 214)');
+  await expect(active.locator('[data-nav-highlight]')).toHaveCSS(
+    'background-color',
+    'rgb(227, 237, 253)',
   );
-  expect(await css(page.getByRole('link', { name: 'Выйти' }), 'color')).toBe(
-    'rgba(230, 237, 251, 0.72)',
-  );
+  await expect(page.getByRole('link', { name: 'Выйти' })).toHaveCSS('color', 'rgb(95, 107, 133)');
+  expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test('6px tint strip sits fixed at the very top', async ({ page }) => {
-  await page.goto('/');
-  const tint = page.locator('header > div[aria-hidden="true"]');
-  await expect(tint).toHaveCount(1);
-  expect(await css(tint, 'position')).toBe('fixed');
-  expect(await css(tint, 'height')).toBe('6px');
-  expect(await css(tint, 'background-color')).toBe('rgb(12, 69, 183)');
-  const box = await tint.boundingBox();
-  expect(box?.y).toBe(0);
-  expect(box?.height).toBe(6);
+test('highlight follows the hovered item and returns to the active one', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/dev/ui?auth=1&path=/devices');
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  await nav.getByRole('link', { name: 'Блог' }).hover();
+  await expect(nav.getByRole('link', { name: 'Блог' }).locator('[data-nav-highlight]')).toHaveCount(
+    1,
+  );
+  await page.mouse.move(5, 700);
+  await expect(
+    nav.getByRole('link', { name: 'Ваши устройства' }).locator('[data-nav-highlight]'),
+  ).toHaveCount(1);
 });
+
+test('pill narrows after scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, 400));
+  await expect(page.locator('header').first()).toHaveAttribute('data-scrolled', 'true');
+  await expect.poll(async () => (await pill(page).boundingBox())?.height).toBe(48);
+  await expect.poll(async () => (await pill(page).boundingBox())?.width).toBeLessThanOrEqual(896);
+});
+
+for (const width of [390, 768, 1280]) {
+  test(`no horizontal scroll at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/dev/ui?auth=1&path=/devices');
+    expect(await noHorizontalScroll(page)).toBe(true);
+  });
+}
 
 test('auth header fits at 768px', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto('/dev/ui?auth=1&path=/devices');
-  expect((await page.locator('header').first().boundingBox())?.height).toBe(60);
+  expect((await pill(page).boundingBox())?.height).toBe(56);
   await expect(page.getByRole('link', { name: 'Ваши устройства' })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('no horizontal overflow at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto('/dev/ui');
   await expect(page.getByRole('button', { name: 'Меню' })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test('side sheet closes on Escape', async ({ page }) => {
+test('card menu opens under the pill and closes on Escape', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/dev/ui?auth=1');
   const burger = page.getByRole('button', { name: 'Меню' });
   await burger.click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('dialog').getByRole('link', { name: 'Профиль' })).toBeVisible();
+  const menu = page.getByRole('dialog');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('group')).toHaveCount(3);
+  const pillBox = await pill(page).boundingBox();
+  const firstCard = await menu.getByRole('group').first().boundingBox();
+  expect(firstCard?.y).toBeGreaterThan((pillBox?.y ?? 0) + (pillBox?.height ?? 0));
+  await expect(menu.getByRole('link', { name: 'Профиль' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(menu).toBeHidden();
   await expect(burger).toBeFocused();
 });
 
-test('focus ring stays visible on the open side sheet', async ({ page }) => {
+test('focus ring stays visible in the open card menu', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/dev/ui');
   const burger = page.getByRole('button', { name: 'Меню' });
   await burger.click();
   const links = page.getByRole('dialog').getByRole('link');
   await expect(links.first()).toBeFocused();
-  // Tab from the last sheet link wraps to the burger, which now sits white on the light sheet.
   await links.last().focus();
   await page.keyboard.press('Tab');
   await expect(burger).toBeFocused();
   expect(await burger.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
-  // toHaveCSS retries, so the .22s background transition can settle first.
-  await expect(burger).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(burger).toHaveCSS('outline-style', 'solid');
   await expect(burger).toHaveCSS('outline-color', 'rgb(34, 118, 243)');
+});
+
+test('iPhone status bar matches the ice page', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
 });

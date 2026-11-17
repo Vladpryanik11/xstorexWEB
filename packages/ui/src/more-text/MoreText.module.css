@@ -23,7 +23,7 @@
   bottom: 0;
   padding: 0 0 0 2.5rem;
   border: 0;
-  background: linear-gradient(to right, transparent, var(--x-page) 2rem);
+  background: linear-gradient(to right, transparent, var(--x-ice) 2rem);
   color: var(--x-link);
   font: 500 15px / 1.45 var(--x-font);
   cursor: pointer;

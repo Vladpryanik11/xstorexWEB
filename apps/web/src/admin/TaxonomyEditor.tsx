@@ -1,10 +1,12 @@
 'use client';
 import type { AdminAppListItem, AdminCategory, AdminCollection, Page } from '@xstore/shared';
+import { toast } from '@xstore/ui';
 import Link from 'next/link';
 import { useState } from 'react';
 import s from './admin.module.css';
 import { adminRequest, errorText, mutate, statusLabel } from './api';
 import { FormField } from './FormField';
+import { Switch } from './Switch';
 
 function moved<T>(items: T[], index: number, delta: number): T[] {
   const copy = [...items];
@@ -69,10 +71,9 @@ function CollectionFields({ value }: { value?: AdminCollection }) {
           defaultValue={value?.limit ?? 12}
         />
       </FormField>
-      <label>
-        <input type="checkbox" name="onHome" defaultChecked={value?.onHome ?? true} /> Показывать на
-        главной
-      </label>
+      <Switch name="onHome" defaultChecked={value?.onHome ?? true}>
+        Показывать на главной
+      </Switch>
     </div>
   );
 }
@@ -93,17 +94,16 @@ export function CategoriesEditor({ initial }: { initial: AdminCategory[] }) {
   const [rows, setRows] = useState(initial);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
   const load = async () => setRows(await adminRequest('/admin/categories'));
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError('');
-    setMessage('');
     try {
       await action();
-      setMessage('Сохранено');
+      toast('Сохранено');
     } catch (err) {
       setError(errorText(err));
+      toast.error(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -147,7 +147,6 @@ export function CategoriesEditor({ initial }: { initial: AdminCategory[] }) {
     <>
       <h1>Категории</h1>
       {error && <p role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
       <section className={s.card}>
         <h2>Добавить категорию</h2>
         <form
@@ -244,6 +243,7 @@ export function CollectionsEditor({ initial }: { initial: AdminCollection[] }) {
       await action();
     } catch (err) {
       setError(errorText(err));
+      toast.error(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -327,16 +327,15 @@ export function CollectionEditor({ initial }: { initial: AdminCollection }) {
   const [results, setResults] = useState<AdminAppListItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError('');
-    setMessage('');
     try {
       await action();
-      setMessage('Сохранено');
+      toast('Сохранено');
     } catch (err) {
       setError(errorText(err));
+      toast.error(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -345,7 +344,6 @@ export function CollectionEditor({ initial }: { initial: AdminCollection }) {
     <>
       <h1>{collection.title}</h1>
       {error && <p role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
       <section className={s.card}>
         <h2>Настройки подборки</h2>
         <form
@@ -424,20 +422,18 @@ export function CollectionEditor({ initial }: { initial: AdminCollection }) {
           {items.map((item, i) => (
             <li key={item.appId}>
               <span>{item.name}</span>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={item.pinned}
-                  onChange={(e) =>
-                    setItems((list) =>
-                      list.map((x) =>
-                        x.appId === item.appId ? { ...x, pinned: e.target.checked } : x,
-                      ),
-                    )
-                  }
-                />{' '}
+              <Switch
+                checked={item.pinned}
+                onChange={(e) =>
+                  setItems((list) =>
+                    list.map((x) =>
+                      x.appId === item.appId ? { ...x, pinned: e.target.checked } : x,
+                    ),
+                  )
+                }
+              >
                 Закрепить
-              </label>
+              </Switch>
               <button
                 type="button"
                 disabled={busy || i === 0}

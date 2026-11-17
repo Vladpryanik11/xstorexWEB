@@ -7,20 +7,19 @@
   max-width: var(--x-column);
   min-height: 2.75rem;
   padding: 0 0.8125rem;
-  border-radius: 12.5rem;
-  color: var(--x-ink);
+  border-radius: var(--x-radius-pill);
+  color: var(--x-text);
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(7.5px);
-  box-shadow: 0 2px 15px rgba(33, 70, 128, 0.25);
+  background: var(--x-white);
+  box-shadow: var(--x-shadow);
 }
 
 .glass:focus-within {
   box-shadow:
-    0 2px 15px rgba(33, 70, 128, 0.25),
-    0 0 0 3px rgba(255, 255, 255, 0.55);
+    var(--x-shadow),
+    0 0 0 3px var(--x-sky-200);
 }
 
 .page {
@@ -51,7 +50,7 @@
 }
 
 .glass .input::placeholder {
-  color: #3a507a;
+  color: var(--x-text-2);
   opacity: 1;
 }
 

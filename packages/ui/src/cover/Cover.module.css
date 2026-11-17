@@ -2,8 +2,8 @@
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  border-radius: var(--x-radius-cover);
-  background: var(--x-surface);
+  border-radius: var(--x-radius-card);
+  background: var(--x-sky-50);
 }
 
 .cover::after {

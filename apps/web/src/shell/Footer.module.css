@@ -4,7 +4,7 @@
  */
 
 .footer {
-  background: var(--x-surface);
+  background: var(--x-sky-50);
   color: var(--x-text);
   font-family: var(--x-font);
   font-weight: 400;
@@ -60,7 +60,7 @@
   width: 2.125rem;
   height: 2.125rem;
   border-radius: 0.6875rem;
-  background: var(--x-card);
+  background: var(--x-white);
   box-shadow: 0 0.25rem 0.625rem rgba(140, 153, 177, 0.08);
   color: var(--x-link);
   -webkit-tap-highlight-color: transparent;
@@ -128,7 +128,7 @@
 
 .small {
   margin: 0;
-  color: #626771;
+  color: var(--x-text-2);
   font-size: 0.8125rem;
   line-height: 1.5;
 }

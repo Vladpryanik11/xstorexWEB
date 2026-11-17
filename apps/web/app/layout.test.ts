@@ -11,7 +11,7 @@ describe('root layout', () => {
       width: 'device-width',
       initialScale: 1,
       maximumScale: 1,
-      themeColor: '#0c45b7',
+      themeColor: '#f2f8fd',
     });
     // diyorde.com sets no viewport-fit: with `cover` landscape iPhone puts the logo under the notch.
     expect(viewport).not.toHaveProperty('viewportFit');

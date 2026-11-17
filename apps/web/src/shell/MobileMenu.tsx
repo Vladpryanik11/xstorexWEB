@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 import styles from './Header.module.css';
-import { isActive, type NavItem } from './nav';
+import { isActive, menuCards, type NavItem } from './nav';
 
 export type MobileMenuProps = {
   items: NavItem[];
@@ -15,6 +15,17 @@ export type MobileMenuProps = {
 
 // 24px line icons, drawn for Xstore.
 const strokes: Record<string, ReactNode> = {
+  '/': (
+    <>
+      <path d="M4.75 10.5 12 4.75l7.25 5.75v8.25a1.5 1.5 0 0 1-1.5 1.5h-3.5v-5.5h-4.5v5.5h-3.5a1.5 1.5 0 0 1-1.5-1.5z" />
+    </>
+  ),
+  '/search': (
+    <>
+      <circle cx="10.75" cy="10.75" r="6" />
+      <path d="m15.25 15.25 4 4" />
+    </>
+  ),
   '/install': (
     <>
       <rect x="4" y="4" width="16" height="16" rx="4.5" />
@@ -89,7 +100,12 @@ const LEAVE_MS = 220;
 /** From this width the menu row replaces the burger (the ≥48em block in Header.module.css). */
 const WIDE = '(min-width: 48em)';
 
-export function MobileMenu({ items, signedIn, forcedPath }: MobileMenuProps) {
+/**
+ * Phone menu: the header pill opens into a row of cards, adapted from React Bits «Card Nav»
+ * (https://reactbits.dev/components/card-nav). Keeps the modal dialog behaviour: focus trap,
+ * Escape, closing on navigation and on crossing 48em.
+ */
+export function MobileMenu({ signedIn, forcedPath }: MobileMenuProps) {
   const pathname = usePathname();
   const path = forcedPath ?? pathname;
   const [state, setState] = useState<'closed' | 'open' | 'leaving'>('closed');
@@ -204,13 +220,23 @@ export function MobileMenu({ items, signedIn, forcedPath }: MobileMenuProps) {
           inert={leaving || undefined}
         >
           <div className={styles.sheetBody}>
-            <ul className={styles.sheetList}>
-              {signedIn ? null : row('/install', 'Установить')}
-              {items.map((item) => row(item.href, item.label))}
-            </ul>
-            <ul className={styles.sheetList}>
-              {signedIn ? row('/signout', 'Выйти', true) : row('/signin', 'Войти', true)}
-            </ul>
+            {menuCards(signedIn).map((card, i) => (
+              // biome-ignore lint/a11y/useSemanticElements: a group of links, not form controls, so no <fieldset>
+              <div
+                key={card.title}
+                role="group"
+                aria-label={card.title}
+                className={styles.card}
+                style={{ animationDelay: `${60 + i * 50}ms` }}
+              >
+                <span className={styles.cardTitle} aria-hidden="true">
+                  {card.title}
+                </span>
+                <ul className={styles.sheetList}>
+                  {card.items.map((item) => row(item.href, item.label, item.quiet))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       )}

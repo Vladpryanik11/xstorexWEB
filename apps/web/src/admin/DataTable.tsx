@@ -5,13 +5,16 @@ export function DataTable({
   caption,
   headings,
   children,
+  stack = false,
 }: {
   caption: string;
   headings: string[];
   children: ReactNode;
+  /** Below 48em each row becomes a card; cells name themselves through `data-label`. */
+  stack?: boolean;
 }) {
   return (
-    <div className={s.tableScroll}>
+    <div className={stack ? `${s.tableScroll} ${s.stack}` : s.tableScroll}>
       <table className={s.table}>
         <caption>{caption}</caption>
         <thead>

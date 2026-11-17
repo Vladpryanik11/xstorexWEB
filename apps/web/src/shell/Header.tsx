@@ -1,27 +1,28 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
+import { HeaderFrame } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
 import { NavLinks } from './NavLinks';
 import { navItems } from './nav';
 
 export type HeaderProps = {
   signedIn: boolean;
-  /** Transparent over the home hero; the gradient fades in over the first 6rem of scroll. */
+  /** Home page: the pill floats over the hero, which starts under it. */
   overHero?: boolean;
   /** Overrides the current path (dev showcase). */
   forcedPath?: string;
 };
 
+/** Floating white glass pill (spec 2026-11-17 §5). */
 export function Header({ signedIn, overHero = false, forcedPath }: HeaderProps) {
   const items = navItems(signedIn);
 
   return (
-    <header className={overHero ? `${styles.header} ${styles.over}` : styles.header}>
-      <div className={styles.tint} aria-hidden="true" />
-      <div className={styles.inner}>
+    <HeaderFrame className={overHero ? `${styles.header} ${styles.over}` : styles.header}>
+      <div className={styles.pill}>
         <Link className={styles.mark} href="/" aria-label="Xstore, на главную">
-          {/* biome-ignore lint/performance/noImgElement: a 38px static SVG needs no optimisation */}
-          <img src="/brand/mark.svg" alt="" width={38} height={38} />
+          {/* biome-ignore lint/performance/noImgElement: a 36px static SVG needs no optimisation */}
+          <img src="/brand/mark.svg" alt="" width={36} height={36} />
         </Link>
         <nav className={styles.menu} aria-label="Основное меню">
           <NavLinks items={items} forcedPath={forcedPath} />
@@ -45,6 +46,6 @@ export function Header({ signedIn, overHero = false, forcedPath }: HeaderProps) 
           )}
         </div>
       </div>
-    </header>
+    </HeaderFrame>
   );
 }

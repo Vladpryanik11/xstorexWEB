@@ -6,6 +6,7 @@ import type {
   MediaKind,
   MediaUploadTicket,
 } from '@xstore/shared';
+import { toast } from '@xstore/ui';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -13,6 +14,7 @@ import s from './admin.module.css';
 import { blockerLabel, errorText, mutate, statusLabel } from './api';
 import { DataTable } from './DataTable';
 import { FormField } from './FormField';
+import { Switch } from './Switch';
 
 export function AppEditor({
   initial,
@@ -26,18 +28,17 @@ export function AppEditor({
   const [app, setApp] = useState(initial);
   const [versions, setVersions] = useState(initialVersions);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const root = `/admin/apps/${app.id}`;
   async function run(action: () => Promise<void>) {
     setBusy(true);
-    setMessage('');
     setError('');
     try {
       await action();
-      setMessage('Сохранено');
+      toast('Сохранено');
     } catch (err) {
       setError(errorText(err));
+      toast.error(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -69,7 +70,6 @@ export function AppEditor({
       <h1>{app.name}</h1>
       <p>Статус: {statusLabel[app.status]}</p>
       {app.status === 'published' && <Link href={`/app/${app.slug}`}>Открыть на сайте</Link>}
-      {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
       <section className={s.card} aria-labelledby="app-card">
         <h2 id="app-card">Карточка приложения</h2>
@@ -193,10 +193,9 @@ export function AppEditor({
               defaultValue={app.rightsBasis ?? ''}
             />
           </FormField>
-          <label>
-            <input name="removed" type="checkbox" defaultChecked={app.removedFromAppStore} />{' '}
+          <Switch name="removed" defaultChecked={app.removedFromAppStore}>
             Удалено из App Store
-          </label>
+          </Switch>
           <div>
             <button disabled={busy} type="submit">
               Сохранить карточку
@@ -287,17 +286,18 @@ export function AppEditor({
       <DataTable
         caption="Версии приложения"
         headings={['Версия', 'Файл', 'Изменения', 'Публикация']}
+        stack
       >
         {versions.map((v) => (
           <tr key={v.id}>
-            <td>
+            <td data-label="Версия">
               {v.version} ({v.build})<br />
               {v.minIos && `iOS ${v.minIos}+`}
             </td>
-            <td>
+            <td data-label="Файл">
               {Math.ceil(v.sizeBytes / 1024 ** 2)} МБ{v.encrypted && <p>Защищено FairPlay</p>}
             </td>
-            <td>
+            <td data-label="Изменения">
               <form
                 className={s.form}
                 onSubmit={(e) => {
@@ -320,7 +320,7 @@ export function AppEditor({
                 </button>
               </form>
             </td>
-            <td>
+            <td data-label="Публикация">
               <p>{statusLabel[v.status] ?? 'Отклонено'}</p>
               <button
                 type="button"

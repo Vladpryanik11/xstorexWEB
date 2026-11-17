@@ -1,97 +1,90 @@
-/*
- * Site header. Every value matches diyorde.com (xstore-design skill, "Header").
- * Literal colours that are not tokens are the reference's own header values.
- */
+/* Floating white glass pill — spec 2026-11-17-premium-ui-design.md §5.
+   Glass after React Bits «Glass Surface» (https://reactbits.dev/components/glass-surface),
+   narrowing after Aceternity «Resizable Navbar», phone menu after React Bits «Card Nav». */
 
 .header {
+  --pill-h: 3.5rem;
+  --pill-top: calc(0.75rem + env(safe-area-inset-top, 0px));
   position: sticky;
-  top: 0;
   z-index: 40;
-  background: var(--x-header-gradient);
+  top: 0;
+  padding: var(--pill-top) var(--x-gutter) 0;
   font-family: var(--x-font);
   font-weight: 400;
   letter-spacing: 0;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* 6px strip under the iOS status bar */
-.tint {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 5;
-  height: 0.375rem;
-  background-color: #0c45b7;
   pointer-events: none;
 }
 
-.inner {
-  box-sizing: content-box;
+/* Home: the hero starts under the pill instead of below it. */
+.over {
+  margin-bottom: calc(-1 * (var(--pill-h) + var(--pill-top)));
+}
+
+.pill {
+  position: relative;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   max-width: var(--x-page-max);
-  min-height: 2.5rem;
+  min-height: var(--pill-h);
   margin-inline: auto;
-  padding: 0.625rem var(--x-gutter);
+  padding: 0.5rem;
+  border-radius: var(--x-radius-pill);
+  pointer-events: auto;
+  transition:
+    max-width 0.32s var(--x-ease),
+    min-height 0.32s var(--x-ease),
+    padding 0.32s var(--x-ease);
+}
+
+/* The glass lives on a pseudo-element: a backdrop-filter on .pill itself would become the
+   containing block of the fixed phone menu inside it. */
+.pill::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    var(--x-shadow);
+  transition: background-color 0.32s var(--x-ease);
+}
+
+.header[data-scrolled="true"] .pill {
+  max-width: min(56rem, var(--x-page-max));
+  min-height: 3rem;
+  padding-block: 0.25rem;
+}
+
+.header[data-scrolled="true"] .pill::before {
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
 }
 
 .mark {
   display: block;
   flex: none;
-  width: 2.375rem;
-  height: 2.375rem;
-  border-radius: 0.625rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
 }
 
 .mark img {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 0.625rem;
+  border-radius: 50%;
+  box-shadow: var(--x-shadow-sm);
 }
-
-.mark:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
-
-/* Home variant: transparent over the hero, the gradient fades in over 6rem of scroll */
-.over {
-  background: transparent;
-}
-
-.over::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--x-header-gradient);
-  opacity: 0;
-  pointer-events: none;
-}
-
-@supports (animation-timeline: scroll()) {
-  .over::before {
-    animation: header-shade 1ms linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 6rem;
-  }
-}
-
-@keyframes header-shade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Menu row (≥48em) */
 
 .menu {
   position: relative;
@@ -120,34 +113,39 @@
 }
 
 .link {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 2.125rem;
-  padding: 0 0.75rem;
-  border-radius: 62.5rem;
-  color: #e6edfb;
-  transition: background-color 0.16s;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: var(--x-radius-pill);
+  color: var(--x-text);
+  transition: color 0.16s;
 }
 
 .link[aria-current="page"] {
-  background: var(--x-glass);
+  color: var(--x-quiet-fg);
+}
+
+.highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--x-sky-50);
+}
+
+.label {
+  position: relative;
 }
 
 .link:focus-visible,
 .entry:focus-visible,
 .quiet:focus-visible,
+.mark:focus-visible,
 .burger:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--x-blue-ring);
   outline-offset: 2px;
 }
-
-@media (hover: hover) and (pointer: fine) {
-  .link:hover {
-    background: rgba(255, 255, 255, 0.14);
-  }
-}
-
-/* End group */
 
 .end {
   display: flex;
@@ -163,12 +161,15 @@
   flex: none;
   align-items: center;
   min-height: 2.5rem;
-  padding: 0 1rem;
-  border-radius: 12.5rem;
-  background: var(--x-glass);
-  box-shadow: var(--x-glass-shadow);
-  color: #fff;
+  padding: 0 1.125rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-blue);
+  color: var(--x-white);
+  box-shadow: 0 6px 14px -6px var(--x-blue);
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.16s,
+    transform 0.16s var(--x-ease);
 }
 
 .entry:active {
@@ -179,8 +180,6 @@
   display: none;
 }
 
-/* Burger and side sheet (<48em) */
-
 .burger {
   position: relative;
   display: grid;
@@ -190,15 +189,18 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--x-glass);
-  box-shadow: var(--x-glass-shadow);
-  color: #fff;
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.22s,
+    transform 0.16s var(--x-ease);
 }
 
+/* 44px hit area. */
 .burger::after {
   content: "";
   position: absolute;
@@ -207,15 +209,6 @@
 
 .burger:active {
   transform: scale(0.95);
-}
-
-.entry,
-.burger {
-  transition:
-    background-color 0.22s,
-    color 0.22s,
-    box-shadow 0.22s,
-    transform 0.16s var(--x-ease);
 }
 
 .bars {
@@ -231,7 +224,7 @@
   width: 100%;
   height: 0.125rem;
   margin-top: -0.0625rem;
-  border-radius: 62.5rem;
+  border-radius: var(--x-radius-pill);
   background: currentColor;
   transition:
     transform 0.26s var(--x-ease),
@@ -259,45 +252,64 @@
   transform: rotate(-45deg);
 }
 
-/* Full-screen sheet painted under the header row (z-index -1 inside the header) */
+/* Card Nav: a glass panel springs open under the pill, the cards follow one by one. */
 .sheet {
   position: fixed;
+  z-index: -2;
   inset: 0;
-  z-index: -1;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  padding-top: 3.75rem;
-  background: var(--x-surface);
+  padding: calc(var(--pill-top) + var(--pill-h) + 0.5rem) var(--x-gutter)
+    calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(242, 248, 253, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: var(--x-text);
-  animation: sheet-in 0.32s var(--x-ease-sheet) both;
+  pointer-events: auto;
+  animation: backdrop-in 0.24s var(--x-ease) both;
 }
 
 .leaving {
-  animation: sheet-out 0.22s var(--x-ease-sheet) both;
+  animation: backdrop-out 0.22s var(--x-ease) both;
 }
 
 .sheetBody {
-  flex: auto;
-  min-height: 0;
-  padding: 1.5rem calc(var(--x-gutter) - 0.5rem) calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  gap: 0.5rem;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  border-radius: var(--x-radius-panel);
+  background: var(--x-white);
+  box-shadow: var(--x-shadow);
   overflow-y: auto;
   overscroll-behavior: contain;
+  transform-origin: top center;
+  animation: panel-in 0.42s var(--x-ease-sheet) both;
+}
+
+.leaving .sheetBody {
+  animation: panel-out 0.22s var(--x-ease) both;
+}
+
+.card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem 0.5rem;
+  border-radius: var(--x-radius-card);
+  background: var(--x-ice);
+  animation: card-in 0.36s var(--x-ease-sheet) both;
+}
+
+.cardTitle {
+  padding: 0 0.5rem;
+  color: var(--x-text-2);
+  font: 600 13px / 1.3 var(--x-system);
 }
 
 .sheetList {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.sheetList + .sheetList {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  background-image: linear-gradient(var(--x-hair), var(--x-hair));
-  background-repeat: no-repeat;
-  background-position: 0.5rem 0;
-  background-size: calc(100% - 1rem) var(--x-hairline);
 }
 
 .item {
@@ -311,13 +323,14 @@
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.36;
-  letter-spacing: 0;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 .item[aria-current="page"] {
-  background: var(--x-card);
+  background: var(--x-white);
+  color: var(--x-quiet-fg);
+  box-shadow: var(--x-shadow-sm);
 }
 
 .quietItem {
@@ -325,7 +338,7 @@
 }
 
 .item:active {
-  background: #e4e9f5;
+  background: var(--x-sky-50);
 }
 
 .item:focus-visible {
@@ -335,7 +348,11 @@
 
 @media (hover: hover) and (pointer: fine) {
   .item:hover {
-    background: #e9edf7;
+    background: var(--x-sky-50);
+  }
+
+  .entry:hover {
+    background: var(--x-blue-deep);
   }
 }
 
@@ -350,64 +367,51 @@
   color: var(--x-text-3);
 }
 
-@keyframes sheet-in {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: none;
-  }
-}
-
-@keyframes sheet-out {
-  from {
-    transform: none;
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes sheet-fade {
+@keyframes backdrop-in {
   from {
     opacity: 0;
   }
+}
+
+@keyframes backdrop-out {
   to {
-    opacity: 1;
+    opacity: 0;
   }
 }
 
-/* While the sheet is open the header row sits on the light sheet */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) scaleY(0.92);
+  }
+}
+
+@keyframes panel-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem) scaleY(0.96);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
 @media (max-width: 47.9375em) {
   .header:has(.sheet) {
     z-index: 70;
   }
-
-  .header:has(.sheet:not(.leaving)) .tint {
-    background-color: var(--x-surface);
-  }
-
-  .header:has(.sheet:not(.leaving)) .burger,
-  .header:has(.sheet:not(.leaving)) .entry {
-    background: var(--x-card);
-    box-shadow: 0 0 0 var(--x-hairline) #8a8a8d73;
-    color: var(--x-text);
-  }
-
-  /* the white focus ring would vanish on the light sheet */
-  .header:has(.sheet:not(.leaving)) .mark:focus-visible,
-  .header:has(.sheet:not(.leaving)) .entry:focus-visible,
-  .header:has(.sheet:not(.leaving)) .burger:focus-visible {
-    outline-color: var(--x-blue-ring);
-  }
 }
 
-/* ≥48em: three-column grid, menu row instead of the burger */
 @media (min-width: 48em) {
-  .inner {
+  .pill {
     display: grid;
     grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
     column-gap: 1rem;
+    padding-inline: 0.5rem 0.75rem;
   }
 
   .mark {
@@ -440,22 +444,25 @@
     align-items: center;
     min-height: 2.5rem;
     padding: 0 0.5rem;
-    border-radius: 62.5rem;
-    color: rgba(230, 237, 251, 0.72);
+    border-radius: var(--x-radius-pill);
+    color: var(--x-text-2);
     transition: color 0.16s;
   }
 }
 
 @media (min-width: 48em) and (hover: hover) and (pointer: fine) {
   .quiet:hover {
-    color: #fff;
+    color: var(--x-text);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pill,
+  .pill::before,
   .entry,
   .burger,
-  .bars span {
+  .bars span,
+  .link {
     transition: none;
   }
 
@@ -464,8 +471,10 @@
     transform: none;
   }
 
-  .sheet {
-    animation-name: sheet-fade;
+  .sheet,
+  .sheetBody,
+  .card {
+    animation: none;
   }
 
   .leaving {

@@ -23,7 +23,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className={styles.hero}>
+      <section className={styles.hero} data-home-hero>
+        <span className={styles.word} aria-hidden="true">
+          XSTORE
+        </span>
         <div className={styles.heroInner}>
           <h1 className={styles.title}>Приложения для iPhone без компьютера</h1>
           <SearchField action="/search" />
