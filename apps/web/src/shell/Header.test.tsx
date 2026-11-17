@@ -52,6 +52,30 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });
 
+  it('narrows into the compact pill after 24px of scroll', () => {
+    render(<Header signedIn={false} />);
+    const header = screen.getByRole('banner');
+    expect(header).toHaveAttribute('data-scrolled', 'false');
+    act(() => {
+      vi.stubGlobal('scrollY', 30);
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(header).toHaveAttribute('data-scrolled', 'true');
+    act(() => {
+      vi.stubGlobal('scrollY', 10);
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(header).toHaveAttribute('data-scrolled', 'false');
+  });
+
+  it('only the active item carries the sliding highlight', () => {
+    render(<Header signedIn />);
+    const row = screen.getByRole('navigation', { name: 'Основное меню' });
+    const pills = row.querySelectorAll('[data-nav-highlight]');
+    expect(pills).toHaveLength(1);
+    expect(pills[0]?.closest('a')).toHaveTextContent('Ваши устройства');
+  });
+
   it('forcedPath overrides the current path', () => {
     render(<Header signedIn forcedPath="/profile" />);
     expect(screen.getByRole('link', { name: 'Профиль' })).toHaveAttribute('aria-current', 'page');
@@ -62,7 +86,7 @@ describe('Header', () => {
 });
 
 describe('MobileMenu', () => {
-  it('burger opens a modal side sheet with the menu and the end-group links', () => {
+  it('burger opens the card menu: catalog, account and help cards', () => {
     render(<Header signedIn />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     expect(burger).toHaveAttribute('aria-expanded', 'false');
@@ -73,25 +97,34 @@ describe('MobileMenu', () => {
     expect(burger).toHaveAttribute('aria-expanded', 'true');
     const sheet = screen.getByRole('dialog');
     expect(sheet).toHaveAttribute('aria-modal', 'true');
-    const labels = within(sheet)
-      .getAllByRole('link')
-      .map((link) => link.textContent);
-    expect(labels).toEqual(['Ваши устройства', 'Профиль', 'Блог', 'Вопросы', 'Поддержка', 'Выйти']);
+    const cards = within(sheet).getAllByRole('group');
+    expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual([
+      'Каталог',
+      'Аккаунт',
+      'Помощь',
+    ]);
+    const labels = (card: HTMLElement) =>
+      within(card)
+        .getAllByRole('link')
+        .map((link) => link.textContent);
+    expect(labels(cards[0] as HTMLElement)).toEqual(['Главная', 'Поиск']);
+    expect(labels(cards[1] as HTMLElement)).toEqual(['Ваши устройства', 'Профиль', 'Выйти']);
+    expect(labels(cards[2] as HTMLElement)).toEqual(['Блог', 'Вопросы', 'Поддержка']);
     expect(within(sheet).getByRole('link', { name: 'Ваши устройства' })).toHaveAttribute(
       'aria-current',
       'page',
     );
   });
 
-  it('guest sheet offers install and login', () => {
+  it('guest account card offers install and login', () => {
     render(<Header signedIn={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    const sheet = screen.getByRole('dialog');
-    expect(within(sheet).getByRole('link', { name: 'Установить' })).toHaveAttribute(
+    const account = within(screen.getByRole('dialog')).getByRole('group', { name: 'Аккаунт' });
+    expect(within(account).getByRole('link', { name: 'Установить' })).toHaveAttribute(
       'href',
       '/install',
     );
-    expect(within(sheet).getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
+    expect(within(account).getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });
 
   it('Escape closes the sheet and returns focus to the burger', () => {
