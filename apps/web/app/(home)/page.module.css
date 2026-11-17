@@ -1,12 +1,30 @@
-/* The header is transparent here (overHero): the hero slides under it and paints its colour. */
+/* Light hero (spec 2026-11-17 §6). The header floats over it (overHero), so the hero starts
+   at the top of the page and pads itself below the pill: 3.5rem pill + .75rem offset. */
 .hero {
-  margin-top: -3.75rem;
-  padding: calc(3.75rem + 1.125rem) 0 1.6875rem;
-  background: var(--x-header-gradient);
-  color: var(--x-card);
+  --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
+  position: relative;
+  overflow: clip;
+  padding: calc(var(--hero-under-pill) + 1.5rem) 0 2rem;
+  background: linear-gradient(180deg, var(--x-sky-50) 0%, var(--x-ice) 100%);
+  color: var(--x-text);
+}
+
+/* Decorative oversized word behind the title (after the Flinex reference). */
+.word {
+  position: absolute;
+  bottom: -0.12em;
+  left: 50%;
+  translate: -50% 0;
+  color: var(--x-white);
+  font: 800 clamp(5.5rem, 30vw, 17rem) / 0.8 var(--x-font);
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .heroInner {
+  position: relative;
   box-sizing: content-box;
   max-width: var(--x-page-max);
   margin-inline: auto;
@@ -31,14 +49,13 @@
   /* children pad themselves by the gutter, like the header's inner box */
   max-width: calc(var(--x-page-max) + 2 * var(--x-gutter));
   margin-inline: auto;
-  /* room for the floating install banner */
-  padding: 1.5rem 0 6rem;
+  padding: 1.5rem 0 3rem;
 }
 
 @media (min-width: 48em) {
   .hero {
-    padding-top: calc(3.75rem + 2.5rem);
-    padding-bottom: 2.5rem;
+    padding-top: calc(var(--hero-under-pill) + 3rem);
+    padding-bottom: 3.5rem;
   }
 
   .title {

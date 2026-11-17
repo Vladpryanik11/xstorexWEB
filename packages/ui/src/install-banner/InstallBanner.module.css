@@ -20,6 +20,11 @@
     var(--x-shadow);
 }
 
+/* The banner floats over the page end: keep room for it (height 3.75rem + .5rem offset + air). */
+:global(body):has(.banner) {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
 .mark {
   flex: none;
   width: 2.5rem;

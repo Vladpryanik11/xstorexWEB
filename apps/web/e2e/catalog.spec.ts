@@ -97,3 +97,40 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Самый загружаемый' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('home hero is light, sits under the pill and carries the XSTORE word', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  expect((await hero.boundingBox())?.y).toBe(0);
+  expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /rgb\(227, 237, 253\).*rgb\(242, 248, 253\)/,
+  );
+  const word = hero.locator('[aria-hidden="true"]', { hasText: 'XSTORE' });
+  await expect(word).toHaveCount(1);
+  await expect(word).toHaveCSS('color', 'rgb(255, 255, 255)');
+  const title = page.getByRole('heading', { level: 1 });
+  await expect(title).toHaveCSS('color', 'rgb(14, 26, 51)');
+  const pill = await page.locator('header').first().locator('> div').first().boundingBox();
+  const titleBox = await title.boundingBox();
+  expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('install banner never covers the end of the page at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const banner = page.getByRole('complementary', { name: 'Установить Xstore' });
+  await expect(banner).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  const bannerTop = (await banner.boundingBox())?.y ?? 0;
+  const lastRow = page.locator('main [role="listitem"], main li').last();
+  const footerEnd = page.locator('footer').last();
+  for (const loc of [lastRow, footerEnd]) {
+    const box = await loc.boundingBox();
+    if (box && box.y + box.height > 0 && box.y < 844) {
+      expect(box.y + box.height).toBeLessThanOrEqual(bannerTop);
+    }
+  }
+});
