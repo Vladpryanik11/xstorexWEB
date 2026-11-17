@@ -40,6 +40,54 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/admin\/apps$/);
 }
 
+const savedToast = (page: Page) =>
+  page.locator('[data-sonner-toast]').filter({ hasText: 'Сохранено' });
+
+async function adminSession(page: Page) {
+  const db = createPrismaClient(testDatabaseUrl());
+  const token = randomBytes(32).toString('base64url');
+  try {
+    const user = await db.user.create({ data: { role: 'admin' } });
+    await db.session.create({
+      data: {
+        id: createHash('sha256').update(token).digest('hex'),
+        userId: user.id,
+        kind: 'staff',
+        expiresAt: new Date(Date.now() + 600000),
+      },
+    });
+  } finally {
+    await db.$disconnect();
+  }
+  await page
+    .context()
+    .addCookies([{ name: 'xs_session', value: token, url: 'http://localhost:3100' }]);
+}
+
+test('app editor fits an iPhone: switches, version cards, toast after saving', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await adminSession(page);
+  await page.goto('/admin/apps');
+  await page.getByRole('link', { name: 'Тестовое приложение 1', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Тестовое приложение 1' }),
+  ).toBeVisible();
+  const noScroll = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+  expect(await noScroll()).toBe(true);
+  await expect(page.getByRole('switch', { name: 'Удалено из App Store' })).toBeVisible();
+  const save = page.getByRole('button', { name: 'Сохранить карточку' });
+  const box = await save.boundingBox();
+  expect(box?.x).toBeGreaterThanOrEqual(0);
+  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+  const versionSave = page.getByRole('button', { name: 'Сохранить изменения версии' }).first();
+  await versionSave.scrollIntoViewIfNeeded();
+  const vbox = await versionSave.boundingBox();
+  expect((vbox?.x ?? 0) + (vbox?.width ?? 0)).toBeLessThanOrEqual(390);
+  await save.click();
+  await expect(savedToast(page)).toBeVisible();
+  expect(await noScroll()).toBe(true);
+});
+
 test('guests are redirected to the admin login', async ({ page }) => {
   await page.goto('/admin/apps');
   await expect(page).toHaveURL(/\/admin\/login\?next=/);
@@ -59,7 +107,7 @@ test('admin signs in, uploads an IPA and publishes the app', async ({ page }, in
     .getByRole('combobox', { name: 'Категория', exact: true })
     .selectOption({ label: 'Утилиты' });
   await page.getByRole('button', { name: 'Сохранить карточку' }).click();
-  await expect(page.getByRole('status')).toContainText('Сохранено');
+  await expect(savedToast(page)).toBeVisible();
   await page.getByRole('button', { name: 'Опубликовать версию' }).click();
   await page.getByRole('button', { name: 'Опубликовать приложение' }).click();
   await expect(page.getByText('Статус: Опубликовано')).toBeVisible();
@@ -140,7 +188,7 @@ test('admin manages categories and collection contents', async ({ page }, info) 
   await items.locator('li').nth(1).getByRole('button', { name: /выше/ }).click();
   await items.locator('li').first().getByLabel('Закрепить').check();
   await page.getByRole('button', { name: 'Сохранить состав' }).click();
-  await expect(page.getByRole('status')).toHaveText('Сохранено');
+  await expect(savedToast(page)).toBeVisible();
   await page.reload();
   await expect(items.locator('li').first().locator('span')).toHaveText(newFirst ?? '');
   await expect(items.locator('li').first().getByLabel('Закрепить')).toBeChecked();
