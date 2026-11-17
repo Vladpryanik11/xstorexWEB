@@ -61,13 +61,7 @@
 }
 
 .shot {
-  display: block;
   width: min(15rem, calc(100vw - 4 * var(--x-gutter)));
-  height: auto;
-  aspect-ratio: 9 / 19.5;
-  object-fit: cover;
-  border-radius: var(--x-radius-card);
-  background: var(--x-surface);
 }
 
 .versions {

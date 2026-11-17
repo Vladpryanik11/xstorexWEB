@@ -6,6 +6,7 @@ import {
   formatBytes,
   type InfoItem,
   InfoList,
+  IPhoneFrame,
   MoreText,
   Rail,
   SectionTitle,
@@ -131,15 +132,15 @@ export default async function AppPage({ params }: Props) {
           <SectionTitle>Скриншоты</SectionTitle>
           <Rail label="Скриншоты">
             {app.screenshots.map((src, i) => (
-              // biome-ignore lint/performance/noImgElement: media come from object storage as is
-              <img
-                key={src}
-                className={styles.shot}
-                src={src}
-                alt={`Скриншот ${i + 1}: ${app.name}`}
-                loading="lazy"
-                decoding="async"
-              />
+              <IPhoneFrame key={src} className={styles.shot}>
+                {/* biome-ignore lint/performance/noImgElement: media come from object storage as is */}
+                <img
+                  src={src}
+                  alt={`Скриншот ${i + 1}: ${app.name}`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </IPhoneFrame>
             ))}
           </Rail>
         </section>

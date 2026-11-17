@@ -154,3 +154,17 @@ test('icon opens a morphing preview; Escape closes it and returns focus', async 
   await expect(trigger).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('app screenshots sit in iPhone frames and the rail fits the screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/app/testovoe-prilozhenie-1');
+  const rail = page.getByRole('list', { name: 'Скриншоты' });
+  const shots = rail.getByRole('img');
+  expect(await shots.count()).toBeGreaterThan(0);
+  for (const shot of await shots.all()) {
+    await expect(shot).toHaveAttribute('alt', /Скриншот \d+: Тестовое приложение 1/);
+    expect(await shot.evaluate((el) => el.closest('[data-iphone-frame]') !== null)).toBe(true);
+  }
+  expect((await rail.boundingBox())?.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
