@@ -8,7 +8,9 @@
   bottom: 0;
   width: 2.5rem;
   pointer-events: none;
-  transition: opacity 0.2s var(--x-ease);
+  transition:
+    opacity 0.2s var(--x-ease),
+    visibility 0s linear 0s;
 }
 
 .root[data-side="start"] {
@@ -20,8 +22,13 @@
   inset-inline-end: 0;
 }
 
+/* Hidden edges stop painting their backdrop once faded out. */
 .root[data-visible="false"] {
+  visibility: hidden;
   opacity: 0;
+  transition:
+    opacity 0.2s var(--x-ease),
+    visibility 0s linear 0.2s;
 }
 
 .root span {
@@ -30,27 +37,17 @@
 }
 
 .root span:nth-child(1) {
-  -webkit-backdrop-filter: blur(1px);
-  backdrop-filter: blur(1px);
-  mask-image: linear-gradient(var(--dir), transparent 0%, #000 20%, #000 40%, transparent 60%);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  -webkit-mask-image: linear-gradient(var(--dir), transparent 0%, #000 50%);
+  mask-image: linear-gradient(var(--dir), transparent 0%, #000 50%);
 }
 
 .root span:nth-child(2) {
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-  mask-image: linear-gradient(var(--dir), transparent 20%, #000 40%, #000 60%, transparent 80%);
-}
-
-.root span:nth-child(3) {
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  mask-image: linear-gradient(var(--dir), transparent 40%, #000 60%, #000 80%, transparent 100%);
-}
-
-.root span:nth-child(4) {
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  mask-image: linear-gradient(var(--dir), transparent 60%, #000 80%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(var(--dir), transparent 50%, #000 100%);
+  mask-image: linear-gradient(var(--dir), transparent 50%, #000 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -187,8 +187,15 @@ test('admin manages categories and collection contents', async ({ page }, info) 
   const newFirst = await items.locator('li').nth(1).locator('span').textContent();
   await items.locator('li').nth(1).getByRole('button', { name: /выше/ }).click();
   await items.locator('li').first().getByLabel('Закрепить').check();
-  await page.getByRole('button', { name: 'Сохранить состав' }).click();
-  await expect(savedToast(page)).toBeVisible();
+  // Wait for the save itself: an earlier «Сохранено» toast may still be on screen.
+  await Promise.all([
+    page.waitForResponse(
+      (res) =>
+        res.request().method() === 'PUT' && /\/admin\/collections\/[^/]+\/items$/.test(res.url()),
+    ),
+    page.getByRole('button', { name: 'Сохранить состав' }).click(),
+  ]);
+  await expect(savedToast(page).first()).toBeVisible();
   await page.reload();
   await expect(items.locator('li').first().locator('span')).toHaveText(newFirst ?? '');
   await expect(items.locator('li').first().getByLabel('Закрепить')).toBeChecked();
