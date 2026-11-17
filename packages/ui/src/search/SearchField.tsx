@@ -14,7 +14,7 @@ export type SearchFieldProps = {
 };
 
 export function SearchField({
-  placeholder = 'Приложения, игры и другое',
+  placeholder = 'Найти приложение или игру',
   defaultValue,
   name = 'q',
   onSubmit,

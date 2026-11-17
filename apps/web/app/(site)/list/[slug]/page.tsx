@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const list = await loadList(params);
   return {
     title: list.title,
-    description: `${list.title}: подборка приложений для iPhone в Xstore.`,
+    description: `${list.title} — подборка приложений в Xstore.`,
     openGraph: { title: list.title },
   };
 }
@@ -27,7 +27,7 @@ export default async function ListPage({ params }: Props) {
       {list.items.length > 0 ? (
         <AppGrid apps={list.items} label={list.title} />
       ) : (
-        <EmptyState>В этой подборке пока нет приложений.</EmptyState>
+        <EmptyState>Подборка пока пуста. Скоро добавим приложения.</EmptyState>
       )}
     </CatalogPage>
   );

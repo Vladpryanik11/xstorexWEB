@@ -5,7 +5,7 @@ description: Use for any Xstore UI work — public pages, account area, admin, h
 
 # Xstore design system
 
-Palette «белый, голубой, синий», maximally rounded shapes, a floating white glass header. Page structure (rails, 3×N rows, icon rows, chips, 16:10 covers, app page, install banner, footer) comes from diyorde.com; DIYORDE assets (logo, images, screenshots, texts) never ship. UI language is Russian only, no language switcher.
+Palette «белый, голубой, синий», maximally rounded shapes, a floating white glass header. Page structure (rails, 3×N rows, icon rows, chips, 16:10 covers, app page, footer) comes from diyorde.com; DIYORDE assets (logo, images, screenshots, texts) never ship. UI language is Russian only, no language switcher.
 
 Spec: `docs/superpowers/specs/2026-11-17-premium-ui-design.md` (authoritative), plan `docs/superpowers/plans/2026-11-17-premium-ui.md`. Palette mock: https://claude.ai/artifact/A3x4saaLnN6TSkz78NwSxx
 
@@ -36,9 +36,9 @@ Spec `docs/superpowers/specs/2026-11-17-typography-design.md`. Manrope 700 (`--x
 
 ## Header
 
-White floating glass pill (spec §5): top offset `.75rem + safe-area`, side `--x-gutter`, max width `--x-page-max`, background `rgba(255,255,255,.78)` + `backdrop-filter: blur(12px) saturate(1.4)`, `--x-shadow`, 1px inner white ring. Active item `--x-sky-50` / `--x-quiet-fg`, the highlight slides between items (motion `layoutId`). After 24px of scroll it narrows to max 56rem and 48px height. Below 48em: logo, «Установить» (guest), round menu button opening a Card Nav (cards «Каталог», «Аккаунт», «Помощь»).
+White floating glass pill (spec §5): top offset `.75rem + safe-area`, side `--x-gutter`, max width `--x-page-max`, background `rgba(255,255,255,.78)` + `backdrop-filter: blur(12px) saturate(1.4)`, `--x-shadow`, 1px inner white ring. Active item `--x-sky-50` / `--x-quiet-fg`, the highlight slides between items (motion `layoutId`). After 24px of scroll it narrows to max 56rem and 48px height. Below 48em: logo, «Тарифы» (guest), round menu button opening a Card Nav (cards «Каталог», «Аккаунт», «Помощь»).
 
-Guest: logo | Блог · Вопросы · Поддержка | Установить + Войти. Signed in: logo | Ваши устройства · Профиль · Блог · Вопросы · Поддержка | Выйти.
+Guest: logo | Блог · Вопросы · Поддержка | Тарифы + Войти. Signed in: logo | Ваши устройства · Профиль · Блог · Вопросы · Поддержка | Выйти.
 
 ## Components
 

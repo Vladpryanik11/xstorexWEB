@@ -46,9 +46,10 @@ describe('Header', () => {
     expect(screen.queryByText('Русский')).toBeNull();
   });
 
-  it('guest header offers install and login', () => {
+  it('guest header offers pricing and login', () => {
     render(<Header signedIn={false} />);
-    expect(screen.getByRole('link', { name: 'Установить' })).toHaveAttribute('href', '/install');
+    expect(screen.getByRole('link', { name: 'Тарифы' })).toHaveAttribute('href', '/pricing');
+    expect(screen.queryByRole('link', { name: 'Установить' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });
 
@@ -116,13 +117,13 @@ describe('MobileMenu', () => {
     );
   });
 
-  it('guest account card offers install and login', () => {
+  it('guest account card offers pricing and login', () => {
     render(<Header signedIn={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
     const account = within(screen.getByRole('dialog')).getByRole('group', { name: 'Аккаунт' });
-    expect(within(account).getByRole('link', { name: 'Установить' })).toHaveAttribute(
+    expect(within(account).getByRole('link', { name: 'Тарифы' })).toHaveAttribute(
       'href',
-      '/install',
+      '/pricing',
     );
     expect(within(account).getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });

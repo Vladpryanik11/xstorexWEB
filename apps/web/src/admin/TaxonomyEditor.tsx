@@ -23,10 +23,10 @@ const layouts = [
 ];
 const sources = [
   ['manual', 'Вручную'],
-  ['top_downloads', 'Самые загружаемые'],
-  ['trending', 'Тенденции'],
-  ['top_rated', 'Самый рейтинговый'],
-  ['recently_updated', 'Недавно обновлённые'],
+  ['top_downloads', 'Популярное'],
+  ['trending', 'Набирают популярность'],
+  ['top_rated', 'Лучшие по оценкам'],
+  ['recently_updated', 'Свежие обновления'],
 ];
 
 function CollectionFields({ value }: { value?: AdminCollection }) {

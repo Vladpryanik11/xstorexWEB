@@ -37,7 +37,7 @@ export function menuCards(signedIn: boolean): MenuCard[] {
       items: signedIn
         ? [...accountItems, { href: '/signout', label: 'Выйти', quiet: true }]
         : [
-            { href: '/install', label: 'Установить' },
+            { href: '/pricing', label: 'Тарифы' },
             { href: '/signin', label: 'Войти', quiet: true },
           ],
     },

@@ -26,10 +26,10 @@ const strokes: Record<string, ReactNode> = {
       <path d="m15.25 15.25 4 4" />
     </>
   ),
-  '/install': (
+  '/pricing': (
     <>
-      <rect x="4" y="4" width="16" height="16" rx="4.5" />
-      <path d="M12 8.25v7.5M8.25 12h7.5" />
+      <path d="M4.75 12.6V5.75a1 1 0 0 1 1-1h6.85l7.15 7.15a1.5 1.5 0 0 1 0 2.12l-5.73 5.73a1.5 1.5 0 0 1-2.12 0z" />
+      <circle cx="8.75" cy="8.75" r="1.25" />
     </>
   ),
   '/devices': (

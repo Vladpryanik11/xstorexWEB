@@ -26,13 +26,13 @@ export default async function SearchPage({ searchParams }: Props) {
 
   let body: ReactNode = null;
   if (q.length > 0 && q.length < MIN) {
-    body = <EmptyState>Введите хотя бы 2 символа</EmptyState>;
+    body = <EmptyState>Введите хотя бы две буквы</EmptyState>;
   } else if (q.length >= MIN) {
     const page = await orNotFound((await serverApi()).search(q, cursor));
     body =
       page.items.length > 0 ? (
         <>
-          <AppGrid apps={page.items} label="Результаты поиска" />
+          <AppGrid apps={page.items} label={`По запросу «${q}»`} />
           {page.nextCursor ? (
             <MoreLink
               href={`/search?q=${encodeURIComponent(q)}&cursor=${encodeURIComponent(page.nextCursor)}`}
@@ -40,7 +40,9 @@ export default async function SearchPage({ searchParams }: Props) {
           ) : null}
         </>
       ) : (
-        <EmptyState>Ничего не нашлось. Попробуйте другое название.</EmptyState>
+        <EmptyState>
+          По запросу «{q}» ничего нет. Проверьте написание или попробуйте другое название.
+        </EmptyState>
       );
   }
 

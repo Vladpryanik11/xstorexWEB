@@ -8,18 +8,19 @@ const app = (slug = 'tg'): InstallCtx['app'] => ({
 });
 
 describe('installButtonState', () => {
-  it('guests are sent to sign in and back', () => {
+  it('guests see «Установить» leading to payment, with sign-in as a second action', () => {
     expect(installButtonState({ signedIn: false, app: app() })).toEqual({
-      kind: 'signin',
-      label: 'Войти',
-      href: '/signin?next=%2Fapp%2Ftg',
+      kind: 'buy',
+      label: 'Установить',
+      href: '/pricing?app=tg',
+      signinHref: '/signin?next=%2Fapp%2Ftg',
     });
   });
 
-  it('encodes the slug in the return path', () => {
-    expect(installButtonState({ signedIn: false, app: app('a b') }).href).toBe(
-      '/signin?next=%2Fapp%2Fa%2520b',
-    );
+  it('encodes the slug in both links', () => {
+    const state = installButtonState({ signedIn: false, app: app('a b') });
+    expect(state.href).toBe('/pricing?app=a%20b');
+    expect(state.signinHref).toBe('/signin?next=%2Fapp%2Fa%2520b');
   });
 
   it('signed-in visitors see «Скоро» until installs ship', () => {

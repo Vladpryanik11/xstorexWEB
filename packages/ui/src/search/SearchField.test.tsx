@@ -6,7 +6,7 @@ describe('SearchField', () => {
   it('is a search landmark with the default placeholder', () => {
     render(<SearchField />);
     expect(screen.getByRole('search')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Приложения, игры и другое')).toHaveAttribute(
+    expect(screen.getByPlaceholderText('Найти приложение или игру')).toHaveAttribute(
       'type',
       'search',
     );

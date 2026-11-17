@@ -223,7 +223,7 @@ async function main(): Promise<void> {
     await db.collection.create({
       data: {
         slug: 'top',
-        title: 'Самый загружаемый',
+        title: 'Популярное',
         layout: 'grid3',
         source: 'top_downloads',
         sort: 1,
@@ -231,12 +231,18 @@ async function main(): Promise<void> {
       },
     });
     await db.collection.create({
-      data: { slug: 'trends', title: 'Тенденции', layout: 'icons', source: 'trending', sort: 2 },
+      data: {
+        slug: 'trends',
+        title: 'Набирают популярность',
+        layout: 'icons',
+        source: 'trending',
+        sort: 2,
+      },
     });
     await db.collection.create({
       data: {
         slug: 'rated',
-        title: 'Самый рейтинговый',
+        title: 'Лучшие по оценкам',
         layout: 'grid3',
         source: 'top_rated',
         sort: 3,
@@ -245,7 +251,7 @@ async function main(): Promise<void> {
     await db.collection.create({
       data: {
         slug: 'removed',
-        title: 'Удалённые из App Store',
+        title: 'Больше нет в App Store',
         layout: 'screenshots',
         source: 'manual',
         sort: 4,
@@ -255,7 +261,7 @@ async function main(): Promise<void> {
     await db.collection.create({
       data: {
         slug: 'fresh',
-        title: 'Недавно обновлено',
+        title: 'Свежие обновления',
         layout: 'icons',
         source: 'recently_updated',
         sort: 5,

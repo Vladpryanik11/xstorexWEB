@@ -48,6 +48,14 @@
   outline-offset: 3px;
 }
 
+.tagline {
+  max-width: 22rem;
+  margin: 1rem 0 0;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
 .social {
   position: relative;
   display: grid;

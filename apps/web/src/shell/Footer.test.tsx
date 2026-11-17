@@ -14,12 +14,15 @@ describe('Footer', () => {
       ['Блог', '/blog'],
       ['Вопросы', '/faq'],
       ['Поддержка', '/support'],
-      ['Условия', '/terms'],
-      ['Конфиденциальность', '/privacy'],
+      ['Условия использования', '/terms'],
+      ['Политика конфиденциальности', '/privacy'],
     ];
     for (const [name, href] of links) {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
     }
+    expect(
+      screen.getByText('Приложения для iPhone и iPad. Только с правами на распространение.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('© 2026 Xstore')).toBeInTheDocument();
   });
 

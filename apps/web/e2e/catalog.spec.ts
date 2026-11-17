@@ -5,9 +5,14 @@ import { expect, test } from '@playwright/test';
 test('home shows collections and opens an app page', async ({ page }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone без компьютера' }),
+    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone и iPad' }),
   ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Самый загружаемый' })).toBeVisible();
+  await expect(
+    page.getByText(
+      'Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не нужна.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
     .getByRole('link', { name: /^Тестовое приложение 1(?!\d)/ })
     .first()
@@ -16,16 +21,35 @@ test('home shows collections and opens an app page', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 1, name: 'Тестовое приложение 1' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Войти' }).last()).toHaveAttribute(
+  const main = page.locator('main');
+  await expect(main.getByRole('link', { name: 'Установить' })).toHaveAttribute(
+    'href',
+    '/pricing?app=testovoe-prilozhenie-1',
+  );
+  await expect(main.getByRole('link', { name: 'Войти' })).toHaveAttribute(
     'href',
     /\/signin\?next=/,
   );
+  await expect(main.getByText('Уже оплачивали?')).toBeVisible();
+});
+
+test('home explains how it works and has no install banner', async ({ page }) => {
+  await page.goto('/');
+  const how = page.getByRole('region', { name: 'Как это работает' });
+  for (const step of ['Найдите приложение', 'Оплатите', 'Установите']) {
+    await expect(how.getByRole('heading', { name: step })).toBeVisible();
+  }
+  await expect(
+    how.getByText('Только приложения с правами на распространение. Никаких взломанных версий.'),
+  ).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Установить Xstore' })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('home renders every collection layout and the category chips', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('list', { name: 'Баннеры' })).toBeVisible();
-  for (const title of ['Самый загружаемый', 'Тенденции', 'Удалённые из App Store']) {
+  for (const title of ['Популярное', 'Набирают популярность', 'Больше нет в App Store']) {
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
   }
   const chips = page.getByRole('navigation', { name: 'Категории' });
@@ -48,15 +72,19 @@ test('search finds by Cyrillic prefix', async ({ page }) => {
 
 test('search explains short and empty queries', async ({ page }) => {
   await page.goto('/search?q=т');
-  await expect(page.getByText('Введите хотя бы 2 символа')).toBeVisible();
+  await expect(page.getByText('Введите хотя бы две буквы')).toBeVisible();
   await page.goto('/search?q=несуществующее');
-  await expect(page.getByText('Ничего не нашлось. Попробуйте другое название.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'По запросу «несуществующее» ничего нет. Проверьте написание или попробуйте другое название.',
+    ),
+  ).toBeVisible();
 });
 
 test('hidden app is 404', async ({ page }) => {
   const res = await page.goto('/app/hidden-app');
   expect(res?.status()).toBe(404);
-  await expect(page.getByRole('heading', { name: 'Страница не найдена' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Такой страницы нет' })).toBeVisible();
 });
 
 test('app page has SoftwareApplication JSON-LD', async ({ page }) => {
@@ -87,14 +115,14 @@ test('category pages page through with «Показать ещё»', async ({ pa
 
 test('list page shows the collection', async ({ page }) => {
   await page.goto('/list/top');
-  await expect(page.getByRole('heading', { level: 1, name: 'Самый загружаемый' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Популярное' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Тестовое приложение/ })).toHaveCount(12);
 });
 
 test('no horizontal overflow on home at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Самый загружаемый' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -115,24 +143,6 @@ test('home hero is light, sits under the pill and carries the XSTORE word', asyn
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-});
-
-test('install banner never covers the end of the page at 390px', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  const banner = page.getByRole('complementary', { name: 'Установить Xstore' });
-  await expect(banner).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-  const bannerTop = (await banner.boundingBox())?.y ?? 0;
-  const lastRow = page.locator('main [role="listitem"], main li').last();
-  const footerEnd = page.locator('footer').last();
-  for (const loc of [lastRow, footerEnd]) {
-    const box = await loc.boundingBox();
-    if (box && box.y + box.height > 0 && box.y < 844) {
-      expect(box.y + box.height).toBeLessThanOrEqual(bannerTop);
-    }
-  }
 });
 
 test('icon opens a morphing preview; Escape closes it and returns focus', async ({ page }) => {

@@ -10,7 +10,6 @@ import {
   formatRating,
   IconTile,
   InfoList,
-  InstallBanner,
   MoreText,
   Rail,
   RowsGrid,
@@ -99,8 +98,8 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
           </section>
 
           <section className={styles.section}>
-            <SectionTitle href="/list/top">Самый загружаемый</SectionTitle>
-            <Rail label="Самый загружаемый">
+            <SectionTitle href="/list/top">Популярное</SectionTitle>
+            <Rail label="Популярное">
               {tiles.map((tile) => (
                 <div key={tile} className={styles.tile}>
                   {tile}
@@ -128,7 +127,7 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
                   title="Новинки недели"
                   subtitle="Свежие приложения"
                 />,
-                <SpotBanner key="b" href="/list/removed" title="Удалённые из App Store" />,
+                <SpotBanner key="b" href="/list/removed" title="Больше нет в App Store" />,
               ]}
             </Rail>
           </section>
@@ -236,7 +235,6 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
           </section>
         </div>
       </main>
-      <InstallBanner href="/install" />
       <Footer />
     </>
   );
