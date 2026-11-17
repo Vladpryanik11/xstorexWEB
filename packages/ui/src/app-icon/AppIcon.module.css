@@ -4,12 +4,12 @@
   flex: none;
   border-radius: 22.5%;
   object-fit: cover;
-  background: var(--x-surface);
+  background: var(--x-sky-50);
   box-shadow: var(--x-cover-ring);
 }
 
 .placeholder {
-  background: var(--x-surface-2);
+  background: var(--x-sky-200);
 }
 
 .s56 {

@@ -10,20 +10,21 @@
   gap: 0.75rem;
   width: min(22rem, calc(100vw - 2 * var(--x-gutter)));
   padding: 0.625rem 0.625rem 0.625rem 0.75rem;
-  border-radius: 1.25rem;
-  background: var(--x-blue);
-  color: var(--x-card);
+  border-radius: var(--x-radius-pill);
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  color: var(--x-text);
   box-shadow:
-    inset 0 -1px 5px rgba(255, 255, 255, 0.4),
-    0 0 0 1px rgba(26, 110, 234, 0.18),
-    0 10px 24px -8px rgba(26, 110, 234, 0.55);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    var(--x-shadow);
 }
 
 .mark {
   flex: none;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 10px;
+  border-radius: 50%;
 }
 
 .text {
@@ -38,7 +39,7 @@
 
 .subtitle {
   font: 500 13px / 1.3 var(--x-font);
-  opacity: 0.8;
+  color: var(--x-text-2);
 }
 
 .pill {
@@ -47,9 +48,10 @@
   align-items: center;
   min-height: 2.25rem;
   padding: 0 1rem;
-  border-radius: 12.5rem;
-  background: var(--x-card);
-  color: var(--x-blue);
+  border-radius: var(--x-radius-pill);
+  background: var(--x-blue);
+  color: var(--x-white);
+  box-shadow: 0 6px 14px -6px var(--x-blue);
   font: 600 14px var(--x-font);
   text-decoration: none;
   transition: transform 0.16s var(--x-ease);
@@ -60,7 +62,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 1.25rem;
+  border-radius: var(--x-radius-pill);
 }
 
 .banner:has(.pill:active) .pill {
@@ -68,7 +70,7 @@
 }
 
 .pill:focus-visible {
-  outline: 2px solid var(--x-card);
+  outline: 2px solid var(--x-blue-ring);
   outline-offset: 2px;
 }
 

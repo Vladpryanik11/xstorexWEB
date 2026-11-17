@@ -29,6 +29,7 @@ describe('palette E tokens (spec 2026-11-17, §3–4)', () => {
     ['--x-err-bg', '#fde6e7'],
     ['--x-shadow', '0 12px 32px -20px rgba(26, 110, 234, .45)'],
     ['--x-shadow-sm', '0 4px 12px -4px rgba(26, 110, 234, .14)'],
+    ['--x-scrim', 'rgba(14, 26, 51, .62)'],
     ['--x-hair', 'rgba(26, 110, 234, .10)'],
     ['--x-radius-panel', '1.75rem'],
     ['--x-radius-card', '1.5rem'],

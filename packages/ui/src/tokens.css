@@ -23,12 +23,13 @@
   --x-card: var(--x-white);
   --x-hair: rgba(26, 110, 234, .10);
   --x-shadow: 0 12px 32px -20px rgba(26, 110, 234, .45);
+  --x-scrim: rgba(14, 26, 51, .62);
   --x-shadow-sm: 0 4px 12px -4px rgba(26, 110, 234, .14);
   /* shapes — §4 */
   --x-radius-panel: 1.75rem;
   --x-radius-card: 1.5rem;
   --x-radius-pill: 999px;
-  --x-radius-field: var(--x-radius-pill);
+  --x-radius-field: .875rem;
   --x-gutter: 1.25rem;
   --x-column: 33rem;
   --x-page-max: 70rem; /* ≥64em: clamp(70rem, 100vw - 10rem, 90rem) */
@@ -80,5 +81,5 @@ body {
 :root {
   --x-star: #8e8e91;
   --x-cover-ring: inset 0 0 0 0.5px rgba(26, 110, 234, 0.14);
-  --x-radius-cover: 0.875rem;
+  --x-radius-cover: var(--x-radius-card);
 }
