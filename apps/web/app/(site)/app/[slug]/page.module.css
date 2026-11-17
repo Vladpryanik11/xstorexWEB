@@ -25,15 +25,16 @@
 
 .name {
   margin: 0;
-  font: 700 1.5rem / 1.15 var(--x-system);
-  letter-spacing: -0.01em;
+  font: var(--x-type-h1);
+  letter-spacing: var(--x-track-head);
   overflow-wrap: anywhere;
 }
 
 .subtitle {
   margin: 0;
   color: var(--x-text-2);
-  font: 400 15px / 1.3 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
 }
 
 .badge {
@@ -42,7 +43,9 @@
   border-radius: 62.5rem;
   background: var(--x-sky-50);
   color: var(--x-text);
-  font: 600 11px / 1.3 var(--x-font);
+  font: var(--x-type-cap);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
 }
 
 .action {
@@ -85,18 +88,22 @@
 }
 
 .versionName {
-  font: 600 15px / 1.3 var(--x-system);
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
 }
 
 .versionDate {
   color: var(--x-text-2);
-  font: 400 13px / 1.3 var(--x-font);
+  font: var(--x-type-ui);
+  font-weight: 400;
+  letter-spacing: var(--x-track-small);
 }
 
 .changelog {
   margin: 0;
   color: var(--x-text);
-  font: 400 15px / 1.4 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
   white-space: pre-line;
 }
 
@@ -108,10 +115,6 @@
 
   .head {
     gap: 1.5rem;
-  }
-
-  .name {
-    font-size: 1.75rem;
   }
 
   .shot {

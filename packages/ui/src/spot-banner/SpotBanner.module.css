@@ -40,11 +40,13 @@
 }
 
 .title {
-  font: 700 22px / 1.2 var(--x-system);
+  font: var(--x-type-h2);
+  letter-spacing: var(--x-track-head);
 }
 
 .subtitle {
-  font: 500 14px / 1.3 var(--x-font);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
   opacity: 0.85;
 }
 

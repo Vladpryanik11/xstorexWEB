@@ -9,9 +9,8 @@
   max-width: 20.5rem;
   margin: 0 0 1.5rem;
   color: var(--x-text);
-  font-size: 1.875rem;
-  font-weight: 500;
-  line-height: 1.19;
+  font: var(--x-type-display);
+  letter-spacing: var(--x-track-head);
 }
 
 .page {
@@ -64,7 +63,8 @@
   border-radius: 22.5%;
   background: var(--x-card);
   color: var(--x-text-2);
-  font-size: 0.8125rem;
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
   text-align: center;
 }
 

@@ -1,6 +1,7 @@
 .title {
   margin: 0;
-  font: 700 17px var(--x-system);
+  font: var(--x-type-h2);
+  letter-spacing: var(--x-track-head);
   color: var(--x-text);
 }
 

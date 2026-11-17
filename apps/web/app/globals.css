@@ -1,10 +1,5 @@
 /* App-wide base. Design tokens come from @xstore/ui/tokens.css, imported before this file. */
 
-:root {
-  /* next/font serves Inter under a generated family name, exposed as --font-inter */
-  --x-font: "Helvetica Neue", Helvetica, var(--font-inter), Arial, sans-serif;
-}
-
 *,
 ::before,
 ::after {
@@ -22,7 +17,8 @@ body {
   min-height: 100dvh;
   margin: 0;
   color: var(--x-text);
-  font-family: var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -7,7 +7,9 @@
   padding: 0.75rem 1.5rem;
   border: 1px solid var(--x-card);
   border-radius: var(--x-radius-pill);
-  font: 500 16px var(--x-font);
+  font: var(--x-type-body);
+  font-weight: 500;
+  letter-spacing: var(--x-track-body);
   text-decoration: none;
   cursor: pointer;
   transition:

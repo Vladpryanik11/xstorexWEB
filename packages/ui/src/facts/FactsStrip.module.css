@@ -27,8 +27,9 @@
 
 .label {
   color: var(--x-text-3);
-  font: 600 10px / 1.2 var(--x-font);
-  letter-spacing: 0.02em;
+  font: var(--x-type-cap);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
   text-transform: uppercase;
 }
 
@@ -37,7 +38,8 @@
   margin: 0;
   overflow: hidden;
   color: var(--x-text);
-  font: 600 17px / 1.25 var(--x-system);
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

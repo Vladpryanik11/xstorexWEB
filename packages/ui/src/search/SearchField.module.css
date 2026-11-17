@@ -45,7 +45,8 @@
   outline: 0;
   background: transparent;
   color: inherit;
-  font: 500 14px var(--x-font);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
   appearance: none;
 }
 

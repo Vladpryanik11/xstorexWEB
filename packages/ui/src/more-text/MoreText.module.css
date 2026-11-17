@@ -5,7 +5,8 @@
 .text {
   margin: 0;
   color: var(--x-text);
-  font: 400 15px / 1.45 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
   white-space: pre-line;
 }
 
@@ -25,7 +26,9 @@
   border: 0;
   background: linear-gradient(to right, transparent, var(--x-ice) 2rem);
   color: var(--x-link);
-  font: 500 15px / 1.45 var(--x-font);
+  font: var(--x-type-body);
+  font-weight: 500;
+  letter-spacing: var(--x-track-body);
   cursor: pointer;
 }
 
