@@ -12,7 +12,8 @@
   padding: 0.6875rem 0;
   box-sizing: border-box;
   box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--x-hair);
-  font: 400 15px / 1.35 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
 }
 
 .label {

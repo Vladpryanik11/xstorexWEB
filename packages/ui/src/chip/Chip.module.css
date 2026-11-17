@@ -10,7 +10,9 @@
   border-radius: var(--x-radius-pill);
   background: var(--x-card);
   color: var(--x-text);
-  font: 600 13px var(--x-font);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
   white-space: nowrap;
   text-decoration: none;
   box-shadow: var(--x-shadow-sm);

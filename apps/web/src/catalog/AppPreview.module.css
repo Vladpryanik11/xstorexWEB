@@ -59,13 +59,15 @@
 
 .name {
   margin: 0;
-  font: 600 1.25rem / 1.25 var(--x-font);
+  font: var(--x-type-h2);
+  letter-spacing: var(--x-track-head);
 }
 
 .subtitle {
   margin: 0;
   color: var(--x-text-2);
-  font: 400 0.9375rem / 1.35 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
 }
 
 .actions {
@@ -82,7 +84,9 @@
   justify-content: center;
   min-height: 2.75rem;
   border-radius: var(--x-radius-pill);
-  font: 600 0.9375rem var(--x-font);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
   text-decoration: none;
   transition:
     background-color 0.16s,

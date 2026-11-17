@@ -17,7 +17,8 @@
   display: -webkit-box;
   width: 100%;
   overflow: hidden;
-  font: 500 12px / 1.25 var(--x-font);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
   text-align: center;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;

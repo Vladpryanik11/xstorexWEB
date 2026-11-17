@@ -22,8 +22,8 @@
 
 .title {
   margin: 0;
-  font: 700 1.75rem / 1.15 var(--x-system);
-  letter-spacing: -0.01em;
+  font: var(--x-type-h1);
+  letter-spacing: var(--x-track-head);
 }
 
 .more {
@@ -40,7 +40,10 @@
   border-radius: 12.5rem;
   background: var(--x-card);
   color: var(--x-blue);
-  font: 600 15px / 1 var(--x-font);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: var(--x-track-small);
   text-decoration: none;
   box-shadow: 0 0 0 var(--x-hairline) var(--x-hair);
 }
@@ -54,16 +57,13 @@
   margin: 0;
   padding: 2rem var(--x-gutter);
   color: var(--x-text-2);
-  font: 400 15px / 1.4 var(--x-font);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
   text-align: center;
 }
 
 @media (min-width: 48em) {
   .page {
     padding-top: 2.5rem;
-  }
-
-  .title {
-    font-size: 2rem;
   }
 }

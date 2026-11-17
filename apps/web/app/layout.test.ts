@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/font/google', () => ({
-  Inter: () => ({ variable: '--font-inter', className: 'font-inter' }),
+  Inter: () => ({ variable: 'var-inter', className: 'font-inter' }),
+  Manrope: () => ({ variable: 'var-manrope', className: 'font-manrope' }),
 }));
 
 describe('root layout', () => {
@@ -16,5 +17,13 @@ describe('root layout', () => {
     // diyorde.com sets no viewport-fit: with `cover` landscape iPhone puts the logo under the notch.
     expect(viewport).not.toHaveProperty('viewportFit');
     expect(viewport).not.toHaveProperty('userScalable');
+  });
+
+  it('serves Manrope and Inter through next/font on <html>', async () => {
+    const { default: RootLayout } = await import('./layout');
+    const html = RootLayout({ children: null }) as { props: { className: string } };
+    expect(html.props.className.split(' ')).toEqual(
+      expect.arrayContaining(['var-inter', 'var-manrope']),
+    );
   });
 });

@@ -23,5 +23,6 @@
 }
 
 .count {
-  font: 500 11px var(--x-font);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
 }

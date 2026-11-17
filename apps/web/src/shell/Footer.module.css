@@ -6,9 +6,6 @@
 .footer {
   background: var(--x-sky-50);
   color: var(--x-text);
-  font-family: var(--x-font);
-  font-weight: 400;
-  letter-spacing: 0;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -33,9 +30,8 @@
   align-items: center;
   gap: 0.625rem;
   color: var(--x-text);
-  font-size: 1.0625rem;
-  font-weight: 500;
-  line-height: 1.19;
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
   text-decoration: none;
 }
 
@@ -102,8 +98,8 @@
   display: block;
   padding-block: 0.375rem;
   color: var(--x-text);
-  font-size: 0.9375rem;
-  line-height: 1.36;
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -129,8 +125,8 @@
 .small {
   margin: 0;
   color: var(--x-text-2);
-  font-size: 0.8125rem;
-  line-height: 1.5;
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
 }
 
 @media (min-width: 48em) {

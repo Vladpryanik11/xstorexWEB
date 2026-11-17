@@ -30,6 +30,10 @@ Source of truth: `packages/ui/src/tokens.css` (pinned by `tokens.test.ts`).
 
 Shapes: panels `--x-radius-panel` (1.75rem), cards/covers/screenshots `--x-radius-card` (1.5rem), buttons, fields, search, chips, badges, header, toasts `--x-radius-pill`. App icons: squircle radius 22.5%. Shadows are always blue, never grey. Text contrast ≥ 4.5:1.
 
+## Type
+
+Spec `docs/superpowers/specs/2026-11-17-typography-design.md`. Manrope 700 (`--x-font-head`) only for display, h1, h2; Inter (`--x-font`) for everything else, weights 400/500/600. Sizes only through `font: var(--x-type-display|h1|h2|h3|body|ui|cap)` (34→48, 28, 22, 17, 16, 14, 12 px), always with `letter-spacing: var(--x-track-head|body|small)` (.01em, .02em, .035em — «много воздуха»). No `font-size:` or literal `font:` in CSS modules; `apps/web/src/typography.test.ts` enforces it.
+
 ## Header
 
 White floating glass pill (spec §5): top offset `.75rem + safe-area`, side `--x-gutter`, max width `--x-page-max`, background `rgba(255,255,255,.78)` + `backdrop-filter: blur(12px) saturate(1.4)`, `--x-shadow`, 1px inner white ring. Active item `--x-sky-50` / `--x-quiet-fg`, the highlight slides between items (motion `layoutId`). After 24px of scroll it narrows to max 56rem and 48px height. Below 48em: logo, «Установить» (guest), round menu button opening a Card Nav (cards «Каталог», «Аккаунт», «Помощь»).

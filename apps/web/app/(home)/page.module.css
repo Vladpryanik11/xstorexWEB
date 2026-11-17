@@ -16,7 +16,7 @@
   left: 50%;
   translate: -50% 0;
   color: var(--x-white);
-  font: 800 clamp(5.5rem, 30vw, 17rem) / 0.8 var(--x-font);
+  font: 800 clamp(5.5rem, 30vw, 17rem) / 0.8 var(--x-font-head);
   letter-spacing: -0.04em;
   white-space: nowrap;
   pointer-events: none;
@@ -34,10 +34,8 @@
 .title {
   max-width: 20.5rem;
   margin: 0 0 1.5rem;
-  font-size: 1.875rem;
-  font-weight: 500;
-  line-height: 1.19;
-  letter-spacing: -0.0103125rem;
+  font: var(--x-type-display);
+  letter-spacing: var(--x-track-head);
   text-wrap: balance;
 }
 
@@ -60,9 +58,6 @@
 
   .title {
     max-width: 34rem;
-    font-size: 2.75rem;
-    line-height: 1.14;
-    letter-spacing: -0.015rem;
   }
 
   .shelves {
