@@ -292,7 +292,7 @@ model CollectionItem {
   @@index([appId])
 }
 
-/// One install from the catalog; feeds «Самый загружаемый» and «Тенденции».
+/// One install from the catalog; feeds «Популярное» and «Набирают популярность».
 model InstallEvent {
   id        String   @id @default(cuid())
   appId     String

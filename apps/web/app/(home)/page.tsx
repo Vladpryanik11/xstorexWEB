@@ -1,10 +1,11 @@
-import { InstallBanner, SearchField } from '@xstore/ui';
+import { SearchField } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { Fragment } from 'react';
 import { serverApi } from '../../src/api/server';
 import { CategoryChips } from '../../src/catalog/CategoryChips';
 import { CollectionSection } from '../../src/catalog/CollectionSection';
 import { HeroCarousel } from '../../src/catalog/HeroCarousel';
+import { HowItWorks } from '../../src/catalog/HowItWorks';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -45,8 +46,8 @@ export default async function HomePage() {
           </Fragment>
         ))}
         {home.collections.length < CHIPS_AFTER ? chips : null}
+        <HowItWorks />
       </div>
-      <InstallBanner href="/install" />
     </>
   );
 }

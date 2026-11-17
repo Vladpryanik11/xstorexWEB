@@ -36,8 +36,8 @@ export function Header({ signedIn, overHero = false, forcedPath }: HeaderProps) 
             </Link>
           ) : (
             <>
-              <Link className={styles.entry} href="/install">
-                Установить
+              <Link className={styles.entry} href="/pricing">
+                Тарифы
               </Link>
               <Link className={styles.quiet} href="/signin">
                 Войти

@@ -39,7 +39,7 @@ describe('AppPreview (Morphing Dialog)', () => {
     expect(dialog).toHaveTextContent('Подзаголовок приложения 1');
     expect(screen.getByRole('link', { name: 'Установить' })).toHaveAttribute(
       'href',
-      expect.stringContaining('/signin?next='),
+      '/pricing?app=testovoe-prilozhenie-1',
     );
     expect(screen.getByRole('link', { name: 'Подробнее' })).toHaveAttribute(
       'href',

@@ -52,6 +52,25 @@
   margin-top: 0.5rem;
 }
 
+.signin {
+  margin: 0.625rem 0 0;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.signin a {
+  color: var(--x-quiet-fg);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.signin a:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
 .section {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

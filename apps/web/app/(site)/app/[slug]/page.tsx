@@ -113,6 +113,11 @@ export default async function AppPage({ params }: Props) {
             ) : (
               <Button disabled>{install.label}</Button>
             )}
+            {install.signinHref ? (
+              <p className={styles.signin}>
+                Уже оплачивали? <a href={install.signinHref}>Войти</a>
+              </p>
+            ) : null}
           </div>
         </div>
       </header>
