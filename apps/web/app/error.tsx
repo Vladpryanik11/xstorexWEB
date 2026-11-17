@@ -11,8 +11,10 @@ export default function ErrorPage({ retry }: { error: unknown; retry: () => void
     <SiteShell>
       <section className={styles.status}>
         <h1 className={styles.title}>Что-то пошло не так</h1>
-        <p className={styles.text}>Страница не загрузилась. Попробуйте ещё раз.</p>
-        <Button onClick={() => retry()}>Попробовать снова</Button>
+        <p className={styles.text}>
+          Не удалось загрузить страницу. Обновите её или загляните чуть позже.
+        </p>
+        <Button onClick={() => retry()}>Обновить</Button>
       </section>
     </SiteShell>
   );

@@ -8,10 +8,10 @@ import { HeroCarousel } from '../../src/catalog/HeroCarousel';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Xstore — приложения для iPhone без компьютера' },
+  title: { absolute: 'Xstore — приложения для iPhone и iPad' },
   description:
-    'Каталог приложений для iPhone и iPad с установкой прямо из Safari, без компьютера и кабеля.',
-  openGraph: { title: 'Xstore — приложения для iPhone без компьютера', type: 'website' },
+    'Каталог приложений для iPhone и iPad. Оплата без регистрации, установка прямо с сайта.',
+  openGraph: { title: 'Xstore — приложения для iPhone и iPad', type: 'website' },
 };
 
 /** Chips go after this many collections (spec §6.3). */
@@ -28,7 +28,11 @@ export default async function HomePage() {
           XSTORE
         </span>
         <div className={styles.heroInner}>
-          <h1 className={styles.title}>Приложения для iPhone без компьютера</h1>
+          <h1 className={styles.title}>Приложения для iPhone и iPad</h1>
+          <p className={styles.lead}>
+            Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не
+            нужна.
+          </p>
           <SearchField action="/search" />
         </div>
       </section>

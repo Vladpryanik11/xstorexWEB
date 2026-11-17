@@ -19,8 +19,8 @@ async function loadCategory(params: Props['params']) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await loadCategory(params);
-  const title = `${category.name}: приложения для iPhone`;
-  return { title, description: `${title} с установкой из Safari.`, openGraph: { title } };
+  const title = `${category.name}: приложения для iPhone и iPad`;
+  return { title, description: `${title} в Xstore.`, openGraph: { title } };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
@@ -36,7 +36,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       {page.items.length > 0 ? (
         <AppGrid apps={page.items} label={category.name} />
       ) : (
-        <EmptyState>В этой категории пока нет приложений.</EmptyState>
+        <EmptyState>Здесь пока пусто. Загляните позже или выберите другую категорию.</EmptyState>
       )}
       {page.nextCursor ? (
         <MoreLink

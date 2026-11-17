@@ -20,8 +20,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Xstore — магазин приложений для iPhone', template: '%s — Xstore' },
-  description: 'Приложения для iPhone с установкой прямо из Safari.',
+  title: { default: 'Xstore — приложения для iPhone и iPad', template: '%s — Xstore' },
+  description:
+    'Каталог приложений для iPhone и iPad. Оплата без регистрации, установка прямо с сайта.',
 };
 
 export const viewport: Viewport = {

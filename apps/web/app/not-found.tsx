@@ -7,9 +7,9 @@ export default function NotFound() {
   return (
     <SiteShell>
       <section className={styles.status}>
-        <h1 className={styles.title}>Страница не найдена</h1>
-        <p className={styles.text}>Проверьте адрес или вернитесь на главную.</p>
-        <Button href="/">На главную</Button>
+        <h1 className={styles.title}>Такой страницы нет</h1>
+        <p className={styles.text}>Возможно, ссылка устарела или в адресе опечатка.</p>
+        <Button href="/">В каталог</Button>
       </section>
     </SiteShell>
   );

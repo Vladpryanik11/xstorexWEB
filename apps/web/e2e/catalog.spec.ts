@@ -5,7 +5,12 @@ import { expect, test } from '@playwright/test';
 test('home shows collections and opens an app page', async ({ page }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone без компьютера' }),
+    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone и iPad' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      'Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не нужна.',
+    ),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Самый загружаемый' })).toBeVisible();
   await page
@@ -48,15 +53,19 @@ test('search finds by Cyrillic prefix', async ({ page }) => {
 
 test('search explains short and empty queries', async ({ page }) => {
   await page.goto('/search?q=т');
-  await expect(page.getByText('Введите хотя бы 2 символа')).toBeVisible();
+  await expect(page.getByText('Введите хотя бы две буквы')).toBeVisible();
   await page.goto('/search?q=несуществующее');
-  await expect(page.getByText('Ничего не нашлось. Попробуйте другое название.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'По запросу «несуществующее» ничего нет. Проверьте написание или попробуйте другое название.',
+    ),
+  ).toBeVisible();
 });
 
 test('hidden app is 404', async ({ page }) => {
   const res = await page.goto('/app/hidden-app');
   expect(res?.status()).toBe(404);
-  await expect(page.getByRole('heading', { name: 'Страница не найдена' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Такой страницы нет' })).toBeVisible();
 });
 
 test('app page has SoftwareApplication JSON-LD', async ({ page }) => {

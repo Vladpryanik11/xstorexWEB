@@ -8,8 +8,8 @@ const groups = [
     { href: '/support', label: 'Поддержка' },
   ],
   [
-    { href: '/terms', label: 'Условия' },
-    { href: '/privacy', label: 'Конфиденциальность' },
+    { href: '/terms', label: 'Условия использования' },
+    { href: '/privacy', label: 'Политика конфиденциальности' },
   ],
 ];
 
@@ -49,6 +49,9 @@ export function Footer() {
             </a>
           ) : null}
         </div>
+        <p className={styles.tagline}>
+          Приложения для iPhone и iPad. Только с правами на распространение.
+        </p>
         <nav className={styles.groups} aria-label="Разделы сайта">
           {groups.map((links) => (
             <ul key={links[0]?.href}>

@@ -11,11 +11,14 @@ it('error page apologises in Russian inside the site shell and offers a retry', 
   expect(
     screen.getByRole('heading', { level: 1, name: 'Что-то пошло не так' }),
   ).toBeInTheDocument();
+  expect(
+    screen.getByText('Не удалось загрузить страницу. Обновите её или загляните чуть позже.'),
+  ).toBeInTheDocument();
   expect(screen.getByRole('banner')).toBeInTheDocument();
   expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   // The raw error never reaches the page.
   expect(screen.queryByText(/secret/)).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Попробовать снова' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
   expect(retry).toHaveBeenCalledOnce();
 });
