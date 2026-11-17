@@ -6,6 +6,6 @@ const css = (loc: Locator, prop: string) =>
 test('footer surface and links', async ({ page }) => {
   await page.goto('/');
   const footer = page.locator('footer');
-  expect(await css(footer, 'background-color')).toBe('rgb(240, 243, 250)');
+  expect(await css(footer, 'background-color')).toBe('rgb(227, 237, 253)');
   await expect(footer.getByRole('link', { name: 'Условия' })).toHaveAttribute('href', '/terms');
 });
