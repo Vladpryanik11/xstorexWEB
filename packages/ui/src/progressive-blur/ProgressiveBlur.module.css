@@ -36,18 +36,11 @@
   inset: 0;
 }
 
-.root span:nth-child(1) {
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-  -webkit-mask-image: linear-gradient(var(--dir), transparent 0%, #000 50%);
-  mask-image: linear-gradient(var(--dir), transparent 0%, #000 50%);
-}
-
-.root span:nth-child(2) {
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  -webkit-mask-image: linear-gradient(var(--dir), transparent 50%, #000 100%);
-  mask-image: linear-gradient(var(--dir), transparent 50%, #000 100%);
+.root span {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask-image: linear-gradient(var(--dir), transparent 0%, #000 100%);
+  mask-image: linear-gradient(var(--dir), transparent 0%, #000 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

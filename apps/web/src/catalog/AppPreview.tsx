@@ -17,6 +17,7 @@ export type AppPreviewProps = {
 
 const SPRING = { type: 'spring', stiffness: 380, damping: 34 } as const;
 const FOCUSABLE = 'a[href], button:not([disabled])';
+const EXIT_FALLBACK_MS = 450;
 
 /**
  * Quick look at an app from its icon, adapted from Motion Primitives «Morphing Dialog»
@@ -25,6 +26,9 @@ const FOCUSABLE = 'a[href], button:not([disabled])';
  */
 export function AppPreview({ slug, name, subtitle, iconUrl }: AppPreviewProps) {
   const [open, setOpen] = useState(false);
+  // The layer stays mounted while the card morphs back; a fallback ends it even where a browser
+  // never finishes the shared-layout exit (seen in WebKit CI and jsdom).
+  const [mounted, setMounted] = useState(false);
   const reduce = useReducedMotion() ?? false;
   const morph = !reduce;
   const id = useId();
@@ -36,6 +40,16 @@ export function AppPreview({ slug, name, subtitle, iconUrl }: AppPreviewProps) {
   });
 
   const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    if (!mounted) return;
+    const timer = window.setTimeout(() => setMounted(false), EXIT_FALLBACK_MS);
+    return () => window.clearTimeout(timer);
+  }, [open, mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -91,10 +105,10 @@ export function AppPreview({ slug, name, subtitle, iconUrl }: AppPreviewProps) {
           <AppIcon src={iconUrl} alt="" size={56} />
         </motion.span>
       </motion.button>
-      {typeof document === 'undefined'
+      {!(open || mounted) || typeof document === 'undefined'
         ? null
         : createPortal(
-            <AnimatePresence>
+            <AnimatePresence onExitComplete={() => setMounted(false)}>
               {open ? (
                 <div className={styles.layer} key="layer">
                   <motion.div

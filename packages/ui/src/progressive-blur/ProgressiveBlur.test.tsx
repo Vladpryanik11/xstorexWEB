@@ -8,6 +8,6 @@ describe('ProgressiveBlur', () => {
     const root = container.firstElementChild as HTMLElement;
     expect(root).toHaveAttribute('aria-hidden', 'true');
     expect(root).toHaveAttribute('data-side', 'end');
-    expect(root.children).toHaveLength(2);
+    expect(root.children).toHaveLength(1);
   });
 });

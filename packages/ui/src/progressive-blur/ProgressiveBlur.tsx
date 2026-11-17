@@ -11,9 +11,9 @@ export type ProgressiveBlurProps = {
 
 /**
  * Edge blur that grows toward one side, adapted from Magic UI «Progressive Blur»
- * (https://magicui.design/docs/components/progressive-blur): stacked `backdrop-filter` layers,
- * each masked to a band, the strongest at the edge. Two layers and no painting while hidden keep
- * it cheap enough for WebKit. Pure CSS, no JS.
+ * (https://magicui.design/docs/components/progressive-blur): one `backdrop-filter` layer whose
+ * mask fades it in toward the edge. A single layer and no painting while hidden keep it cheap
+ * enough for WebKit. Pure CSS, no JS.
  */
 export function ProgressiveBlur({
   side,
@@ -29,7 +29,6 @@ export function ProgressiveBlur({
       aria-hidden="true"
       {...rest}
     >
-      <span />
       <span />
     </div>
   );

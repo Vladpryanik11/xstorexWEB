@@ -60,6 +60,16 @@ describe('AppPreview (Morphing Dialog)', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('Escape removes the morphing dialog even if the exit animation never settles', async () => {
+    render(<AppCardRow app={app} />);
+    const trigger = screen.getByRole('button', { name: 'Быстрый просмотр: Тестовое приложение 1' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-morph', 'true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(trigger).toHaveFocus();
+  });
+
   it('does not morph under reduced motion', () => {
     reduced.value = true;
     render(<AppCardRow app={app} />);
