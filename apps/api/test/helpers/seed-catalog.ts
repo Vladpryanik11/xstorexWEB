@@ -132,6 +132,6 @@ export async function seedInstalls(
 ): Promise<void> {
   const createdAt = new Date(now.getTime() - daysAgo * 86_400_000);
   await db.installEvent.createMany({
-    data: Array.from({ length: count }, (_, i) => ({ appId, deviceId: `dev-${i}`, createdAt })),
+    data: Array.from({ length: count }, () => ({ appId, createdAt })),
   });
 }
