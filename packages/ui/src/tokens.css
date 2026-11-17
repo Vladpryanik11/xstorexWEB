@@ -1,31 +1,51 @@
 /* biome-ignore format: token block is kept verbatim from the xstore-design skill */
 :root {
+  /* palette E — spec 2026-11-17-premium-ui-design.md §3 */
+  --x-white: #fff;
+  --x-ice: #f2f8fd;
+  --x-sky-50: #e3edfd;
+  --x-sky-200: #a8cff4;
+  --x-sky-400: #4da3ff;
   --x-blue: #1a6eea;
-  --x-blue-strong: #0167e5;
+  --x-blue-deep: #0a4bbf;
   --x-blue-ring: #2276f3;
-  --x-ink: #062260;
-  --x-text: #000;
-  --x-text-2: #6b7280;
+  --x-text: #0e1a33;
+  --x-text-2: #5f6b85;
   --x-text-3: #8c97ae;
-  --x-quiet: #8a8a8d;
-  --x-link: #008bff;
-  --x-page: #f3f4f6;
-  --x-surface: #f0f3fa;
-  --x-surface-2: #eceef5;
-  --x-card: #fff;
-  --x-hair: #8a8a8d33;
+  --x-quiet-fg: #0f5fd6;
+  --x-link: #0f5fd6;
+  --x-ok: #0f7743;
+  --x-ok-bg: #e3f5ea;
+  --x-warn: #a35a00;
+  --x-warn-bg: #fdf0dc;
+  --x-err: #c62f35;
+  --x-err-bg: #fde6e7;
+  --x-card: var(--x-white);
+  --x-hair: rgba(26, 110, 234, .10);
+  --x-shadow: 0 12px 32px -20px rgba(26, 110, 234, .45);
+  --x-shadow-sm: 0 4px 12px -4px rgba(26, 110, 234, .14);
+  /* shapes — §4 */
+  --x-radius-panel: 1.75rem;
   --x-radius-card: 1.5rem;
-  --x-radius-field: .875rem;
+  --x-radius-pill: 999px;
+  --x-radius-field: var(--x-radius-pill);
   --x-gutter: 1.25rem;
   --x-column: 33rem;
   --x-page-max: 70rem; /* ≥64em: clamp(70rem, 100vw - 10rem, 90rem) */
   --x-font: "Helvetica Neue", Helvetica, Inter, Arial, sans-serif;
   --x-system: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --x-ease: cubic-bezier(.23, 1, .32, 1);
+  --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
+  /* transitional aliases, removed in plan task 11 */
+  --x-page: var(--x-ice);
+  --x-surface: var(--x-sky-50);
+  --x-surface-2: #eaf2fd;
+  --x-ink: var(--x-text);
+  --x-quiet: var(--x-text-2);
+  /* diyorde header, removed in plan task 4 */
   --x-header-gradient: linear-gradient(#0c45b7 0%, #134cbe 30%, #1c55c8 51%, #245dd0 69%, #3b75e9 100%);
   --x-glass: rgba(255,255,255,.2);
   --x-glass-shadow: inset 0 -1px 1px -.5px rgba(255,255,255,.2), inset 0 1px 1px -.5px rgba(255,255,255,.39);
-  --x-ease: cubic-bezier(.23, 1, .32, 1);
-  --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
 }
 
 /* page width: wider at ≥64em */
@@ -53,12 +73,12 @@
 }
 
 body {
-  background: var(--x-page);
+  background: var(--x-ice);
 }
 
 /* component tokens (design skill «Components») */
 :root {
   --x-star: #8e8e91;
-  --x-cover-ring: inset 0 0 0 0.5px rgba(6, 34, 96, 0.12);
+  --x-cover-ring: inset 0 0 0 0.5px rgba(26, 110, 234, 0.14);
   --x-radius-cover: 0.875rem;
 }
