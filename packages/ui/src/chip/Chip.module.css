@@ -1,4 +1,6 @@
 .chip {
+  position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -22,6 +24,11 @@
 .chip:focus-visible {
   outline: 2px solid var(--x-blue-ring);
   outline-offset: 2px;
+}
+
+.icon,
+.label {
+  position: relative;
 }
 
 .icon {

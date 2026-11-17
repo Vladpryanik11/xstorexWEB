@@ -47,6 +47,7 @@
     background: var(--x-card);
     color: var(--x-blue);
     box-shadow: var(--x-shadow-sm);
+    z-index: 2;
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.16s var(--x-ease);

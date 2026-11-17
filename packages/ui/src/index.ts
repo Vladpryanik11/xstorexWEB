@@ -9,6 +9,7 @@ export { IconTile, type IconTileProps } from './icon-tile/IconTile';
 export { type InfoItem, InfoList, type InfoListProps } from './info-list/InfoList';
 export { InstallBanner, type InstallBannerProps } from './install-banner/InstallBanner';
 export { MoreText, type MoreTextProps } from './more-text/MoreText';
+export { ProgressiveBlur, type ProgressiveBlurProps } from './progressive-blur/ProgressiveBlur';
 export { Rail, type RailProps } from './rail/Rail';
 export { RowsGrid, type RowsGridProps } from './rows-grid/RowsGrid';
 export { SearchField, type SearchFieldProps } from './search/SearchField';

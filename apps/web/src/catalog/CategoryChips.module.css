@@ -27,3 +27,21 @@
     overflow-x: visible;
   }
 }
+
+.highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--x-sky-50);
+  transition: background-color 0.2s var(--x-ease);
+}
+
+.onActive {
+  background: var(--x-blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .highlight {
+    transition: none;
+  }
+}
