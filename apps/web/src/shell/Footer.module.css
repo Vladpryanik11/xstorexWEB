@@ -128,7 +128,7 @@
 
 .small {
   margin: 0;
-  color: #626771;
+  color: var(--x-text-2);
   font-size: 0.8125rem;
   line-height: 1.5;
 }

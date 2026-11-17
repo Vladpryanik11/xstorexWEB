@@ -110,3 +110,8 @@ test('focus ring stays visible in the open card menu', async ({ page }) => {
   await expect(burger).toHaveCSS('outline-style', 'solid');
   await expect(burger).toHaveCSS('outline-color', 'rgb(34, 118, 243)');
 });
+
+test('iPhone status bar matches the ice page', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
+});

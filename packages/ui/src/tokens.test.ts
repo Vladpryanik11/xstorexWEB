@@ -41,4 +41,17 @@ describe('palette E tokens (spec 2026-11-17, §3–4)', () => {
   it('page background is ice', () => {
     expect(css).toMatch(/body\s*\{\s*background:\s*var\(--x-ice\)/);
   });
+
+  it.each([
+    '--x-page',
+    '--x-surface',
+    '--x-surface-2',
+    '--x-ink',
+    '--x-quiet',
+    '--x-header-gradient',
+    '--x-glass',
+    '--x-glass-shadow',
+  ])('legacy token %s is gone', (name) => {
+    expect(token(name)).toBeUndefined();
+  });
 });

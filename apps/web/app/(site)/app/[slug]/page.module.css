@@ -40,8 +40,8 @@
   margin: 0;
   padding: 0.1875rem 0.5rem;
   border-radius: 62.5rem;
-  background: var(--x-surface-2);
-  color: var(--x-ink);
+  background: var(--x-sky-50);
+  color: var(--x-text);
   font: 600 11px / 1.3 var(--x-font);
 }
 

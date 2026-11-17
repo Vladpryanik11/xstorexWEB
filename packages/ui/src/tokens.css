@@ -37,16 +37,6 @@
   --x-system: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --x-ease: cubic-bezier(.23, 1, .32, 1);
   --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
-  /* transitional aliases, removed in plan task 11 */
-  --x-page: var(--x-ice);
-  --x-surface: var(--x-sky-50);
-  --x-surface-2: #eaf2fd;
-  --x-ink: var(--x-text);
-  --x-quiet: var(--x-text-2);
-  /* diyorde header, removed in plan task 4 */
-  --x-header-gradient: linear-gradient(#0c45b7 0%, #134cbe 30%, #1c55c8 51%, #245dd0 69%, #3b75e9 100%);
-  --x-glass: rgba(255,255,255,.2);
-  --x-glass-shadow: inset 0 -1px 1px -.5px rgba(255,255,255,.2), inset 0 1px 1px -.5px rgba(255,255,255,.39);
 }
 
 /* page width: wider at ≥64em */
