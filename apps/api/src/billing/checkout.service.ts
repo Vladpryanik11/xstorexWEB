@@ -103,6 +103,11 @@ export class CheckoutService {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.checkoutKey}))`;
       const same = await tx.order.findUnique({ where: { checkoutKey: input.checkoutKey } });
       if (same) {
+        // A key left over from a settled order (e.g. in sessionStorage) never returns that
+        // order: the client starts again with a new key.
+        if (!OPEN_STATUSES.some((s) => s === same.status)) {
+          throw new DomainError(ErrorCode.CHECKOUT_SETTLED, 409);
+        }
         if (buyer && same.userId === buyer) return { order: same, guestUserId: null };
         throw new DomainError(ErrorCode.CHECKOUT_IN_PROGRESS, 409);
       }

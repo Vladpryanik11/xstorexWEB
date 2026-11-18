@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ApiClientError, type CheckoutRequest, ErrorCode } from '@xstore/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PayStep } from './PayStep';
+import { CHECKOUT_KEY_STORAGE } from './wizard-step';
 
 const plan = { code: 'month', title: 'Месяц', durationDays: 30, priceRub: 299 };
 
@@ -107,5 +108,57 @@ describe('PayStep', () => {
     expect(screen.getByRole('heading', { name: 'Продление доступа' })).toBeInTheDocument();
     expect(screen.getByText('Доступ продлится до 17 января 2027')).toBeInTheDocument();
     expect(screen.queryByText('Подписка начнётся сразу после оплаты')).toBeNull();
+  });
+
+  it('a key of a settled order is replaced by a new one and the checkout is retried once', async () => {
+    sessionStorage.setItem(CHECKOUT_KEY_STORAGE, 'old-key');
+    const checkout = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new ApiClientError(409, ErrorCode.CHECKOUT_SETTLED, 'Эта оплата уже завершена'),
+      )
+      .mockResolvedValue({ orderId: 'o2', redirectUrl: '/dev/pay/p2' });
+    const { navigate, button, email, terms } = setup(checkout);
+    fireEvent.change(email, { target: { value: 'buyer@example.com' } });
+    fireEvent.click(terms);
+    fireEvent.click(button);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/dev/pay/p2'));
+    const [first, second] = checkout.mock.calls.map((c) => c[0] as CheckoutRequest);
+    expect(first?.checkoutKey).toBe('old-key');
+    expect(second?.checkoutKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sessionStorage.getItem(CHECKOUT_KEY_STORAGE)).toBe(second?.checkoutKey);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('retries a settled key only once, then shows the error', async () => {
+    const settled = new ApiClientError(409, ErrorCode.CHECKOUT_SETTLED, 'x');
+    const checkout = vi.fn().mockRejectedValue(settled);
+    const { button, email, terms } = setup(checkout);
+    fireEvent.change(email, { target: { value: 'buyer@example.com' } });
+    fireEvent.click(terms);
+    fireEvent.click(button);
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(checkout).toHaveBeenCalledTimes(2);
+  });
+
+  it('renewal starts with a new key, not one left in sessionStorage', async () => {
+    sessionStorage.setItem(CHECKOUT_KEY_STORAGE, 'old-key');
+    const checkout = vi.fn().mockResolvedValue({ orderId: 'o3', redirectUrl: '/dev/pay/p3' });
+    render(
+      <PayStep
+        plan={plan}
+        renewUntil={new Date('2026-12-18T12:00:00Z')}
+        checkout={checkout}
+        navigate={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Почта'), { target: { value: 'buyer@example.com' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Согласен с условиями/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Оплатить/ }));
+    await waitFor(() => expect(checkout).toHaveBeenCalledTimes(1));
+    const key = (checkout.mock.calls[0]?.[0] as CheckoutRequest | undefined)?.checkoutKey;
+    expect(key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(key).not.toBe('old-key');
+    expect(sessionStorage.getItem(CHECKOUT_KEY_STORAGE)).toBe(key);
   });
 });

@@ -23,6 +23,7 @@ it('has a Russian message for every code', () => {
   expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта или пароль');
   expect(errorMessages.CODE_INVALID).toBe('Неверный или устаревший код');
   expect(errorMessages.CONFLICT).toBe('Конфликт данных');
+  expect(errorMessages.CHECKOUT_SETTLED).toBe('Эта оплата уже завершена. Начните новую');
   expect(errorMessages.DUPLICATE_VERSION).toBe('Эта версия уже загружена');
   expect(errorMessages.IPA_ZIP_BOMB).toBe('Архив подозрительно сильно сжат и отклонён');
 });

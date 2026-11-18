@@ -269,3 +269,25 @@ it('returnTo outside site is dropped', async () => {
     expect(order.returnTo).toBeNull();
   }
 });
+
+it('a key of a settled order answers CHECKOUT_SETTLED, a new key starts a new order', async () => {
+  await seedPlan(db);
+  const agent = request.agent(app.getHttpServer());
+  for (const status of ['paid', 'failed', 'expired', 'refunded'] as const) {
+    await redis.flushdb(); // checkout rate limit
+    const key = randomUUID();
+    const first = await postCheckout(agent, checkoutBody(key));
+    expect(first.status).toBe(200);
+    await db.order.update({ where: { id: first.body.orderId }, data: { status } });
+    const again = await postCheckout(agent, checkoutBody(key));
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe('CHECKOUT_SETTLED');
+    // Without the buyer's session too: a settled order is never continued.
+    const stranger = await postCheckout(request(app.getHttpServer()), checkoutBody(key));
+    expect(stranger.status).toBe(409);
+    expect(stranger.body.code).toBe('CHECKOUT_SETTLED');
+  }
+  const fresh = await postCheckout(agent, checkoutBody(randomUUID()));
+  expect(fresh.status).toBe(200);
+  expect(await db.order.count()).toBe(5);
+});

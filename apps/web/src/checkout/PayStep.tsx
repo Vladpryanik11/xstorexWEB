@@ -42,6 +42,7 @@ function checkoutErrorText(err: unknown): string {
       case ErrorCode.PAYMENT_PROVIDER_DOWN:
       case ErrorCode.PLAN_UNAVAILABLE:
       case ErrorCode.CHECKOUT_IN_PROGRESS:
+      case ErrorCode.CHECKOUT_SETTLED:
         return errorMessages[err.code];
       default:
         break;
@@ -73,6 +74,12 @@ export function PayStep({
   const [error, setError] = useState('');
   // One key per opened form: a double press or a reload continues the same order.
   const key = useRef<string | null>(null);
+  const renewing = renewUntil !== undefined;
+
+  // «Продлить» is a new payment: a key left from the last checkout would return its old order.
+  useEffect(() => {
+    if (renewing) key.current = newCheckoutKey();
+  }, [renewing]);
 
   const emailOk = looksLikeEmail(email);
   const ready = emailOk && accepted && !busy;
@@ -97,14 +104,24 @@ export function PayStep({
     if (!ready) return;
     key.current ??= readCheckoutKey();
     setBusy(true);
-    try {
-      const { redirectUrl } = await checkout({
-        checkoutKey: key.current,
+    const send = (checkoutKey: string) =>
+      checkout({
+        checkoutKey,
         email: email.trim(),
         acceptTerms: true,
         ...(returnTo ? { returnTo } : {}),
       });
-      navigate(redirectUrl);
+    try {
+      let response: CheckoutResponse;
+      try {
+        response = await send(key.current);
+      } catch (err) {
+        // The stored key belongs to an order that is already settled: start once with a new key.
+        if (!(err instanceof ApiClientError && err.code === ErrorCode.CHECKOUT_SETTLED)) throw err;
+        key.current = newCheckoutKey();
+        response = await send(key.current);
+      }
+      navigate(response.redirectUrl);
     } catch (err) {
       setError(checkoutErrorText(err));
     } finally {
