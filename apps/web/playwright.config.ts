@@ -24,6 +24,9 @@ export const e2eApiEnv = (env: NodeJS.ProcessEnv = process.env): Record<string, 
     S3_ACCESS_KEY: pick('S3_ACCESS_KEY', env.S3_ACCESS_KEY),
     S3_SECRET_KEY: pick('S3_SECRET_KEY', env.S3_SECRET_KEY),
     S3_BUCKET_PREFIX: pick('S3_BUCKET_PREFIX_TEST', env.S3_BUCKET_PREFIX_TEST),
+    // E2E pays through the development-only fake provider; the key signs only fake webhooks.
+    PAYMENT_PROVIDER: 'fake',
+    FAKE_PAYMENT_WEBHOOK_SECRET: 'e2e-fake-webhook-secret',
   };
 };
 
@@ -65,6 +68,7 @@ export default defineConfig({
         API_PORT: String(apiPort),
         SITE_URL: `http://localhost:${port}`,
         LOG_LEVEL: 'warn',
+        XSTORE_DEV_PAGES: '1',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

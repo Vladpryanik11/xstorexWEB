@@ -47,6 +47,8 @@ COPY --from=prod-deps /app .
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
 COPY --from=builder /app/packages/db/dist packages/db/dist
 COPY --from=builder /app/packages/ios/dist packages/ios/dist
+# When the worker depends on @xstore/billing (N1 task 5), copy packages/billing/dist here too:
+# turbo prune leaves out packages the worker does not depend on, so the COPY would fail before.
 COPY --from=builder /app/apps/worker/dist apps/worker/dist
 USER node
 CMD ["node", "apps/worker/dist/main.js"]

@@ -68,6 +68,9 @@ services:
       S3_PUBLIC_URL: https://${DL_DOMAIN:-dl.localhost}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-xstore}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # Production always pays through Platega; the fake provider refuses NODE_ENV=production.
+      PAYMENT_PROVIDER: platega
+      XSTORE_DEV_PAGES: '0'
     depends_on:
       migrate:
         condition: service_completed_successfully

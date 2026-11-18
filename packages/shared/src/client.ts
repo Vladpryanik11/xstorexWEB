@@ -1,5 +1,16 @@
 import type { z } from 'zod';
 import {
+  type AccessResponse,
+  accessResponseSchema,
+  type CheckoutRequest,
+  type CheckoutResponse,
+  checkoutResponseSchema,
+  type OrderView,
+  orderViewSchema,
+  type PlanView,
+  planViewSchema,
+} from './billing.js';
+import {
   type AppCard,
   type AppDetail,
   appCardSchema,
@@ -44,13 +55,7 @@ export function createApiClient(opts: ApiClientOptions) {
   const base = `${opts.baseUrl.replace(/\/+$/, '')}/api/v1`;
   const doFetch = opts.fetch ?? fetch;
 
-  async function get<T extends z.ZodType>(path: string, schema: T, query: Query = {}) {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(query)) if (v !== undefined) params.set(k, v);
-    const qs = params.size > 0 ? `?${params}` : '';
-    const res = await doFetch(`${base}${path}${qs}`, {
-      headers: { accept: 'application/json', ...opts.headers },
-    });
+  async function parse<T extends z.ZodType>(res: Response, schema: T): Promise<z.infer<T>> {
     const body: unknown = await res.json().catch(() => undefined);
     if (!res.ok) {
       const err = apiErrorSchema.safeParse(body);
@@ -58,6 +63,25 @@ export function createApiClient(opts: ApiClientOptions) {
       throw new ApiClientError(res.status, ErrorCode.INTERNAL, errorMessages.INTERNAL);
     }
     return schema.parse(body) as z.infer<T>;
+  }
+
+  async function get<T extends z.ZodType>(path: string, schema: T, query: Query = {}) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) if (v !== undefined) params.set(k, v);
+    const qs = params.size > 0 ? `?${params}` : '';
+    const res = await doFetch(`${base}${path}${qs}`, {
+      headers: { accept: 'application/json', ...opts.headers },
+    });
+    return parse(res, schema);
+  }
+
+  async function post<T extends z.ZodType>(path: string, schema: T, body: unknown) {
+    const res = await doFetch(`${base}${path}`, {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json', ...opts.headers },
+      body: JSON.stringify(body),
+    });
+    return parse(res, schema);
   }
 
   const seg = encodeURIComponent;
@@ -72,6 +96,12 @@ export function createApiClient(opts: ApiClientOptions) {
       get(`/catalog/lists/${seg(slug)}`, collectionViewSchema),
     search: (q: string, cursor?: string): Promise<Page<AppCard>> =>
       get('/catalog/search', appPage, { q, cursor }),
+    getPlan: (): Promise<PlanView> => get('/billing/plan', planViewSchema),
+    checkout: (body: CheckoutRequest): Promise<CheckoutResponse> =>
+      post('/billing/checkout', checkoutResponseSchema, body),
+    getOrder: (id: string): Promise<OrderView> =>
+      get(`/billing/orders/${seg(id)}`, orderViewSchema),
+    getAccess: (): Promise<AccessResponse> => get('/access', accessResponseSchema),
   };
 }
 

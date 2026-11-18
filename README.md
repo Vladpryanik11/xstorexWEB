@@ -77,6 +77,10 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 Адрес: http://localhost:3000/dev/ui. Параметры: `?auth=1` показывает шапку вошедшего пользователя, `&path=/devices` подсвечивает пункт меню, `&w=hero` включает прозрачный вариант шапки для главной. E2E-тесты включают переменную сами (`apps/web/playwright.config.ts`).
 
+### Оплата в разработке
+
+`PAYMENT_PROVIDER=fake` (по умолчанию в `.env.example`) хранит платежи в Redis и подписывает вебхуки ключом `FAKE_PAYMENT_WEBHOOK_SECRET`. При `NODE_ENV=production` API с `fake` не запускается; production compose задаёт `PAYMENT_PROVIDER=platega`. С `XSTORE_DEV_PAGES=1` API открывает `POST /api/v1/billing/dev/fake-payments/<id>/pay` и `/fail`: они меняют статус фейкового платежа и проводят его тем же путём, что и вебхук.
+
 ## Production-стек
 
 `infra/docker-compose.yml` поднимает web, api, worker, Postgres, Redis, MinIO и Caddy; наружу публикует порты 80 и 443 только Caddy. Конфигурация берётся из `.env` (домены `SITE_DOMAIN` и `DL_DOMAIN`, пароли `POSTGRES_PASSWORD` и `MINIO_ROOT_PASSWORD`; на сервере задайте настоящие значения). API и воркер ходят в MinIO с учётными данными `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, presigned-ссылки выдаются на `https://DL_DOMAIN`; при старте API создаёт недостающие бакеты (`S3_BUCKET_PREFIX` + `originals`, `media`, `signed`, `uploads`).

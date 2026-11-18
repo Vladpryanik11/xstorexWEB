@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AdminCatalogModule } from './admin-catalog/admin-catalog.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BillingModule } from './billing/billing.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { ApiExceptionFilter } from './common/api-exception.filter.js';
 import { resolveRequestId } from './common/request-id.js';
@@ -47,6 +48,7 @@ export class AppModule {
         CatalogModule,
         AdminCatalogModule,
         JobsModule,
+        BillingModule,
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],

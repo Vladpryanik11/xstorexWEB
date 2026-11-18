@@ -1,13 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { SessionKind } from '@xstore/db';
+import { accessUntil, userSessionExpiry } from '@xstore/shared';
 import type { AuthContext } from '../common/http.js';
 import { PrismaService } from '../infra/prisma.service.js';
 
-const TTL_MS: Record<SessionKind, number> = {
-  staff: 12 * 60 * 60 * 1000,
-  user: 30 * 24 * 60 * 60 * 1000,
-};
+/** Staff sessions have a fixed lifetime; buyer sessions follow paid access (`userExpiry`). */
+const STAFF_TTL_MS = 12 * 60 * 60 * 1000;
 /** lastSeenAt is refreshed at most this often to keep reads cheap. */
 const TOUCH_MS = 5 * 60 * 1000;
 const RENEW_BELOW_MS = 15 * 24 * 60 * 60 * 1000;
@@ -29,7 +28,8 @@ export class SessionService {
     meta: SessionMeta,
   ): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + TTL_MS[kind]);
+    const expiresAt =
+      kind === 'user' ? await this.userExpiry(userId) : new Date(Date.now() + STAFF_TTL_MS);
     await this.prisma.client.session.create({
       data: {
         id: hashToken(token),
@@ -64,7 +64,7 @@ export class SessionService {
     if (shouldRenew || shouldTouch) {
       const data: { lastSeenAt: Date; expiresAt?: Date } = { lastSeenAt: new Date(now) };
       if (shouldRenew) {
-        expiresAt = new Date(now + TTL_MS.user);
+        expiresAt = await this.userExpiry(session.userId, new Date(now));
         data.expiresAt = expiresAt;
       }
       const updated = await this.prisma.client.session.updateMany({
@@ -83,6 +83,28 @@ export class SessionService {
       expiresAt,
       renewed: shouldRenew,
     };
+  }
+
+  /** `max(now + 30 days, end of paid access + 7 days)` over all the user's subscriptions. */
+  async userExpiry(userId: string, now = new Date()): Promise<Date> {
+    const rights = await this.prisma.client.entitlement.findMany({
+      where: { subscription: { userId } },
+      select: { startsAt: true, expiresAt: true, revokedAt: true },
+    });
+    return userSessionExpiry(now, accessUntil(rights, now));
+  }
+
+  /**
+   * After a payment: moves every live buyer session of the user up to the new expiry. Never
+   * shortens a session and never revives an expired one.
+   */
+  async extendUserSessions(userId: string): Promise<void> {
+    const now = new Date();
+    const expiresAt = await this.userExpiry(userId, now);
+    await this.prisma.client.session.updateMany({
+      where: { userId, kind: 'user', expiresAt: { gt: now, lt: expiresAt } },
+      data: { expiresAt },
+    });
   }
 
   async revoke(sessionId: string): Promise<void> {

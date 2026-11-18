@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { AccessState } from './access.js';
 import { emailSchema } from './auth.js';
 
 export const orderStatusSchema = z.enum([
@@ -39,3 +40,32 @@ export const checkoutRequestSchema = z.object({
   acceptTerms: z.literal(true),
 });
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
+
+export const checkoutResponseSchema = z.object({
+  orderId: z.string().min(1),
+  /** Payment page of the provider, or the wizard page when the order needs no payment. */
+  redirectUrl: z.string().min(1),
+});
+export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
+
+const isoDate = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
+
+/** `AccessState` as sent over JSON; `until` is parsed back into a `Date`. */
+export const accessStateSchema: z.ZodType<AccessState, unknown> = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('none') }),
+  z.object({ kind: z.literal('payment_pending'), orderId: z.string().min(1) }),
+  z.object({
+    kind: z.literal('active'),
+    until: isoDate,
+    subscriptionId: z.string().min(1),
+    deviceReady: z.boolean(),
+  }),
+]);
+
+/** `GET /access`. Without a buyer session only `state: { kind: 'none' }` is sent. */
+export const accessResponseSchema = z.object({
+  state: accessStateSchema,
+  email: z.string().nullable().optional(),
+  hasPassword: z.boolean().optional(),
+});
+export type AccessResponse = z.infer<typeof accessResponseSchema>;

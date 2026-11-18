@@ -88,3 +88,83 @@ describe('endpoints', () => {
     expect(String(fetch.mock.calls[0]?.[0] ?? '')).toBe(`http://api${path}`);
   });
 });
+
+describe('billing', () => {
+  const plan = { code: 'month', title: 'Подписка на месяц', durationDays: 30, priceRub: 299 };
+
+  it('getPlan and getOrder call their paths', async () => {
+    const fetch = fakeFetch(200, plan);
+    const api = createApiClient({ baseUrl: 'http://api', fetch });
+    expect(await api.getPlan()).toEqual(plan);
+    expect(String(fetch.mock.calls[0]?.[0])).toBe('http://api/api/v1/billing/plan');
+    const order = {
+      id: 'o/1',
+      status: 'pending',
+      amountRub: 299,
+      paidAt: null,
+      returnTo: null,
+      accessUntil: null,
+    };
+    const f2 = fakeFetch(200, order);
+    expect(await createApiClient({ baseUrl: 'http://api', fetch: f2 }).getOrder('o/1')).toEqual(
+      order,
+    );
+    expect(String(f2.mock.calls[0]?.[0])).toBe('http://api/api/v1/billing/orders/o%2F1');
+  });
+
+  it('checkout posts JSON and returns the redirect', async () => {
+    const fetch = fakeFetch(200, { orderId: 'o1', redirectUrl: 'https://pay/x' });
+    const api = createApiClient({ baseUrl: 'http://api', fetch, headers: { origin: 'http://s' } });
+    const body = {
+      checkoutKey: '3f0c2a52-5b0e-4c1c-9d3e-0b6f6a1f8a11',
+      email: 'a@b.ru',
+      acceptTerms: true as const,
+    };
+    expect(await api.checkout(body)).toEqual({ orderId: 'o1', redirectUrl: 'https://pay/x' });
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(String(url)).toBe('http://api/api/v1/billing/checkout');
+    expect(init?.method).toBe('POST');
+    expect(JSON.parse(String(init?.body))).toEqual(body);
+    const headers = new Headers(init?.headers);
+    expect(headers.get('content-type')).toBe('application/json');
+    expect(headers.get('origin')).toBe('http://s');
+  });
+
+  it('checkout surfaces API errors', async () => {
+    const fetch = fakeFetch(409, { code: 'CHECKOUT_IN_PROGRESS', message: 'x' });
+    const err = await createApiClient({ baseUrl: 'http://api', fetch })
+      .checkout({
+        checkoutKey: '3f0c2a52-5b0e-4c1c-9d3e-0b6f6a1f8a11',
+        email: 'a@b.ru',
+        acceptTerms: true,
+      })
+      .catch((e: unknown) => e);
+    expect(err).toMatchObject({ status: 409, code: 'CHECKOUT_IN_PROGRESS' });
+  });
+
+  it('getAccess parses the active date', async () => {
+    const fetch = fakeFetch(200, {
+      state: {
+        kind: 'active',
+        until: '2026-12-18T12:00:00.000Z',
+        subscriptionId: 's1',
+        deviceReady: false,
+      },
+      email: 'a@b.ru',
+      hasPassword: false,
+    });
+    const access = await createApiClient({ baseUrl: 'http://api', fetch }).getAccess();
+    expect(String(fetch.mock.calls[0]?.[0])).toBe('http://api/api/v1/access');
+    expect(access.state).toEqual({
+      kind: 'active',
+      until: new Date('2026-12-18T12:00:00.000Z'),
+      subscriptionId: 's1',
+      deviceReady: false,
+    });
+    const none = await createApiClient({
+      baseUrl: 'http://api',
+      fetch: fakeFetch(200, { state: { kind: 'none' } }),
+    }).getAccess();
+    expect(none).toEqual({ state: { kind: 'none' } });
+  });
+});

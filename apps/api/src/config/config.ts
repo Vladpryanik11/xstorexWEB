@@ -21,6 +21,10 @@ const envSchema = z.object({
     .string()
     .regex(/^[a-z0-9][a-z0-9-]{0,40}$/)
     .default('xstore-'),
+  NODE_ENV: z.string().optional(),
+  PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
+  FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
+  XSTORE_DEV_PAGES: z.string().optional(),
 });
 
 export type S3Config = {
@@ -34,6 +38,13 @@ export type S3Config = {
   bucketPrefix: string;
 };
 
+export type PaymentConfig = {
+  /** `fake` is for development and tests only; the process refuses it in production. */
+  provider: 'fake' | 'platega';
+  /** HMAC key of fake webhooks; set only with the fake provider. */
+  fakeWebhookSecret: string | null;
+};
+
 export type AppConfig = {
   databaseUrl: string;
   redisUrl: string;
@@ -41,15 +52,26 @@ export type AppConfig = {
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   siteUrl: string;
   s3: S3Config;
+  payment: PaymentConfig;
+  /** `XSTORE_DEV_PAGES=1`: development-only routes such as the fake payment buttons. */
+  devPages: boolean;
 };
+
+const invalid = (names: string[]): Error =>
+  new Error(`Invalid environment variables: ${names.join(', ')}`);
 
 export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
-    const names = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))];
-    throw new Error(`Invalid environment variables: ${names.join(', ')}`);
+    throw invalid([...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))]);
   }
   const e = parsed.data;
+  if (e.PAYMENT_PROVIDER === 'fake' && e.NODE_ENV === 'production') {
+    throw invalid(['PAYMENT_PROVIDER']);
+  }
+  if (e.PAYMENT_PROVIDER === 'fake' && !e.FAKE_PAYMENT_WEBHOOK_SECRET) {
+    throw invalid(['FAKE_PAYMENT_WEBHOOK_SECRET']);
+  }
   return {
     databaseUrl: e.DATABASE_URL,
     redisUrl: e.REDIS_URL,
@@ -64,5 +86,11 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
       secretKey: e.S3_SECRET_KEY,
       bucketPrefix: e.S3_BUCKET_PREFIX,
     },
+    payment: {
+      provider: e.PAYMENT_PROVIDER,
+      fakeWebhookSecret:
+        e.PAYMENT_PROVIDER === 'fake' ? (e.FAKE_PAYMENT_WEBHOOK_SECRET ?? null) : null,
+    },
+    devPages: e.XSTORE_DEV_PAGES === '1',
   };
 }

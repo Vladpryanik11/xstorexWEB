@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
 if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
+export const TEST_WEBHOOK_SECRET = 'test-fake-webhook-secret';
+
 /**
  * Environment for `loadConfig` in integration tests: the *_TEST database and Redis, and the S3
  * buckets under `S3_BUCKET_PREFIX_TEST` so tests never touch development buckets.
@@ -21,6 +23,8 @@ export function testEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     S3_ACCESS_KEY: env.S3_ACCESS_KEY,
     S3_SECRET_KEY: env.S3_SECRET_KEY,
     S3_BUCKET_PREFIX: env.S3_BUCKET_PREFIX_TEST,
+    PAYMENT_PROVIDER: 'fake',
+    FAKE_PAYMENT_WEBHOOK_SECRET: TEST_WEBHOOK_SECRET,
     ...overrides,
   };
 }

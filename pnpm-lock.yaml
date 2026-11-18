@@ -196,6 +196,9 @@ importers:
       '@node-rs/argon2':
         specifier: 2.2.2
         version: 2.2.2
+      '@xstore/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@xstore/db':
         specifier: workspace:*
         version: link:../../packages/db
