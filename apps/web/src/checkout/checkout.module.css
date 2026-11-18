@@ -294,13 +294,18 @@
   cursor: pointer;
 }
 
+.skip:disabled {
+  color: var(--x-text-2);
+  cursor: default;
+}
+
 .skip:focus-visible {
   outline: 2px solid var(--x-blue-ring);
   outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .skip:hover {
+  .skip:hover:enabled {
     background: var(--x-sky-50);
   }
 }

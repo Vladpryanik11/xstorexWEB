@@ -4,11 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 import styles from './Header.module.css';
-import { isActive, menuCards, type NavItem } from './nav';
+import { isActive, menuCards, type NavState } from './nav';
 
 export type MobileMenuProps = {
-  items: NavItem[];
-  signedIn: boolean;
+  nav: NavState;
   /** Overrides the current path (dev showcase). */
   forcedPath?: string;
 };
@@ -32,16 +31,10 @@ const strokes: Record<string, ReactNode> = {
       <circle cx="8.75" cy="8.75" r="1.25" />
     </>
   ),
-  '/devices': (
+  '/access': (
     <>
-      <rect x="6.5" y="2.75" width="11" height="18.5" rx="2.75" />
-      <path d="M10.5 18h3" />
-    </>
-  ),
-  '/profile': (
-    <>
-      <circle cx="12" cy="8.5" r="3.75" />
-      <path d="M4.75 20c.9-3.6 3.7-5.5 7.25-5.5s6.35 1.9 7.25 5.5" />
+      <path d="M12 3.75 5.25 6.5v5.1c0 4.1 2.85 7.5 6.75 8.65 3.9-1.15 6.75-4.55 6.75-8.65V6.5z" />
+      <path d="m9.25 12 2 2 3.5-3.75" />
     </>
   ),
   '/blog': (
@@ -67,12 +60,6 @@ const strokes: Record<string, ReactNode> = {
     <>
       <path d="M14 4.25h3.25a2 2 0 0 1 2 2v11.5a2 2 0 0 1-2 2H14" />
       <path d="M4.75 12h9.5m0 0-3.75-3.75M14.25 12l-3.75 3.75" />
-    </>
-  ),
-  '/signout': (
-    <>
-      <path d="M10 4.25H6.75a2 2 0 0 0-2 2v11.5a2 2 0 0 0 2 2H10" />
-      <path d="M9.75 12h9.5m0 0-3.75-3.75M19.25 12l-3.75 3.75" />
     </>
   ),
 };
@@ -105,7 +92,7 @@ const WIDE = '(min-width: 48em)';
  * (https://reactbits.dev/components/card-nav). Keeps the modal dialog behaviour: focus trap,
  * Escape, closing on navigation and on crossing 48em.
  */
-export function MobileMenu({ signedIn, forcedPath }: MobileMenuProps) {
+export function MobileMenu({ nav, forcedPath }: MobileMenuProps) {
   const pathname = usePathname();
   const path = forcedPath ?? pathname;
   const [state, setState] = useState<'closed' | 'open' | 'leaving'>('closed');
@@ -181,7 +168,6 @@ export function MobileMenu({ signedIn, forcedPath }: MobileMenuProps) {
       <Link
         className={quiet ? `${styles.item} ${styles.quietItem}` : styles.item}
         href={href}
-        prefetch={href === '/signout' ? false : undefined}
         aria-current={isActive(path, href) ? 'page' : undefined}
         onClick={() => setState('closed')}
       >
@@ -220,7 +206,7 @@ export function MobileMenu({ signedIn, forcedPath }: MobileMenuProps) {
           inert={leaving || undefined}
         >
           <div className={styles.sheetBody}>
-            {menuCards(signedIn).map((card, i) => (
+            {menuCards(nav).map((card, i) => (
               // biome-ignore lint/a11y/useSemanticElements: a group of links, not form controls, so no <fieldset>
               <div
                 key={card.title}

@@ -40,6 +40,17 @@ describe('/get', () => {
     await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /access');
   });
 
+  it('«Продлить» (?renew=1) shows the payment step to a subscriber', async () => {
+    api.getAccess.mockResolvedValue({
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+      email: 'buyer@example.com',
+      hasPassword: true,
+    });
+    const { default: Page } = await import('./page');
+    render(await Page({ searchParams: Promise.resolve({ renew: '1' }) }));
+    expect(screen.getByRole('button', { name: /Оплатить 299/ })).toBeInTheDocument();
+  });
+
   it('shows the payment step to a visitor without access', async () => {
     api.getAccess.mockResolvedValue({ state: { kind: 'none' } });
     const { default: Page } = await import('./page');

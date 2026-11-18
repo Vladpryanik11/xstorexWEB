@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -24,9 +24,10 @@ describe('/dev/ui', () => {
   it('renders the requested header variant when the flag is set', async () => {
     vi.stubEnv('XSTORE_DEV_PAGES', '1');
     const { default: Page } = await import('./page');
-    render(await Page({ searchParams: Promise.resolve({ auth: '1', path: '/profile' }) }));
-    expect(screen.getByRole('link', { name: 'Профиль' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Выйти' })).toHaveAttribute('href', '/signout');
+    render(await Page({ searchParams: Promise.resolve({ auth: '1', path: '/faq' }) }));
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', { name: 'Вопросы' })).toHaveAttribute('aria-current', 'page');
+    expect(header.getByRole('link', { name: 'Мой доступ' })).toHaveAttribute('href', '/access');
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 });

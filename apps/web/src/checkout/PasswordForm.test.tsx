@@ -43,4 +43,10 @@ describe('PasswordForm', () => {
     expect(screen.queryByLabelText('Пароль')).not.toBeInTheDocument();
     expect(screen.getByText(/по коду из письма/)).toBeInTheDocument();
   });
+
+  it('«Задать пароль» on «Мой доступ»: own title, no skipping', () => {
+    render(<PasswordForm setPassword={vi.fn()} title="Задать пароль" skippable={false} />);
+    expect(screen.getByRole('heading', { name: 'Задать пароль' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Пропустить' })).toBeNull();
+  });
 });

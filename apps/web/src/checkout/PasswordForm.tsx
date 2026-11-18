@@ -7,6 +7,10 @@ import styles from './checkout.module.css';
 
 export type PasswordFormProps = {
   setPassword?: (body: SetPassword) => Promise<void>;
+  /** «Придумайте пароль» in the wizard, «Задать пароль» on «Мой доступ». */
+  title?: string;
+  /** The wizard lets the buyer skip; «Мой доступ» keeps the form until a password is set. */
+  skippable?: boolean;
 };
 
 const defaultSetPassword = (body: SetPassword) => browserApi().setPassword(body);
@@ -21,7 +25,11 @@ function passwordErrorText(err: unknown): string {
 }
 
 /** «Придумайте пароль» after payment; skipping leaves sign-in by a code from the email. */
-export function PasswordForm({ setPassword = defaultSetPassword }: PasswordFormProps) {
+export function PasswordForm({
+  setPassword = defaultSetPassword,
+  title = 'Придумайте пароль',
+  skippable = true,
+}: PasswordFormProps) {
   const id = useId();
   const [password, setValue] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'skipped'>('idle');
@@ -60,10 +68,12 @@ export function PasswordForm({ setPassword = defaultSetPassword }: PasswordFormP
   return (
     <form className={styles.subpanel} onSubmit={submit} noValidate aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`} className={styles.subtitle}>
-        Придумайте пароль
+        {title}
       </h2>
       <p className={styles.note}>
-        Чтобы входить по почте и паролю. Можно пропустить — тогда войдёте по коду из письма.
+        {skippable
+          ? 'Чтобы входить по почте и паролю. Можно пропустить — тогда войдёте по коду из письма.'
+          : 'Чтобы входить по почте и паролю, а не только по коду из письма.'}
       </p>
       <div className={styles.field}>
         <label htmlFor={id} className={styles.label}>
@@ -92,9 +102,11 @@ export function PasswordForm({ setPassword = defaultSetPassword }: PasswordFormP
         <Button type="submit" disabled={state === 'saving'}>
           {state === 'saving' ? 'Сохраняем…' : 'Сохранить'}
         </Button>
-        <button type="button" className={styles.skip} onClick={() => setState('skipped')}>
-          Пропустить
-        </button>
+        {skippable ? (
+          <button type="button" className={styles.skip} onClick={() => setState('skipped')}>
+            Пропустить
+          </button>
+        ) : null}
       </div>
     </form>
   );

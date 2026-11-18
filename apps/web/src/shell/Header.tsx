@@ -1,12 +1,16 @@
+'use client';
+
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { HeaderFrame } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
 import { NavLinks } from './NavLinks';
-import { navItems } from './nav';
+import { type NavState, navFor, navItems } from './nav';
+import { useNavState } from './useNavState';
 
 export type HeaderProps = {
-  signedIn: boolean;
+  /** Forces the session (tests, dev showcase); left out, it is read after mount. */
+  nav?: NavState;
   /** Home page: the pill floats over the hero, which starts under it. */
   overHero?: boolean;
   /** Overrides the current path (dev showcase). */
@@ -14,8 +18,9 @@ export type HeaderProps = {
 };
 
 /** Floating white glass pill (spec 2026-11-17 §5). */
-export function Header({ signedIn, overHero = false, forcedPath }: HeaderProps) {
-  const items = navItems(signedIn);
+export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
+  const state = useNavState(nav);
+  const items = navItems();
 
   return (
     <HeaderFrame className={overHero ? `${styles.header} ${styles.over}` : styles.header}>
@@ -26,24 +31,18 @@ export function Header({ signedIn, overHero = false, forcedPath }: HeaderProps) 
         </Link>
         <nav className={styles.menu} aria-label="Основное меню">
           <NavLinks items={items} forcedPath={forcedPath} />
-          <MobileMenu items={items} signedIn={signedIn} forcedPath={forcedPath} />
+          <MobileMenu nav={state} forcedPath={forcedPath} />
         </nav>
         <div className={styles.end}>
-          {signedIn ? (
-            // Sign-out must never be prefetched.
-            <Link className={styles.quiet} href="/signout" prefetch={false}>
-              Выйти
+          {navFor(state).map((item) => (
+            <Link
+              key={item.href}
+              className={item.kind === 'entry' ? styles.entry : styles.quiet}
+              href={item.href}
+            >
+              {item.label}
             </Link>
-          ) : (
-            <>
-              <Link className={styles.entry} href="/pricing">
-                Тарифы
-              </Link>
-              <Link className={styles.quiet} href="/signin">
-                Войти
-              </Link>
-            </>
-          )}
+          ))}
         </div>
       </div>
     </HeaderFrame>

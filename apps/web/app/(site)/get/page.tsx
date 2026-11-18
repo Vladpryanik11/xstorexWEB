@@ -25,13 +25,19 @@ async function optional<T>(call: Promise<T>): Promise<T | null> {
   }
 }
 
-/** Wizard, step 1 «Оплата». `?app=<slug>` names the app the visitor came from. */
+/**
+ * Wizard, step 1 «Оплата». `?app=<slug>` names the app the visitor came from, `?renew=1` is
+ * «Продлить» from «Мой доступ».
+ */
 export default async function GetPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const slug = one((await searchParams).app);
+  const params = await searchParams;
+  const slug = one(params.app);
+  const renew = one(params.renew) === '1';
   const api = await serverApi();
   const access: AccessResponse = await api.getAccess();
   // A subscriber never sees the payment form (spec v2 §4); «Мой доступ» leads on from there.
-  if (access.state.kind === 'active') redirect('/access');
+  // «Продлить» on «Мой доступ» opens it on purpose with `?renew=1`.
+  if (access.state.kind === 'active' && !renew) redirect('/access');
   // No second payment while the first is unresolved (spec v2 §4): continue that order.
   if (access.state.kind === 'payment_pending') {
     redirect(`/get/${encodeURIComponent(access.state.orderId)}`);

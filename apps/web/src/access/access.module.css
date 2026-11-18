@@ -1,0 +1,50 @@
+/* «Мой доступ»: the wizard's column and panels (checkout.module.css) plus these rows. */
+
+.facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0.25rem 1.25rem;
+  border-radius: var(--x-radius-card);
+  background: var(--x-ice);
+}
+
+.fact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-block: 0.875rem;
+}
+
+.fact + .fact {
+  border-top: 1px solid var(--x-hair);
+}
+
+.fact dt {
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.fact dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--x-text);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding-inline: 0.25rem;
+}
+
+.wideRow {
+  flex-basis: 100%;
+}

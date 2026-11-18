@@ -1,10 +1,16 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header } from './Header';
 
-const nav = vi.hoisted(() => ({ pathname: '/devices/abc' }));
+const nav = vi.hoisted(() => ({ pathname: '/faq/abc' }));
 
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }));
+
+const getAccess = vi.hoisted(() => vi.fn());
+vi.mock('../checkout/browser-api', () => ({ browserApi: () => ({ getAccess }) }));
+
+const SUB = { signedIn: true, hasAccess: true };
+const GUEST = { signedIn: false, hasAccess: false };
 
 // jsdom has no matchMedia: this one answers only the ≥48em query and lets a test cross it.
 const viewport = {
@@ -17,7 +23,9 @@ const viewport = {
 };
 
 beforeEach(() => {
-  nav.pathname = '/devices/abc';
+  nav.pathname = '/faq/abc';
+  getAccess.mockReset();
+  getAccess.mockResolvedValue({ state: { kind: 'none' } });
   viewport.wide = false;
   viewport.listeners.clear();
   vi.stubGlobal('matchMedia', (query: string) => ({
@@ -36,25 +44,47 @@ afterEach(() => {
 });
 
 describe('Header', () => {
-  it('signed-in header marks the active item and offers logout', () => {
-    render(<Header signedIn />);
-    expect(screen.getByRole('link', { name: 'Ваши устройства' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(screen.getByRole('link', { name: 'Выйти' })).toHaveAttribute('href', '/signout');
+  it('subscriber header marks the active item and leads to «Мой доступ»', () => {
+    render(<Header nav={SUB} />);
+    expect(screen.getByRole('link', { name: 'Вопросы' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Мой доступ' })).toHaveAttribute('href', '/access');
+    expect(screen.queryByRole('link', { name: 'Войти' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Выйти' })).toBeNull();
     expect(screen.queryByText('Русский')).toBeNull();
   });
 
+  it('without a forced state it starts as a guest and asks the API after mount', async () => {
+    getAccess.mockResolvedValue({
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+      email: 'a@b.ru',
+      hasPassword: true,
+    });
+    render(<Header />);
+    expect(screen.getByRole('link', { name: 'Войти' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Мой доступ' })).toHaveAttribute(
+      'href',
+      '/access',
+    );
+    expect(screen.queryByRole('link', { name: 'Войти' })).toBeNull();
+    expect(getAccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays a guest when the API cannot be reached', async () => {
+    getAccess.mockRejectedValue(new Error('offline'));
+    render(<Header />);
+    await waitFor(() => expect(getAccess).toHaveBeenCalled());
+    expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
+  });
+
   it('guest header offers pricing and login', () => {
-    render(<Header signedIn={false} />);
+    render(<Header nav={GUEST} />);
     expect(screen.getByRole('link', { name: 'Тарифы' })).toHaveAttribute('href', '/pricing');
     expect(screen.queryByRole('link', { name: 'Установить' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });
 
   it('narrows into the compact pill after 24px of scroll', () => {
-    render(<Header signedIn={false} />);
+    render(<Header nav={GUEST} />);
     const header = screen.getByRole('banner');
     expect(header).toHaveAttribute('data-scrolled', 'false');
     act(() => {
@@ -70,25 +100,23 @@ describe('Header', () => {
   });
 
   it('only the active item carries the sliding highlight', () => {
-    render(<Header signedIn />);
+    render(<Header nav={SUB} />);
     const row = screen.getByRole('navigation', { name: 'Основное меню' });
     const pills = row.querySelectorAll('[data-nav-highlight]');
     expect(pills).toHaveLength(1);
-    expect(pills[0]?.closest('a')).toHaveTextContent('Ваши устройства');
+    expect(pills[0]?.closest('a')).toHaveTextContent('Вопросы');
   });
 
   it('forcedPath overrides the current path', () => {
-    render(<Header signedIn forcedPath="/profile" />);
-    expect(screen.getByRole('link', { name: 'Профиль' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Ваши устройства' })).not.toHaveAttribute(
-      'aria-current',
-    );
+    render(<Header nav={SUB} forcedPath="/support" />);
+    expect(screen.getByRole('link', { name: 'Поддержка' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Вопросы' })).not.toHaveAttribute('aria-current');
   });
 });
 
 describe('MobileMenu', () => {
-  it('burger opens the card menu: catalog, account and help cards', () => {
-    render(<Header signedIn />);
+  it('burger opens the card menu: catalog, access and help cards', () => {
+    render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     expect(burger).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -101,7 +129,7 @@ describe('MobileMenu', () => {
     const cards = within(sheet).getAllByRole('group');
     expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual([
       'Каталог',
-      'Аккаунт',
+      'Доступ',
       'Помощь',
     ]);
     const labels = (card: HTMLElement) =>
@@ -115,18 +143,18 @@ describe('MobileMenu', () => {
       'Популярные',
       'Поиск',
     ]);
-    expect(labels(cards[1] as HTMLElement)).toEqual(['Ваши устройства', 'Профиль', 'Выйти']);
+    expect(labels(cards[1] as HTMLElement)).toEqual(['Мой доступ']);
     expect(labels(cards[2] as HTMLElement)).toEqual(['Блог', 'Вопросы', 'Поддержка']);
-    expect(within(sheet).getByRole('link', { name: 'Ваши устройства' })).toHaveAttribute(
+    expect(within(sheet).getByRole('link', { name: 'Вопросы' })).toHaveAttribute(
       'aria-current',
       'page',
     );
   });
 
-  it('guest account card offers pricing and login', () => {
-    render(<Header signedIn={false} />);
+  it('guest access card offers pricing and login', () => {
+    render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    const account = within(screen.getByRole('dialog')).getByRole('group', { name: 'Аккаунт' });
+    const account = within(screen.getByRole('dialog')).getByRole('group', { name: 'Доступ' });
     expect(within(account).getByRole('link', { name: 'Тарифы' })).toHaveAttribute(
       'href',
       '/pricing',
@@ -137,7 +165,7 @@ describe('MobileMenu', () => {
   it('Escape closes the sheet and returns focus to the burger', () => {
     vi.useFakeTimers();
     try {
-      render(<Header signedIn />);
+      render(<Header nav={SUB} />);
       const burger = screen.getByRole('button', { name: 'Меню' });
       fireEvent.click(burger);
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -162,7 +190,7 @@ describe('MobileMenu', () => {
   });
 
   it('Tab from the last sheet link wraps to the burger', () => {
-    render(<Header signedIn />);
+    render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     fireEvent.click(burger);
     const links = within(screen.getByRole('dialog')).getAllByRole('link');
@@ -177,13 +205,13 @@ describe('MobileMenu', () => {
   });
 
   it('closes when the route changes from outside the sheet (back/forward)', () => {
-    const { rerender } = render(<Header signedIn />);
+    const { rerender } = render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     fireEvent.click(burger);
     expect(within(screen.getByRole('dialog')).getAllByRole('link')[0]).toHaveFocus();
 
     nav.pathname = '/blog';
-    rerender(<Header signedIn />);
+    rerender(<Header nav={SUB} />);
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(burger).toHaveAttribute('aria-expanded', 'false');
@@ -193,29 +221,29 @@ describe('MobileMenu', () => {
   });
 
   it('closes when a header link above the sheet navigates, keeping focus on that link', () => {
-    const { rerender } = render(<Header signedIn={false} />);
+    const { rerender } = render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
     const logo = screen.getByRole('link', { name: 'Xstore, на главную' });
     logo.focus();
 
     nav.pathname = '/';
-    rerender(<Header signedIn={false} />);
+    rerender(<Header nav={GUEST} />);
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(logo).toHaveFocus();
   });
 
   it('a forced path does not close the sheet', () => {
-    const { rerender } = render(<Header signedIn forcedPath="/devices" />);
+    const { rerender } = render(<Header nav={SUB} forcedPath="/faq" />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
 
-    rerender(<Header signedIn forcedPath="/profile" />);
+    rerender(<Header nav={SUB} forcedPath="/support" />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('closes when the viewport grows past 48em (iPad rotation)', () => {
-    render(<Header signedIn />);
+    render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     fireEvent.click(burger);
 
@@ -234,7 +262,7 @@ describe('MobileMenu', () => {
   });
 
   it('a second burger click closes the sheet', () => {
-    render(<Header signedIn />);
+    render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     fireEvent.click(burger);
     fireEvent.click(burger);

@@ -13,7 +13,7 @@ const pill = (page: Page) => page.locator('header').first().locator('> div').fir
 
 test('floating white glass pill (desktop)', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/dev/ui?auth=1&path=/devices');
+  await page.goto('/dev/ui?path=/faq');
   const header = page.locator('header').first();
   const box = await pill(page).boundingBox();
   expect(box?.y).toBeGreaterThanOrEqual(12);
@@ -23,20 +23,22 @@ test('floating white glass pill (desktop)', async ({ page }) => {
   expect(await css(header, 'background-image')).toBe('none');
   await expect(page.locator('header [aria-hidden="true"][class*="tint"]')).toHaveCount(0);
 
-  const active = page.getByRole('link', { name: 'Ваши устройства' });
+  const active = page
+    .getByRole('navigation', { name: 'Основное меню' })
+    .getByRole('link', { name: 'Вопросы' });
   await expect(active).toHaveAttribute('aria-current', 'page');
   await expect(active).toHaveCSS('color', 'rgb(15, 95, 214)');
   await expect(active.locator('[data-nav-highlight]')).toHaveCSS(
     'background-color',
     'rgb(227, 237, 253)',
   );
-  await expect(page.getByRole('link', { name: 'Выйти' })).toHaveCSS('color', 'rgb(95, 107, 133)');
+  await expect(header.getByRole('link', { name: 'Войти' })).toHaveCSS('color', 'rgb(95, 107, 133)');
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
 test('highlight follows the hovered item and returns to the active one', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/dev/ui?auth=1&path=/devices');
+  await page.goto('/dev/ui?auth=1&path=/faq');
   const nav = page.getByRole('navigation', { name: 'Основное меню' });
   await nav.getByRole('link', { name: 'Блог' }).hover();
   await expect(nav.getByRole('link', { name: 'Блог' }).locator('[data-nav-highlight]')).toHaveCount(
@@ -44,7 +46,7 @@ test('highlight follows the hovered item and returns to the active one', async (
   );
   await page.mouse.move(5, 700);
   await expect(
-    nav.getByRole('link', { name: 'Ваши устройства' }).locator('[data-nav-highlight]'),
+    nav.getByRole('link', { name: 'Вопросы' }).locator('[data-nav-highlight]'),
   ).toHaveCount(1);
 });
 
@@ -60,16 +62,19 @@ test('pill narrows after scrolling', async ({ page }) => {
 for (const width of [390, 768, 1280]) {
   test(`no horizontal scroll at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/dev/ui?auth=1&path=/devices');
+    await page.goto('/dev/ui?auth=1&path=/faq');
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 }
 
 test('auth header fits at 768px', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
-  await page.goto('/dev/ui?auth=1&path=/devices');
+  await page.goto('/dev/ui?auth=1&path=/faq');
   expect((await pill(page).boundingBox())?.height).toBe(56);
-  await expect(page.getByRole('link', { name: 'Ваши устройства' })).toBeVisible();
+  await expect(page.locator('header').first().getByRole('link', { name: 'Мой доступ' })).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
 });
 
 test('no horizontal overflow at 320px', async ({ page }) => {
@@ -90,7 +95,7 @@ test('card menu opens under the pill and closes on Escape', async ({ page }) => 
   const pillBox = await pill(page).boundingBox();
   const firstCard = await menu.getByRole('group').first().boundingBox();
   expect(firstCard?.y).toBeGreaterThan((pillBox?.y ?? 0) + (pillBox?.height ?? 0));
-  await expect(menu.getByRole('link', { name: 'Профиль' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Мой доступ' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
   await expect(burger).toBeFocused();
