@@ -1,0 +1,49 @@
+import { render, screen } from '@testing-library/react';
+import type { AccessResponse } from '@xstore/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  redirect: (url: string) => {
+    throw new Error(`REDIRECT ${url}`);
+  },
+  notFound: () => {
+    throw new Error('NEXT_NOT_FOUND');
+  },
+}));
+
+const api = {
+  getAccess: vi.fn<() => Promise<AccessResponse>>(),
+  getPlan: vi.fn(),
+  app: vi.fn(),
+};
+vi.mock('../../../src/api/server', () => ({ serverApi: async () => api }));
+
+const searchParams = Promise.resolve({});
+
+beforeEach(() => {
+  api.getPlan.mockResolvedValue({ code: 'month', title: 'Месяц', durationDays: 30, priceRub: 299 });
+  api.app.mockRejectedValue(new Error('not used'));
+});
+
+describe('/get', () => {
+  it('continues the order awaiting payment instead of starting a second one', async () => {
+    api.getAccess.mockResolvedValue({ state: { kind: 'payment_pending', orderId: 'ord_7' } });
+    const { default: Page } = await import('./page');
+    await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /get/ord_7');
+  });
+
+  it('sends a subscriber to «Мой доступ»', async () => {
+    api.getAccess.mockResolvedValue({
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+    });
+    const { default: Page } = await import('./page');
+    await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /access');
+  });
+
+  it('shows the payment step to a visitor without access', async () => {
+    api.getAccess.mockResolvedValue({ state: { kind: 'none' } });
+    const { default: Page } = await import('./page');
+    render(await Page({ searchParams }));
+    expect(screen.getByRole('button', { name: /Оплатить 299/ })).toBeInTheDocument();
+  });
+});

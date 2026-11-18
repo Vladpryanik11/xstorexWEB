@@ -1,5 +1,6 @@
 'use client';
 import type { OrderView, SetPassword } from '@xstore/shared';
+import { formatRuDate } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useEffect, useState } from 'react';
 import { browserApi } from './browser-api';
@@ -74,8 +75,25 @@ export function Wizard({
     if (step === 'paid' || step === 'failed') clearCheckoutKey();
   }, [step]);
 
+  const status =
+    step === 'paid'
+      ? order.accessUntil
+        ? `Доступ активен до ${formatRuDate(new Date(order.accessUntil))}`
+        : 'Доступ активен'
+      : step === 'failed'
+        ? order.status === 'expired'
+          ? 'Время на оплату истекло'
+          : 'Оплата не прошла'
+        : timedOut
+          ? 'Оплата ещё не подтвердилась'
+          : 'Проверяем оплату…';
+
   return (
     <div className={styles.wizard}>
+      {/* One polite announcement per change of state; the panels below are not live. */}
+      <p role="status" aria-live="polite" className={styles.srOnly} data-testid="wizard-status">
+        {status}
+      </p>
       <StepBar current={step === 'paid' ? 1 : 0} />
       {step === 'paid' ? (
         <PaidStep

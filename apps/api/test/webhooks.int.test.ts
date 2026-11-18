@@ -195,7 +195,7 @@ it('dev fake payment routes exist only with dev pages', async () => {
     .post(`/api/v1/billing/dev/fake-payments/${dev.paymentId}/pay`)
     .set('Origin', SITE);
   expect(pay.status).toBe(200);
-  expect(pay.body).toEqual({ result: 'granted' });
+  expect(pay.body).toEqual({ result: 'granted', orderId: dev.order.id });
   const access = await dev.agent.get('/api/v1/access');
   expect(access.body.state.kind).toBe('active');
 
@@ -204,7 +204,7 @@ it('dev fake payment routes exist only with dev pages', async () => {
     .post(`/api/v1/billing/dev/fake-payments/${other.paymentId}/fail`)
     .set('Origin', SITE);
   expect(fail.status).toBe(200);
-  expect(fail.body).toEqual({ result: 'failed' });
+  expect(fail.body).toEqual({ result: 'failed', orderId: other.order.id });
   expect((await db.order.findUniqueOrThrow({ where: { id: other.order.id } })).status).toBe(
     'failed',
   );

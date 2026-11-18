@@ -35,6 +35,10 @@ describe('Wizard', () => {
     const getOrder = vi.fn().mockResolvedValueOnce(order()).mockResolvedValue(paid);
     render(<Wizard initialOrder={order()} hasPassword={false} getOrder={getOrder} />);
     expect(screen.getByRole('heading', { name: 'Проверяем оплату…' })).toBeInTheDocument();
+    const live = screen.getByTestId('wizard-status');
+    expect(live).toHaveAttribute('role', 'status');
+    expect(live).toHaveAttribute('aria-live', 'polite');
+    expect(live).toHaveTextContent('Проверяем оплату…');
     await tick(2000);
     expect(getOrder).toHaveBeenCalledTimes(1);
     await tick(2000);
@@ -42,6 +46,9 @@ describe('Wizard', () => {
       screen.getByRole('heading', { name: 'Доступ активен до 18 декабря 2026' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Придумайте пароль' })).toBeInTheDocument();
+    expect(screen.getByTestId('wizard-status')).toHaveTextContent(
+      'Доступ активен до 18 декабря 2026',
+    );
     expect(sessionStorage.getItem(CHECKOUT_KEY_STORAGE)).toBeNull();
   });
 
@@ -54,6 +61,7 @@ describe('Wizard', () => {
     await tick(10_000);
     expect(getOrder).toHaveBeenCalledTimes(calls);
     expect(screen.queryByRole('heading', { name: 'Проверяем оплату…' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('wizard-status')).toHaveTextContent('Оплата ещё не подтвердилась');
     getOrder.mockResolvedValue(paid);
     fireEvent.click(screen.getByRole('button', { name: 'Проверить ещё раз' }));
     await tick(2000);
@@ -69,6 +77,7 @@ describe('Wizard', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Оплата не прошла' })).toBeInTheDocument();
+    expect(screen.getByTestId('wizard-status')).toHaveTextContent('Оплата не прошла');
     expect(screen.getByRole('link', { name: 'Попробовать ещё раз' })).toHaveAttribute(
       'href',
       '/get?app=notes',

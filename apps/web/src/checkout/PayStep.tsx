@@ -8,7 +8,7 @@ import {
   type PlanView,
 } from '@xstore/shared';
 import { AppIcon, Button } from '@xstore/ui';
-import { type FormEvent, useId, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
 import { newCheckoutKey, readCheckoutKey } from './checkout-key';
@@ -59,6 +59,8 @@ export function PayStep({
 }: PayStepProps) {
   const emailId = useId();
   const hintId = useId();
+  const missingId = useId();
+  const problemRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState(defaultEmail);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,22 @@ export function PayStep({
   // One key per opened form: a double press or a reload continues the same order.
   const key = useRef<string | null>(null);
 
-  const ready = looksLikeEmail(email) && accepted && !busy;
+  const emailOk = looksLikeEmail(email);
+  const ready = emailOk && accepted && !busy;
+  const missing = busy
+    ? ''
+    : !emailOk && !accepted
+      ? 'Введите почту и отметьте согласие с условиями.'
+      : !emailOk
+        ? 'Введите почту.'
+        : !accepted
+          ? 'Отметьте согласие с условиями.'
+          : '';
+
+  // After a failed checkout the form is replaced: keep keyboard and screen reader users in place.
+  useEffect(() => {
+    if (error) problemRef.current?.querySelector('button')?.focus();
+  }, [error]);
   const price = formatRub(plan.priceRub);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -90,6 +107,9 @@ export function PayStep({
   }
 
   function retry() {
+    // A new key, not the failed one: if the failed request left an order that this browser cannot
+    // continue (e.g. a 409 for another session, or a lost cookie), the old key would fail again.
+    // With the session cookie the API still finds the buyer's open order, so no second payment.
     key.current = newCheckoutKey();
     setError('');
   }
@@ -121,7 +141,7 @@ export function PayStep({
       </div>
 
       {error ? (
-        <div className={styles.problem}>
+        <div className={styles.problem} ref={problemRef}>
           <p role="alert" className={styles.problemText}>
             {error}
           </p>
@@ -166,9 +186,19 @@ export function PayStep({
               </a>
             </span>
           </label>
-          <Button type="submit" disabled={!ready} className={styles.wide}>
+          <Button
+            type="submit"
+            disabled={!ready}
+            className={styles.wide}
+            aria-describedby={missing ? missingId : undefined}
+          >
             {busy ? 'Переходим к оплате…' : `Оплатить ${price}`}
           </Button>
+          {missing ? (
+            <p id={missingId} className={styles.missing}>
+              {missing}
+            </p>
+          ) : null}
         </form>
       )}
     </section>

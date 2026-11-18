@@ -95,11 +95,11 @@ it('payment webhook sends payment_paid mail', async () => {
 
 it('dev fake payment sends payment_paid mail', async () => {
   const to = rcpt();
-  const { paymentId } = await buy(devApp, to);
+  const { order, paymentId } = await buy(devApp, to);
   const pay = await request(devApp.getHttpServer())
     .post(`/api/v1/billing/dev/fake-payments/${paymentId}/pay`)
     .set('Origin', SITE);
-  expect(pay.body).toEqual({ result: 'granted' });
+  expect(pay.body).toEqual({ result: 'granted', orderId: order.id });
   const [mail] = await waitForMail(to);
   expect(mail?.subject).toMatch(/^Оплата прошла, доступ до /);
 });

@@ -40,6 +40,18 @@ describe('PayStep', () => {
     expect(button).toBeDisabled();
   });
 
+  it('the disabled button says what is missing', () => {
+    const { button, email, terms } = setup();
+    expect(button).toHaveAccessibleDescription('Введите почту и отметьте согласие с условиями.');
+    fireEvent.change(email, { target: { value: 'buyer@example.com' } });
+    expect(button).toHaveAccessibleDescription('Отметьте согласие с условиями.');
+    fireEvent.change(email, { target: { value: '' } });
+    fireEvent.click(terms);
+    expect(button).toHaveAccessibleDescription('Введите почту.');
+    fireEvent.change(email, { target: { value: 'buyer@example.com' } });
+    expect(button).not.toHaveAttribute('aria-describedby');
+  });
+
   it('button reads «Оплатить 299 ₽» for the price 299', () => {
     const { button } = setup();
     expect(button.textContent?.replace(/\s/g, ' ')).toBe('Оплатить 299 ₽');
@@ -74,7 +86,9 @@ describe('PayStep', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Платёжный сервис не отвечает. Попробуйте через минуту',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Попробовать ещё раз' }));
+    const retry = screen.getByRole('button', { name: 'Попробовать ещё раз' });
+    await waitFor(() => expect(retry).toHaveFocus());
+    fireEvent.click(retry);
     fireEvent.click(screen.getByRole('button', { name: /Оплатить/ }));
     await waitFor(() => expect(checkout).toHaveBeenCalledTimes(2));
     const [first, second] = checkout.mock.calls.map((c) => c[0] as CheckoutRequest);

@@ -52,7 +52,7 @@ export class WebhooksController {
   async devPayment(
     @Param('id') id: string,
     @Param('action') action: string,
-  ): Promise<{ result: ApplyPaymentResult['result'] }> {
+  ): Promise<{ result: ApplyPaymentResult['result']; orderId?: string }> {
     const provider = this.provider;
     if (!this.devPayments || !isFakeProvider(provider) || (action !== 'pay' && action !== 'fail')) {
       throw new DomainError(ErrorCode.NOT_FOUND, 404);
@@ -62,8 +62,9 @@ export class WebhooksController {
     } catch {
       throw new DomainError(ErrorCode.NOT_FOUND, 404);
     }
-    const { result } = await this.apply(id, `fake:dev-${action}-${id}`);
-    return { result };
+    // The page knows only the payment id; the order id tells it where the wizard continues.
+    const { result, orderId } = await this.apply(id, `fake:dev-${action}-${id}`);
+    return orderId ? { result, orderId } : { result };
   }
 
   private async apply(providerPaymentId: string, eventKey: string): Promise<ApplyPaymentResult> {

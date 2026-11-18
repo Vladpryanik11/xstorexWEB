@@ -32,6 +32,10 @@ export default async function GetPage({ searchParams }: { searchParams: Promise<
   const access: AccessResponse = await api.getAccess();
   // A subscriber never sees the payment form (spec v2 §4); «Мой доступ» leads on from there.
   if (access.state.kind === 'active') redirect('/access');
+  // No second payment while the first is unresolved (spec v2 §4): continue that order.
+  if (access.state.kind === 'payment_pending') {
+    redirect(`/get/${encodeURIComponent(access.state.orderId)}`);
+  }
 
   const [plan, app] = await Promise.all([
     optional<PlanView>(api.getPlan()),
