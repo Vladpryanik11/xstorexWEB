@@ -164,7 +164,7 @@ it('expireOrders reaches orders beyond the first batch', async () => {
   await expireOrders(deps, new Date(), 2);
 
   expect((await deps.db.order.findUniqueOrThrow({ where: { id: late.order.id } })).status).toBe(
-    'expired',
+    'failed',
   );
 });
 
@@ -261,15 +261,17 @@ it('a failed mail does not fail reconcile', async () => {
   }
 });
 
-it('order older than 24h with provider failed becomes expired', async () => {
+it('order older than 24h with provider failed becomes failed, not expired', async () => {
   const { order, paymentId } = await makeOrder(25 * HOUR);
   await fake.setStatus(paymentId, 'failed');
 
-  await expireOrders(deps);
+  const outcome = await expireOrders(deps);
 
+  // The provider said the payment failed: the buyer sees «Оплата не прошла», as with reconcile.
   expect((await deps.db.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe(
-    'expired',
+    'failed',
   );
+  expect(outcome).toMatchObject({ failed: 1, expired: 0 });
 });
 
 it('order older than 24h still pending at provider stays pending', async () => {

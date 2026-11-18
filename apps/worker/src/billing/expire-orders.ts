@@ -7,6 +7,7 @@ export const BATCH = 200;
 
 export type ExpireOutcome = {
   expired: number;
+  failed: number;
   granted: number;
   stillPending: number;
   errors: number;
@@ -15,9 +16,9 @@ export type ExpireOutcome = {
 /**
  * `billing:expireOrders`: an unpaid order lives 24 hours.
  * - `created` without a provider payment older than that expires directly;
- * - `created`/`pending` with a payment ask the provider: `failed` expires the order, `paid` grants
- *   access (a late success is never dropped), `pending` leaves it alone with a warning, because
- *   the buyer may still pay and a second payment must not appear until the result is known.
+ * - `created`/`pending` with a payment ask the provider: `failed` marks the order `failed` (as
+ *   reconcile does), `paid` grants access (a late success is never dropped), `pending` leaves it
+ *   alone with a warning, because the buyer may still pay and a second payment must not appear until the result is known.
  */
 export async function expireOrders(
   deps: WorkerDeps,
@@ -25,7 +26,7 @@ export async function expireOrders(
   batch: number = BATCH,
 ): Promise<ExpireOutcome> {
   const { db, logger, payments } = deps;
-  const outcome: ExpireOutcome = { expired: 0, granted: 0, stillPending: 0, errors: 0 };
+  const outcome: ExpireOutcome = { expired: 0, failed: 0, granted: 0, stillPending: 0, errors: 0 };
   const cutoff = new Date(now.getTime() - ORDER_TTL_MS);
 
   const direct = await db.order.updateMany({
@@ -68,9 +69,9 @@ export async function expireOrders(
         } else if (payment.status === 'failed') {
           const { count } = await db.order.updateMany({
             where: { id: order.id, status: { in: ['created', 'pending'] }, paidAt: null },
-            data: { status: 'expired' },
+            data: { status: 'failed' },
           });
-          outcome.expired += count;
+          outcome.failed += count;
         } else {
           outcome.stillPending += 1;
           logger.warn(
