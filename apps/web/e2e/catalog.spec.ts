@@ -85,13 +85,19 @@ test('hidden app is 404', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Такой страницы нет' })).toBeVisible();
 });
 
-test('an old app link opens the install sheet over the home page', async ({ page }) => {
+test('an old app link opens the install sheet over the home page', async ({ page, isMobile }) => {
   await page.goto('/app/testovoe-prilozhenie-1');
   await expect(page).toHaveURL(/\/\?app=testovoe-prilozhenie-1$/);
   const sheet = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
   await expect(sheet).toBeVisible();
-  // The desktop project is a computer: the sheet says where the app installs.
-  await expect(sheet.getByText(/только на iPhone или iPad/)).toBeVisible();
+  // On iPhone the sheet lists the steps; on a computer it says where the app installs.
+  if (isMobile) {
+    await expect(
+      sheet.getByRole('list', { name: 'Как установить' }).getByRole('listitem'),
+    ).toHaveCount(3);
+  } else {
+    await expect(sheet.getByText(/только на iPhone или iPad/)).toBeVisible();
+  }
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\/$/);
@@ -165,9 +171,13 @@ test('home tiles open the catalog sections, shown as icons', async ({ page }) =>
   await expect(grid.getByRole('button', { name: /^Тестовое приложение 5$/ })).toHaveCount(0);
 
   await page.goto('/catalog');
-  await expect(page.getByRole('list', { name: 'Весь каталог' }).getByRole('button')).toHaveCount(
-    12,
-  );
+  // The admin spec may publish more apps into the shared test database: check the seeded ones.
+  const all = page.getByRole('list', { name: 'Весь каталог' });
+  for (const n of [1, 12]) {
+    await expect(
+      all.getByRole('button', { name: new RegExp(`^Тестовое приложение ${n}$`) }),
+    ).toBeVisible();
+  }
   await page.goto('/premium');
   await expect(page.getByText('Здесь пока пусто. Скоро добавим приложения.')).toBeVisible();
 });
