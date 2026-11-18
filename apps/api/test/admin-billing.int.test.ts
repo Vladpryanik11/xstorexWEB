@@ -136,16 +136,17 @@ describe('plan', () => {
       admin().patch('/admin/billing/plan', { priceRub: 500 }),
     ]);
     expect([a.status, b.status]).toEqual([200, 200]);
-    const audits = await db.auditLog.findMany({
-      where: { action: 'plan.update' },
-      orderBy: { createdAt: 'asc' },
-    });
+    const audits = await db.auditLog.findMany({ where: { action: 'plan.update' } });
     expect(audits).toHaveLength(2);
-    const [first, second] = audits.map(
+    // Both writes may land in the same millisecond: order the chain by its prices, not createdAt.
+    const changes = audits.map(
       (x) => (x.diff as { priceRub: { from: number; to: number } }).priceRub,
     );
-    expect(first?.from).toBe(PRICE);
+    const first = changes.find((c) => c.from === PRICE);
+    const second = changes.find((c) => c !== first);
+    expect(first).toBeDefined();
     expect(second?.from).toBe(first?.to);
+    expect(new Set([first?.to, second?.to])).toEqual(new Set([400, 500]));
     expect((await db.plan.findFirstOrThrow()).priceRub).toBe(second?.to);
   });
 
