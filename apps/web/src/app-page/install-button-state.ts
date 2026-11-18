@@ -1,37 +1,43 @@
+import type { AccessState } from '@xstore/shared';
+import type { DeviceKind } from './device';
+
 /**
- * What the install button on `/app/[slug]` shows. M1 knows only guests (`buy`: payment without
- * registration, sign-in second) and «Скоро»; M2–M5 add `add_device`, `signing`, `install` and
- * `instructions` (spec §6.3).
+ * What the button in the app window shows (spec v2 §3.2). Н1 knows payment only: without access
+ * the window leads to the wizard, an unpaid order continues, and a subscriber waits for installs
+ * (`soon`) until Н2–Н4 add connecting the iPhone and installing.
  */
 export type InstallCtx = {
-  signedIn: boolean;
+  device: DeviceKind;
+  access: AccessState;
   app: {
     slug: string;
-    accessLevel: string;
     latestVersion: { encrypted: boolean } | null;
   };
 };
 
 export type InstallState = {
-  kind: 'buy' | 'unavailable';
+  kind: 'buy' | 'resume' | 'soon' | 'desktop' | 'unavailable';
   label: string;
   href?: string;
-  /** Second action for visitors who have already paid. */
+  /** Second action for visitors who have already paid; returns to the same window. */
   signinHref?: string;
 };
 
-const UNAVAILABLE: InstallState = { kind: 'unavailable', label: 'Скоро' };
-
-export function installButtonState(ctx: InstallCtx): InstallState {
-  if (!ctx.app.latestVersion) return UNAVAILABLE;
-  if (!ctx.signedIn) {
-    const next = `/app/${encodeURIComponent(ctx.app.slug)}`;
+export function installButtonState({ device, access, app }: InstallCtx): InstallState {
+  if (!app.latestVersion) return { kind: 'unavailable', label: 'Скоро' };
+  if (access.kind === 'payment_pending') {
     return {
-      kind: 'buy',
-      label: 'Установить',
-      href: `/pricing?app=${encodeURIComponent(ctx.app.slug)}`,
-      signinHref: `/signin?next=${encodeURIComponent(next)}`,
+      kind: 'resume',
+      label: 'Продолжить оплату',
+      href: `/get/${encodeURIComponent(access.orderId)}`,
     };
   }
-  return UNAVAILABLE;
+  if (access.kind === 'active') return { kind: 'soon', label: 'Скоро можно будет установить' };
+  const slug = encodeURIComponent(app.slug);
+  return {
+    kind: device === 'ios' ? 'buy' : 'desktop',
+    label: device === 'ios' ? 'Установить' : 'Оформить доступ',
+    href: `/get?app=${slug}`,
+    signinHref: `/signin?next=${encodeURIComponent(`/?app=${slug}`)}`,
+  };
 }

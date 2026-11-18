@@ -1,10 +1,13 @@
 'use client';
 
+import { type AccessState, formatRuDate } from '@xstore/shared';
 import { AppIcon } from '@xstore/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { type DeviceKind, deviceKind } from '../app-page/device';
 import { installButtonState } from '../app-page/install-button-state';
+import { browserApi } from '../checkout/browser-api';
 import styles from './AppPreview.module.css';
 
 export type AppPreviewProps = {
@@ -28,15 +31,9 @@ export const INSTALL_STEPS = [
   'Значок появится на экране «Домой».',
 ] as const;
 
-export const DESKTOP_NOTE =
-  'Установить можно только на iPhone или iPad: откройте этот сайт на телефоне. Оплатить можно и здесь.';
+export const DESKTOP_NOTE = 'Установить можно с iPhone или iPad. Откройте этот сайт на телефоне.';
 
-/** iPhone, iPad or iPod; iPadOS reports itself as a Mac with touch. */
-function isAppleMobile(): boolean {
-  const { userAgent, maxTouchPoints } = window.navigator;
-  if (/iPhone|iPad|iPod/.test(userAgent)) return true;
-  return /Macintosh/.test(userAgent) && maxTouchPoints > 1;
-}
+const GUEST: AccessState = { kind: 'none' };
 
 const SPRING = { type: 'spring', stiffness: 380, damping: 34 } as const;
 const FOCUSABLE = 'a[href], button:not([disabled])';
@@ -62,16 +59,23 @@ export function AppPreview({
   // never finishes the shared-layout exit (seen in WebKit CI and jsdom).
   const [mounted, setMounted] = useState(false);
   // Rendered as a phone on the server; a computer gets its note after hydration.
-  const [phone, setPhone] = useState(true);
+  const [device, setDevice] = useState<DeviceKind>('ios');
+  // Asked from the browser once the window opens, so the catalog pages stay cacheable;
+  // `null` while the answer is on its way. Any failure falls back to the guest button.
+  const [access, setAccess] = useState<AccessState | null>(null);
   const reduce = useReducedMotion() ?? false;
   const morph = !reduce;
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
+  // The public catalog lists only apps with a published version.
+  const latestVersion = { encrypted: false };
   const install = installButtonState({
-    signedIn: false,
-    app: { slug, accessLevel: 'public', latestVersion: { encrypted: false } },
+    device,
+    access: access ?? GUEST,
+    app: { slug, latestVersion },
   });
+  const phone = device === 'ios';
 
   const close = useCallback(() => {
     setOpen(false);
@@ -79,7 +83,25 @@ export function AppPreview({
     if (variant === 'none') window.history.replaceState(null, '', window.location.pathname);
   }, [variant]);
 
-  useEffect(() => setPhone(isAppleMobile()), []);
+  useEffect(
+    () => setDevice(deviceKind(window.navigator.userAgent, window.navigator.maxTouchPoints)),
+    [],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    let current = true;
+    setAccess(null);
+    browserApi()
+      .getAccess()
+      .then(
+        (res) => current && setAccess(res.state),
+        () => current && setAccess(GUEST),
+      );
+    return () => {
+      current = false;
+    };
+  }, [open]);
   // After hydration, so the server and the first client render match.
   useEffect(() => {
     if (initialOpen) setOpen(true);
@@ -196,7 +218,12 @@ export function AppPreview({
                       {name}
                     </h2>
                     {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-                    {phone ? (
+                    {access?.kind === 'active' ? (
+                      <p className={styles.note}>
+                        Доступ активен до {formatRuDate(access.until)}.
+                        {phone ? null : ` ${DESKTOP_NOTE}`}
+                      </p>
+                    ) : phone ? (
                       <ol className={styles.steps} aria-label="Как установить">
                         {INSTALL_STEPS.map((step) => (
                           <li key={step}>{step}</li>
@@ -206,14 +233,20 @@ export function AppPreview({
                       <p className={styles.note}>{DESKTOP_NOTE}</p>
                     )}
                     <div className={styles.actions}>
-                      {install.href ? (
+                      {access === null ? (
+                        <span className={styles.soon} aria-busy="true">
+                          {install.label}
+                        </span>
+                      ) : install.href ? (
                         <a className={styles.install} href={install.href}>
-                          Установить
+                          {install.label}
                         </a>
                       ) : (
-                        <span className={styles.soon}>{install.label}</span>
+                        <span className={styles.soon} aria-disabled="true">
+                          {install.label}
+                        </span>
                       )}
-                      {install.signinHref ? (
+                      {access !== null && install.signinHref ? (
                         <p className={styles.paid}>
                           Уже оплачивали? <a href={install.signinHref}>Войти</a>
                         </p>

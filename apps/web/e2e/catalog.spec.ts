@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 // Data comes from `pnpm --filter @xstore/db seed:e2e` (global setup).
 
-test('home shows collections and an app opens its install sheet', async ({ page }) => {
+test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
   await page.goto('/');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Приложения для iPhone и iPad' }),
@@ -19,10 +19,10 @@ test('home shows collections and an app opens its install sheet', async ({ page 
     .click();
   const sheet = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByRole('link', { name: 'Установить' })).toHaveAttribute(
-    'href',
-    '/pricing?app=testovoe-prilozhenie-1',
-  );
+  // A guest pays first: «Установить» on iPhone, «Оформить доступ» on a computer.
+  await expect(
+    sheet.getByRole('link', { name: isMobile ? 'Установить' : 'Оформить доступ' }),
+  ).toHaveAttribute('href', '/get?app=testovoe-prilozhenie-1');
   await expect(sheet.getByRole('link', { name: 'Войти' })).toHaveAttribute(
     'href',
     /\/signin\?next=/,
@@ -96,7 +96,7 @@ test('an old app link opens the install sheet over the home page', async ({ page
       sheet.getByRole('list', { name: 'Как установить' }).getByRole('listitem'),
     ).toHaveCount(3);
   } else {
-    await expect(sheet.getByText(/только на iPhone или iPad/)).toBeVisible();
+    await expect(sheet.getByText(/Установить можно с iPhone или iPad/)).toBeVisible();
   }
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
@@ -151,7 +151,10 @@ test('an app morphs into its sheet; Escape closes it and returns focus', async (
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('link', { name: 'Установить' })).toBeVisible();
+  // The button waits for the access check; a guest then gets the payment link.
+  await expect(
+    dialog.getByRole('link', { name: /^(Установить|Оформить доступ)$/ }),
+  ).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
