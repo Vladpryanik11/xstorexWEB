@@ -68,6 +68,28 @@ export function accessState(input: {
   return { kind: 'none' };
 }
 
+/**
+ * The subscription a renewal or an admin grant goes to: the one `accessState` shows (the latest
+ * live access end); without live access, the one with the most recent right; with no rights at
+ * all, the first given. `null` only when there are no subscriptions (the caller creates one).
+ */
+export function pickSubscription(
+  subscriptions: { id: string; rights: RightLike[] }[],
+  now: Date,
+): string | null {
+  let live: { id: string; until: Date } | null = null;
+  let recent: { id: string; startsAt: number } | null = null;
+  for (const s of subscriptions) {
+    const until = accessUntil(s.rights, now);
+    if (until && (!live || until > live.until)) live = { id: s.id, until };
+    for (const r of s.rights) {
+      const t = r.startsAt.getTime();
+      if (!recent || t > recent.startsAt) recent = { id: s.id, startsAt: t };
+    }
+  }
+  return live?.id ?? recent?.id ?? subscriptions[0]?.id ?? null;
+}
+
 const ruDate = new Intl.DateTimeFormat('ru-RU', {
   timeZone: 'Europe/Moscow',
   day: 'numeric',

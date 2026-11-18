@@ -223,6 +223,53 @@ describe('grants', () => {
     expect(access.body.state.until).toBe(res.body.expiresAt);
   });
 
+  it('grant chains after a claimed paid subscription, not the old granted one', async () => {
+    // An earlier grant made the verified buyer and its first subscription; that right has ended.
+    const first = await admin().post('/admin/billing/grants', { email: 'mix@example.ru', days: 5 });
+    expect(first.status).toBe(201);
+    const user = await db.user.findUniqueOrThrow({ where: { email: 'mix@example.ru' } });
+    await db.entitlement.updateMany({
+      where: { subscriptionId: first.body.subscriptionId },
+      data: {
+        startsAt: new Date(Date.now() - 40 * DAY_MS),
+        expiresAt: new Date(Date.now() - 35 * DAY_MS),
+      },
+    });
+    // Then a guest paid with this email; the code login claimed that subscription.
+    const claimed = await db.subscription.create({ data: { userId: user.id } });
+    const { entitlement } = await paidOrder(
+      user.id,
+      claimed.id,
+      'mix@example.ru',
+      new Date(Date.now() - DAY_MS),
+    );
+
+    const res = await admin().post('/admin/billing/grants', { email: 'mix@example.ru', days: 7 });
+    expect(res.status).toBe(201);
+    expect(res.body.subscriptionId).toBe(claimed.id);
+    expect(res.body.startsAt).toBe(entitlement.expiresAt.toISOString());
+    const access = await as(await cookieFor(user.id, 'user')).get('/access');
+    expect(access.body.state).toMatchObject({
+      subscriptionId: claimed.id,
+      until: res.body.expiresAt,
+    });
+  });
+
+  it('grant to a buyer with two subscriptions picks the live one', async () => {
+    const user = await db.user.create({ data: { email: 'pair@example.ru', role: 'user' } });
+    // The oldest: an unpaid checkout, never a right.
+    await db.subscription.create({
+      data: { userId: user.id, createdAt: new Date(Date.now() - 10 * DAY_MS) },
+    });
+    const live = await db.subscription.create({ data: { userId: user.id } });
+    const { entitlement } = await paidOrder(user.id, live.id, 'pair@example.ru', new Date());
+    const res = await admin().post('/admin/billing/grants', { email: 'pair@example.ru', days: 3 });
+    expect(res.status).toBe(201);
+    expect(res.body.subscriptionId).toBe(live.id);
+    expect(res.body.startsAt).toBe(entitlement.expiresAt.toISOString());
+    expect(await db.subscription.count({ where: { userId: user.id } })).toBe(2);
+  });
+
   it('concurrent grants to one new email create one buyer and chain their periods', async () => {
     const results = await Promise.all(
       [5, 5, 5].map((days) =>

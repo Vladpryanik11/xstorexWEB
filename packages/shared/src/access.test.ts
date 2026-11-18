@@ -4,6 +4,7 @@ import {
   accessUntil,
   formatRuDate,
   nextWindow,
+  pickSubscription,
   type RightLike,
   userSessionExpiry,
 } from './access.js';
@@ -115,6 +116,50 @@ describe('accessState', () => {
     expect(accessState({ signedIn: false, subscriptions: [], pendingOrderId: null, now })).toEqual({
       kind: 'none',
     });
+  });
+});
+
+describe('pickSubscription', () => {
+  const now = d('2026-11-18T12:00:00Z');
+  it('нет подписок — null', () => {
+    expect(pickSubscription([], now)).toBeNull();
+  });
+  it('действующая подписка важнее старой истёкшей', () => {
+    const subs = [
+      { id: 's1', rights: [right('2026-09-01T00:00:00Z', '2026-10-01T00:00:00Z')] },
+      { id: 's2', rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')] },
+    ];
+    expect(pickSubscription(subs, now)).toBe('s2');
+  });
+  it('из двух действующих — с более поздним концом доступа', () => {
+    const subs = [
+      { id: 's1', rights: [right('2026-11-01T00:00:00Z', '2026-12-20T00:00:00Z')] },
+      { id: 's2', rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')] },
+    ];
+    expect(pickSubscription(subs, now)).toBe('s1');
+  });
+  it('без действующих — с самым свежим правом', () => {
+    const subs = [
+      { id: 's1', rights: [] },
+      { id: 's2', rights: [right('2026-10-01T00:00:00Z', '2026-10-31T00:00:00Z')] },
+      { id: 's3', rights: [right('2026-08-01T00:00:00Z', '2026-08-31T00:00:00Z')] },
+      {
+        id: 's4',
+        rights: [right('2026-11-01T00:00:00Z', '2026-12-01T00:00:00Z', '2026-11-05T00:00:00Z')],
+      },
+    ];
+    expect(pickSubscription(subs, now)).toBe('s4');
+  });
+  it('без прав вовсе — первая по порядку', () => {
+    expect(
+      pickSubscription(
+        [
+          { id: 'a', rights: [] },
+          { id: 'b', rights: [] },
+        ],
+        now,
+      ),
+    ).toBe('a');
   });
 });
 

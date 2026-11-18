@@ -7,6 +7,7 @@ import { Redis } from 'ioredis';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
+import { SessionService } from '../src/auth/session.service.js';
 import { loadConfig } from '../src/config/config.js';
 import {
   checkoutBody,
@@ -229,4 +230,125 @@ it('session renewal on a visit follows paid access', async () => {
   const expected = paidAt.getTime() + 37 * DAY_MS;
   expect((await db.session.findFirstOrThrow()).expiresAt.getTime()).toBe(expected);
   expect(Math.abs((cookieExpiry(res)?.getTime() ?? 0) - expected)).toBeLessThan(1000);
+});
+
+/** A verified buyer with two subscriptions, as after `claimProvisional`: an old one whose right
+ * ended long ago, then a claimed one with a live right. */
+async function buyerWithClaimedSubscription() {
+  const user = await db.user.create({ data: { email: 'two@example.ru', role: 'user' } });
+  const s1 = await db.subscription.create({
+    data: { userId: user.id, createdAt: new Date(Date.now() - 120 * DAY_MS) },
+  });
+  await db.entitlement.create({
+    data: {
+      subscriptionId: s1.id,
+      planCode: 'manual',
+      durationDays: 30,
+      startsAt: new Date(Date.now() - 100 * DAY_MS),
+      expiresAt: new Date(Date.now() - 70 * DAY_MS),
+    },
+  });
+  const s2 = await db.subscription.create({ data: { userId: user.id } });
+  const live = await db.entitlement.create({
+    data: {
+      subscriptionId: s2.id,
+      planCode: 'manual',
+      durationDays: 30,
+      startsAt: new Date(Date.now() - 5 * DAY_MS),
+      expiresAt: new Date(Date.now() + 25 * DAY_MS),
+    },
+  });
+  const { token } = await app.get(SessionService).create(user.id, 'user', {});
+  return { user, s1, s2, live, cookie: `xs_session=${token}` };
+}
+
+const checkoutAs = (cookie: string) =>
+  request(app.getHttpServer())
+    .post('/api/v1/billing/checkout')
+    .set('Origin', SITE)
+    .set('Cookie', cookie)
+    .send(checkoutBody(randomUUID()));
+
+it('renewal goes to the live claimed subscription and chains after its end', async () => {
+  const { s2, live, cookie } = await buyerWithClaimedSubscription();
+  const res = await checkoutAs(cookie);
+  expect(res.status).toBe(200);
+  const order = await db.order.findUniqueOrThrow({ where: { id: res.body.orderId } });
+  expect(order.subscriptionId).toBe(s2.id);
+
+  await fake.setStatus(order.providerPaymentId ?? '', 'paid', new Date());
+  expect((await sendWebhook(order.providerPaymentId ?? '', 'ev-renew')).status).toBe(204);
+  const right = await db.entitlement.findUniqueOrThrow({ where: { orderId: order.id } });
+  expect(right.subscriptionId).toBe(s2.id);
+  expect(right.startsAt).toEqual(live.expiresAt);
+
+  const access = await request(app.getHttpServer()).get('/api/v1/access').set('Cookie', cookie);
+  expect(access.body.state).toMatchObject({
+    kind: 'active',
+    subscriptionId: s2.id,
+    until: right.expiresAt.toISOString(),
+  });
+});
+
+it("order page shows the buyer's overall access end, like /access", async () => {
+  const { s1, cookie } = await buyerWithClaimedSubscription();
+  // A paid order on the old subscription: its own right ended, the claimed one is live.
+  const plan = await db.plan.findFirstOrThrow();
+  const old = await db.order.create({
+    data: {
+      userId: s1.userId,
+      subscriptionId: s1.id,
+      planId: plan.id,
+      planSnapshot: {
+        code: 'month',
+        title: 'Подписка на месяц',
+        durationDays: 30,
+        priceRub: PRICE,
+      },
+      checkoutEmail: 'two@example.ru',
+      checkoutKey: randomUUID(),
+      amountRub: PRICE,
+      status: 'paid',
+      provider: 'fake',
+      paidAt: new Date(Date.now() - 100 * DAY_MS),
+      expiresAt: new Date(Date.now() - 99 * DAY_MS),
+    },
+  });
+  const access = await request(app.getHttpServer()).get('/api/v1/access').set('Cookie', cookie);
+  const view = await request(app.getHttpServer())
+    .get(`/api/v1/billing/orders/${old.id}`)
+    .set('Cookie', cookie);
+  expect(view.status).toBe(200);
+  expect(view.body.accessUntil).toBe(access.body.state.until);
+  expect(view.body.accessUntil).not.toBeNull();
+});
+
+it('an open order on another subscription blocks a second payment', async () => {
+  const { s1, cookie } = await buyerWithClaimedSubscription();
+  const plan = await db.plan.findFirstOrThrow();
+  const open = await db.order.create({
+    data: {
+      userId: s1.userId,
+      subscriptionId: s1.id,
+      planId: plan.id,
+      planSnapshot: {
+        code: 'month',
+        title: 'Подписка на месяц',
+        durationDays: 30,
+        priceRub: PRICE,
+      },
+      checkoutEmail: 'two@example.ru',
+      checkoutKey: randomUUID(),
+      amountRub: PRICE,
+      status: 'pending',
+      provider: 'fake',
+      providerPaymentId: 'fake_open',
+      redirectUrl: `${SITE}/dev/pay/fake_open`,
+      expiresAt: new Date(Date.now() + DAY_MS),
+    },
+  });
+  const res = await checkoutAs(cookie);
+  expect(res.status).toBe(200);
+  expect(res.body.orderId).toBe(open.id);
+  expect(await db.order.count()).toBe(1);
 });

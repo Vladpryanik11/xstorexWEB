@@ -9,7 +9,6 @@ import type { Order } from '@xstore/db';
 import {
   type AccessState,
   accessState,
-  accessUntil,
   type CheckoutRequest,
   ErrorCode,
   type OrderView,
@@ -24,6 +23,7 @@ import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
 import { PrismaService } from '../infra/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { buyerAccessUntil, buyerSubscription } from './buyer-subscription.js';
 import { PAYMENT_PROVIDER } from './provider.provider.js';
 
 /** An unpaid order lives 24 hours; while it does, no second payment is created. */
@@ -119,21 +119,18 @@ export class CheckoutService {
           select: { blockedAt: true },
         });
         if (!owner || owner.blockedAt) throw new DomainError(ErrorCode.UNAUTHORIZED, 401);
-        const subscription =
-          (await tx.subscription.findFirst({
-            where: { userId: buyer },
-            orderBy: { createdAt: 'asc' },
-            select: { id: true },
-          })) ?? (await tx.subscription.create({ data: { userId: buyer }, select: { id: true } }));
+        // An open order on any of the buyer's subscriptions blocks a second payment.
         const open = await tx.order.findFirst({
           where: {
-            subscriptionId: subscription.id,
+            subscription: { userId: buyer },
             status: { in: [...OPEN_STATUSES] },
             expiresAt: { gt: new Date() },
           },
           orderBy: { createdAt: 'desc' },
         });
         if (open) return { order: open, guestUserId: null };
+        // The one `/access` shows: a renewal chains after the live access, not an old period.
+        const subscription = await buyerSubscription(tx, buyer);
         userId = buyer;
         subscriptionId = subscription.id;
       } else {
@@ -222,14 +219,9 @@ export class CheckoutService {
         this.logger.warn({ orderId: order.id, err: (err as Error).message }, 'return check failed');
       }
     }
-    let until: Date | null = null;
-    if (order.status === 'paid') {
-      const rights = await this.prisma.client.entitlement.findMany({
-        where: { subscriptionId: order.subscriptionId },
-        select: { startsAt: true, expiresAt: true, revokedAt: true },
-      });
-      until = accessUntil(rights, new Date());
-    }
+    // The buyer's overall access end, the same as `/access`, not only this order's subscription.
+    const until =
+      order.status === 'paid' ? await buyerAccessUntil(this.prisma.client, order.userId) : null;
     return {
       id: order.id,
       status: order.status,

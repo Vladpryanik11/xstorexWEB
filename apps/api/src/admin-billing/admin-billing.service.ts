@@ -16,6 +16,7 @@ import {
 } from '@xstore/shared';
 import { z } from 'zod';
 import { SessionService } from '../auth/session.service.js';
+import { buyerSubscription } from '../billing/buyer-subscription.js';
 import type { Actor } from '../common/actor.js';
 import { DomainError } from '../common/domain-error.js';
 import { PrismaService } from '../infra/prisma.service.js';
@@ -246,8 +247,9 @@ export class AdminBillingService {
   }
 
   /**
-   * Gives `days` of access to the verified buyer with `email`, created if there is none. The
-   * period starts at `max(now, end of the subscription's live rights)`, as a renewal would.
+   * Gives `days` of access to the verified buyer with `email`, created if there is none. It goes
+   * to the subscription `/access` shows (`buyerSubscription`) and starts at `max(now, end of its
+   * live rights)`, as a renewal would.
    * Provisional buyers who paid with this email are left alone: their purchases merge into the
    * verified buyer at their next code login (`claimProvisional`).
    */
@@ -274,12 +276,8 @@ export class AdminBillingService {
 
       // 2. The checkout lock: no concurrent openOrder creates a second subscription meanwhile.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checkout:${user.id}`}))`;
-      const subscription =
-        (await tx.subscription.findFirst({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'asc' },
-          select: { id: true },
-        })) ?? (await tx.subscription.create({ data: { userId: user.id }, select: { id: true } }));
+      // The subscription `/access` shows: after a claim the oldest is not always the live one.
+      const subscription = await buyerSubscription(tx, user.id);
 
       // 3. The applyPayment lock: a payment and a grant on one subscription never interleave.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${subscription.id}))`;
