@@ -146,6 +146,7 @@ describe('app page', () => {
           publishedAt: new Date('2026-03-01T00:00:00Z'),
           sizeBytes: 5_000_000_000n,
           minIos: '15.0',
+          deviceFamily: [1, 2],
           changelog: 'Исправления',
         },
         { version: '1.1', build: '11', publishedAt: new Date('2026-02-01T00:00:00Z') },
@@ -180,7 +181,54 @@ describe('app page', () => {
       ],
       removedFromAppStore: true,
       accessLevel: 'addon:maps',
+      devices: ['iphone', 'ipad'],
+      similar: [],
     });
+  });
+
+  it('lists similar apps of the same category by rating, without itself', async () => {
+    const maps = await seedCategory(db, {
+      slug: 'maps',
+      name: 'Карты',
+      icon: 'navigation',
+      sort: 0,
+    });
+    const games = await seedCategory(db, { slug: 'games', name: 'Игры', icon: 'games', sort: 1 });
+    await seedApp(db, { slug: 'self', name: 'Сам', categoryId: maps.id, rating: 5 });
+    await seedApp(db, { slug: 'low', name: 'Низкий', categoryId: maps.id, rating: 3.1 });
+    await seedApp(db, { slug: 'high', name: 'Высокий', categoryId: maps.id, rating: 4.9 });
+    await seedApp(db, { slug: 'b-none', name: 'Б без оценки', categoryId: maps.id });
+    await seedApp(db, { slug: 'a-none', name: 'А без оценки', categoryId: maps.id });
+    await seedApp(db, { slug: 'other', name: 'Чужой', categoryId: games.id, rating: 5 });
+    await seedApp(db, { slug: 'hidden', name: 'Скрытый', categoryId: maps.id, status: 'hidden' });
+    await seedApp(db, {
+      slug: 'unpublished',
+      name: 'Без версии',
+      categoryId: maps.id,
+      versions: [{ version: '1.0', status: 'draft' }],
+    });
+
+    const res = await get('/catalog/apps/self');
+    const detail = appDetailSchema.parse(res.body);
+    expect(slugs(detail.similar)).toEqual(['high', 'low', 'a-none', 'b-none']);
+    expect(detail.devices).toEqual(['iphone']);
+  });
+
+  it('caps similar apps at 12 and has none without a category', async () => {
+    const maps = await seedCategory(db, {
+      slug: 'maps',
+      name: 'Карты',
+      icon: 'navigation',
+      sort: 0,
+    });
+    await seedApp(db, { slug: 'self', name: 'Сам', categoryId: maps.id });
+    for (let n = 0; n < 14; n++) {
+      await seedApp(db, { slug: `m${n}`, name: `Карта ${n}`, categoryId: maps.id });
+    }
+    await seedApp(db, { slug: 'lonely', name: 'Без категории' });
+
+    expect(appDetailSchema.parse((await get('/catalog/apps/self')).body).similar).toHaveLength(12);
+    expect(appDetailSchema.parse((await get('/catalog/apps/lonely')).body).similar).toEqual([]);
   });
 
   it('answers 404 for an unknown slug', async () => {
@@ -258,6 +306,78 @@ describe('visibility', () => {
     const home = homeViewSchema.parse((await get('/catalog/home')).body);
     expect(slugs(home.banners)).toEqual(['shown-app']);
     for (const c of home.collections) expect(slugs(c.items)).toEqual(['shown-app']);
+  });
+});
+
+describe('sections', () => {
+  it('lists apps removed from the App Store by name', async () => {
+    await seedApp(db, { slug: 'b', name: 'Б', removedFromAppStore: true });
+    await seedApp(db, { slug: 'a', name: 'А', removedFromAppStore: true });
+    await seedApp(db, { slug: 'kept', name: 'В', removedFromAppStore: false });
+    await seedApp(db, { slug: 'hid', name: 'Г', removedFromAppStore: true, status: 'hidden' });
+    const res = await get('/catalog/sections/removed');
+    expect(res.status).toBe(200);
+    expect(res.headers['cache-control']).toBe(CACHE);
+    const page = appPage.parse(res.body);
+    expect(slugs(page.items)).toEqual(['a', 'b']);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('lists premium as the admin picked it in the «premium» collection', async () => {
+    expect(appPage.parse((await get('/catalog/sections/premium')).body)).toEqual({
+      items: [],
+      nextCursor: null,
+    });
+    const game = await seedApp(db, { slug: 'game', name: 'Игра' });
+    const tool = await seedApp(db, { slug: 'tool', name: 'Утилита' });
+    const hidden = await seedApp(db, { slug: 'hid', name: 'Скрытое', status: 'hidden' });
+    await seedApp(db, { slug: 'other', name: 'Другое' });
+    await seedCollection(db, {
+      slug: 'premium',
+      title: 'Premium доступы',
+      onHome: false,
+      items: [{ appId: tool.id }, { appId: hidden.id }, { appId: game.id }],
+    });
+    expect(slugs(appPage.parse((await get('/catalog/sections/premium')).body).items)).toEqual([
+      'tool',
+      'game',
+    ]);
+  });
+
+  it('ranks popular apps by installs', async () => {
+    const a = await seedApp(db, { slug: 'a', name: 'А' });
+    const b = await seedApp(db, { slug: 'b', name: 'Б' });
+    await seedInstalls(db, a.id, 2, 1);
+    await seedInstalls(db, b.id, 5, 1);
+    const page = appPage.parse((await get('/catalog/sections/popular')).body);
+    expect(slugs(page.items)).toEqual(['b', 'a']);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('pages the whole catalog by name, 24 at a time', async () => {
+    for (let i = 30; i >= 1; i -= 1) {
+      const n = String(i).padStart(2, '0');
+      await seedApp(db, { slug: `app-${n}`, name: `App ${n}` });
+    }
+    const first = appPage.parse((await get('/catalog/sections/all')).body);
+    expect(first.items).toHaveLength(24);
+    expect(first.items[0]?.slug).toBe('app-01');
+    const second = appPage.parse(
+      (await get(`/catalog/sections/all?cursor=${first.nextCursor}`)).body,
+    );
+    expect(slugs(second.items)).toEqual([
+      'app-25',
+      'app-26',
+      'app-27',
+      'app-28',
+      'app-29',
+      'app-30',
+    ]);
+    expect(second.nextCursor).toBeNull();
+  });
+
+  it('answers 404 for an unknown section', async () => {
+    expect((await get('/catalog/sections/nope')).status).toBe(404);
   });
 });
 

@@ -25,7 +25,8 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "test:int": "vitest run test",
-    "seed:e2e": "node prisma/seed-e2e.ts"
+    "seed:e2e": "node prisma/seed-e2e.ts",
+    "seed:demo": "node prisma/seed-demo.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",

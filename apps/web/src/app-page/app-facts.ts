@@ -30,6 +30,34 @@ export function languageNames(languages: string[]): string {
   return languages.map(languageName).join(', ');
 }
 
+const DEVICE_NAMES: Record<AppDetail['devices'][number], string> = {
+  iphone: 'iPhone',
+  ipad: 'iPad',
+};
+
+/** «Устройства»: «iPhone, iPad». */
+export function devicesLabel(devices: AppDetail['devices']): string {
+  return devices.map((d) => DEVICE_NAMES[d]).join(', ');
+}
+
+const dateFormat = new Intl.DateTimeFormat('ru-RU', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Europe/Moscow',
+});
+
+/** A date of the version history: «3 ноября 2026 г.» in Moscow time. */
+export function formatDate(iso: string): string {
+  return dateFormat.format(new Date(iso));
+}
+
+/** «Обновлено»: the date of the latest published version (versions come newest first). */
+export function updatedLabel(versions: AppDetail['versions']): string | undefined {
+  const [latest] = versions;
+  return latest ? formatDate(latest.publishedAt) : undefined;
+}
+
 export function compatibility(minIos: string | undefined): string | undefined {
   return minIos ? `iOS ${minIos} и новее` : undefined;
 }

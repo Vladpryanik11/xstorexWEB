@@ -1,11 +1,14 @@
+import type { AppDetail } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { Fragment } from 'react';
 import { serverApi } from '../../src/api/server';
+import { AppPreview } from '../../src/catalog/AppPreview';
 import { CategoryChips } from '../../src/catalog/CategoryChips';
 import { CollectionSection } from '../../src/catalog/CollectionSection';
 import { HeroCarousel } from '../../src/catalog/HeroCarousel';
 import { HowItWorks } from '../../src/catalog/HowItWorks';
+import { SectionTiles } from '../../src/catalog/SectionTiles';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -18,8 +21,17 @@ export const metadata: Metadata = {
 /** Chips go after this many collections (spec §6.3). */
 const CHIPS_AFTER = 2;
 
-export default async function HomePage() {
-  const home = await (await serverApi()).home();
+type Props = { searchParams: Promise<{ app?: string | string[] }> };
+
+/** `/?app=<slug>`: a shared link opens that app's install sheet; a bad slug is ignored. */
+async function sharedApp(api: Awaited<ReturnType<typeof serverApi>>, slug: unknown) {
+  if (typeof slug !== 'string' || slug === '') return null;
+  return api.app(slug).catch((): AppDetail | null => null);
+}
+
+export default async function HomePage({ searchParams }: Props) {
+  const api = await serverApi();
+  const [home, shared] = await Promise.all([api.home(), sharedApp(api, (await searchParams).app)]);
   const chips = <CategoryChips categories={home.categories} />;
 
   return (
@@ -38,6 +50,7 @@ export default async function HomePage() {
         </div>
       </section>
       <div className={styles.shelves}>
+        <SectionTiles />
         <HeroCarousel banners={home.banners} />
         {home.collections.map((c, i) => (
           <Fragment key={c.slug}>
@@ -48,6 +61,17 @@ export default async function HomePage() {
         {home.collections.length < CHIPS_AFTER ? chips : null}
         <HowItWorks />
       </div>
+      {shared ? (
+        <AppPreview
+          key={shared.slug}
+          variant="none"
+          initialOpen
+          slug={shared.slug}
+          name={shared.name}
+          subtitle={shared.subtitle ?? shared.category?.name}
+          iconUrl={shared.iconUrl}
+        />
+      ) : null}
     </>
   );
 }

@@ -41,9 +41,12 @@ describe('view schemas', () => {
       versions: [{ version: '11.2', build: '100', publishedAt: '2026-11-01T00:00:00.000Z' }],
       removedFromAppStore: false,
       accessLevel: 'free',
+      devices: ['iphone', 'ipad'],
+      similar: [card],
     };
     expect(appDetailSchema.parse(detail)).toEqual(detail);
     expect(appDetailSchema.safeParse({ ...detail, accessLevel: 'premium' }).success).toBe(false);
+    expect(appDetailSchema.safeParse({ ...detail, devices: ['watch'] }).success).toBe(false);
   });
 
   it('parses a home view and a page', () => {

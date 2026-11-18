@@ -17,6 +17,7 @@ export type SeedVersion = {
   minIos?: string;
   changelog?: string;
   encrypted?: boolean;
+  deviceFamily?: number[];
 };
 
 export type SeedApp = {
@@ -64,6 +65,7 @@ export async function seedApp(db: Db, input: SeedApp): Promise<{ id: string; slu
             ipaKey: `originals/${seq}.ipa`,
             encrypted: v.encrypted ?? false,
             minIos: v.minIos,
+            ...(v.deviceFamily && { deviceFamily: v.deviceFamily }),
             changelog: v.changelog,
             status,
             publishedAt:

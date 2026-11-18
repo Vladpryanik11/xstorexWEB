@@ -1,0 +1,867 @@
+{
+  "categories": [
+    {
+      "slug": "social",
+      "name": "Общение",
+      "icon": "social"
+    },
+    {
+      "slug": "video",
+      "name": "Видео и кино",
+      "icon": "video"
+    },
+    {
+      "slug": "music",
+      "name": "Музыка",
+      "icon": "music"
+    },
+    {
+      "slug": "photo",
+      "name": "Фото и видео",
+      "icon": "photo"
+    },
+    {
+      "slug": "navigation",
+      "name": "Карты и транспорт",
+      "icon": "navigation"
+    },
+    {
+      "slug": "finance",
+      "name": "Финансы",
+      "icon": "finance"
+    },
+    {
+      "slug": "shopping",
+      "name": "Покупки",
+      "icon": "shopping"
+    },
+    {
+      "slug": "work",
+      "name": "Работа и учёба",
+      "icon": "tools"
+    },
+    {
+      "slug": "games",
+      "name": "Игры",
+      "icon": "games"
+    }
+  ],
+  "apps": [
+    {
+      "slug": "vkontakte",
+      "name": "ВКонтакте",
+      "subtitle": "Чаты, видео, музыка и звонки",
+      "category": "social",
+      "developer": "V Kontakte OOO",
+      "rating": 3.4,
+      "ratingCount": 909000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it"],
+      "sizeMb": 216.7,
+      "minIos": "17.6",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "8.182",
+          "publishedAt": "2026-10-21T09:00:00Z"
+        },
+        {
+          "version": "8.183",
+          "publishedAt": "2026-11-03T09:00:00Z",
+          "changelog": "Быстрее открываются чаты, исправили ошибки в звонках."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Социальная сеть, где переписка, звонки, видео и музыка собраны в одном приложении.\n\nОбщение:\n• Личные и групповые чаты, голосовые и видеосообщения\n• Бесплатные звонки, в том числе групповые\n• Сообщества и ленты по интересам\n\nРазвлечения:\n• Клипы и видео от авторов и каналов\n• Музыка с плейлистами и рекомендациями\n• Игры и мини-приложения прямо внутри"
+    },
+    {
+      "slug": "vk-video",
+      "name": "VK Видео",
+      "subtitle": "Фильмы, сериалы, шоу и трансляции",
+      "category": "video",
+      "developer": "VK LLC",
+      "rating": 4.6,
+      "ratingCount": 352000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it"],
+      "sizeMb": 123.1,
+      "minIos": "17.6",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "2.31",
+          "publishedAt": "2026-10-29T09:00:00Z",
+          "changelog": "Улучшили качество трансляций."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Видеоплатформа с фильмами, сериалами, шоу и прямыми эфирами.\n\nЧто можно смотреть:\n• Сериалы и шоу собственного производства\n• Мультфильмы и детские каналы\n• Прямые эфиры телеканалов и блогеров\n\nУдобство:\n• Продолжение просмотра с того же места на любом устройстве\n• Подборки по жанрам и настроению"
+    },
+    {
+      "slug": "vk-muzyka",
+      "name": "VK Музыка",
+      "subtitle": "Новинки и хиты без интернета",
+      "category": "music",
+      "developer": "VK LLC",
+      "rating": 4.3,
+      "ratingCount": 598000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it"],
+      "sizeMb": 99.3,
+      "minIos": "16.6",
+      "deviceFamily": [1],
+      "versions": [
+        {
+          "version": "6.4",
+          "publishedAt": "2026-10-15T09:00:00Z",
+          "changelog": "Новые подборки на главной."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Музыкальный сервис с миллионами треков, подкастами и аудиокнигами.\n\nВозможности:\n• Рекомендации, которые подстраиваются под ваш вкус\n• Прослушивание без интернета по подписке\n• Тексты песен и караоке-режим\n• Подкасты и аудиокниги в одном месте"
+    },
+    {
+      "slug": "odnoklassniki",
+      "name": "Одноклассники",
+      "subtitle": "Общение, видео и хобби",
+      "category": "social",
+      "developer": "VK LLC",
+      "rating": 4.7,
+      "ratingCount": 224000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh"
+      ],
+      "sizeMb": 168.5,
+      "minIos": "15.6",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "25.10",
+          "publishedAt": "2026-10-30T09:00:00Z",
+          "changelog": "Исправления и улучшения."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Социальная сеть для общения с близкими, одноклассниками и людьми со схожими увлечениями.\n\nЧто внутри:\n• Сообщения и бесплатные видеозвонки\n• Группы по интересам: дача, кулинария, рукоделие и многое другое\n• Видео, фильмы и музыка\n• Фотоальбомы и поздравления с праздниками"
+    },
+    {
+      "slug": "pochta-mail-ru",
+      "name": "Почта Mail",
+      "subtitle": "Все ящики в одном приложении",
+      "category": "work",
+      "developer": "VK LLC",
+      "rating": 4.8,
+      "ratingCount": 1700000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky",
+        "tg",
+        "tk"
+      ],
+      "sizeMb": 472.4,
+      "minIos": "16.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "16.12",
+          "publishedAt": "2026-11-05T09:00:00Z",
+          "changelog": "Быстрее работает поиск по письмам."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Почтовый клиент для ящиков Mail и других почтовых сервисов.\n\nПочта:\n• Несколько ящиков в одном приложении\n• Умная сортировка: рассылки и уведомления отдельно от важных писем\n• Защита от спама и мошеннических писем\n\nЕщё:\n• Календарь и заметки\n• Облако для вложений"
+    },
+    {
+      "slug": "rutube",
+      "name": "RUTUBE",
+      "subtitle": "Видео, сериалы и прямые эфиры",
+      "category": "video",
+      "developer": "Ruform OOO",
+      "rating": 4.2,
+      "ratingCount": 45000,
+      "languages": ["ru", "en"],
+      "sizeMb": 48.7,
+      "minIos": "14.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "46.5",
+          "publishedAt": "2026-10-02T09:00:00Z"
+        },
+        {
+          "version": "46.6",
+          "publishedAt": "2026-11-07T09:00:00Z",
+          "changelog": "Фоновое прослушивание стало стабильнее."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Видеохостинг для зрителей и авторов: блогеры, шоу, кино и эфиры телеканалов.\n\nДля зрителей:\n• Прямые эфиры телеканалов и спортивные трансляции\n• Фильмы и сериалы бесплатно и по подписке\n• Воспроизведение в фоне при заблокированном экране\n\nДля авторов:\n• Загрузка видео прямо с iPhone\n• Статистика канала и монетизация"
+    },
+    {
+      "slug": "okko",
+      "name": "Okko",
+      "subtitle": "Кино, сериалы и спорт",
+      "category": "video",
+      "developer": "Okko OOO",
+      "rating": 4.7,
+      "ratingCount": 1500,
+      "languages": ["ru"],
+      "sizeMb": 344.0,
+      "minIos": "16.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "3.58",
+          "publishedAt": "2026-11-01T09:00:00Z",
+          "changelog": "Обновили страницу сериала."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Онлайн-кинотеатр с фильмами, сериалами, мультфильмами и спортом.\n\nПочему удобно:\n• Тысячи фильмов и сериалов в хорошем качестве\n• Скачивание для просмотра в дороге\n• Детский профиль с подборками для семьи\n• Спортивные трансляции в прямом эфире"
+    },
+    {
+      "slug": "avito",
+      "name": "Авито",
+      "subtitle": "Объявления: авто, квартиры, работа",
+      "category": "shopping",
+      "developer": "LLC DOUBLETAPP",
+      "rating": 4.7,
+      "ratingCount": 3400000,
+      "languages": ["ru"],
+      "sizeMb": 372.7,
+      "minIos": "15.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "183.0",
+          "publishedAt": "2026-11-04T09:00:00Z",
+          "changelog": "Новые фильтры в поиске квартир."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Сервис объявлений: покупайте и продавайте вещи, ищите жильё, работу и услуги.\n\nПокупателям:\n• Миллионы объявлений рядом с вами\n• Доставка и безопасная оплата\n• Сохранённые поиски и уведомления о новых предложениях\n\nПродавцам:\n• Объявление за пару минут прямо с телефона\n• Чат с покупателями"
+    },
+    {
+      "slug": "alfa-bank",
+      "name": "Альфа-Банк",
+      "subtitle": "Ваши финансы онлайн",
+      "category": "finance",
+      "developer": "AO ALFA-BANK",
+      "rating": 4.9,
+      "ratingCount": 450000,
+      "languages": ["ru", "en", "uk", "kk"],
+      "sizeMb": 225.0,
+      "minIos": "15.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "13.24",
+          "publishedAt": "2026-10-26T09:00:00Z",
+          "changelog": "Улучшили переводы по номеру телефона."
+        }
+      ],
+      "removedFromAppStore": true,
+      "description": "Мобильный банк для повседневных платежей, переводов и накоплений.\n\nКаждый день:\n• Переводы по номеру телефона\n• Оплата ЖКУ, связи и штрафов\n• Кэшбэк и персональные предложения\n\nНакопления:\n• Вклады и накопительные счета\n• Аналитика расходов по категориям"
+    },
+    {
+      "slug": "2gis",
+      "name": "2ГИС",
+      "subtitle": "Карты, маршруты и справочник",
+      "category": "navigation",
+      "developer": "LLC \"DoubleGIS\"",
+      "rating": 4.8,
+      "ratingCount": 768000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it", "pt"],
+      "sizeMb": 241.0,
+      "minIos": "16.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "6.48",
+          "publishedAt": "2026-11-06T09:00:00Z",
+          "changelog": "Подробнее показываем входы в здания."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Подробная карта городов со справочником организаций и навигатором.\n\nВозможности:\n• Маршруты на машине, общественном транспорте и пешком\n• Входы в здания, этажи и парковки\n• Часы работы, телефоны и отзывы об организациях\n• Карты работают без интернета"
+    },
+    {
+      "slug": "yandex-go",
+      "name": "Яндекс Go",
+      "subtitle": "Такси, доставка и самокаты",
+      "category": "navigation",
+      "developer": "Mikromobilnost doo",
+      "rating": 4.9,
+      "ratingCount": 326000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky",
+        "tg",
+        "tk",
+        "ro",
+        "nl",
+        "sv",
+        "fi",
+        "cs",
+        "sk",
+        "hu",
+        "el"
+      ],
+      "sizeMb": 261.4,
+      "minIos": "16.0",
+      "deviceFamily": [1],
+      "versions": [
+        {
+          "version": "5.12",
+          "publishedAt": "2026-11-02T09:00:00Z",
+          "changelog": "Исправления и улучшения."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Одно приложение для поездок и доставки по городу.\n\nЧто можно сделать:\n• Вызвать такси разных тарифов\n• Взять самокат или каршеринг\n• Заказать доставку посылок и продуктов\n• Оплатить картой и следить за машиной на карте"
+    },
+    {
+      "slug": "yandex-karty",
+      "name": "Яндекс Карты",
+      "subtitle": "Навигатор и транспорт",
+      "category": "navigation",
+      "developer": "Direct Cursus Computer Systems Trading",
+      "rating": 4.6,
+      "ratingCount": 36000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it", "pt"],
+      "sizeMb": 386.2,
+      "minIos": "17.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "20.4",
+          "publishedAt": "2026-10-28T09:00:00Z",
+          "changelog": "Обновили расписание транспорта."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Карты с навигатором, общественным транспортом и поиском мест.\n\nДорога:\n• Голосовой навигатор с учётом пробок\n• Транспорт в реальном времени\n\nМеста:\n• Рестораны, магазины и услуги с отзывами\n• Сохранённые места и списки"
+    },
+    {
+      "slug": "yandex-muzyka",
+      "name": "Яндекс Музыка",
+      "subtitle": "Музыка, подкасты и книги",
+      "category": "music",
+      "developer": "Direct Cursus Computer Systems Trading",
+      "rating": 4.7,
+      "ratingCount": 983000,
+      "languages": ["ru", "en", "uk", "kk"],
+      "sizeMb": 137.2,
+      "minIos": "17.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "7.31",
+          "publishedAt": "2026-11-08T09:00:00Z",
+          "changelog": "Новая волна стала точнее."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Музыкальный сервис с персональной волной, подкастами и аудиокнигами.\n\nВозможности:\n• Моя волна: бесконечный поток под ваш вкус\n• Скачивание треков для прослушивания без сети\n• Детский раздел со сказками и песнями\n• Синхронизация с колонками и автомобилем"
+    },
+    {
+      "slug": "yandex-disk",
+      "name": "Яндекс Диск",
+      "subtitle": "Облако для фото и файлов",
+      "category": "work",
+      "developer": "DIRECT CURSUS COMPUTER SYSTEMS TRADING LLC",
+      "rating": 4.8,
+      "ratingCount": 392000,
+      "languages": ["ru", "en", "uk", "kk"],
+      "sizeMb": 176.6,
+      "minIos": "16.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "5.70",
+          "publishedAt": "2026-10-19T09:00:00Z",
+          "changelog": "Быстрее загружаются видео."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Облачное хранилище для фотографий, видео и документов.\n\nВозможности:\n• Автозагрузка фото и видео с iPhone\n• Общий доступ к папкам по ссылке\n• Просмотр и редактирование документов\n• Поиск по тексту на фотографиях"
+    },
+    {
+      "slug": "yandex-pochta",
+      "name": "Яндекс Почта",
+      "subtitle": "Почта для работы и жизни",
+      "category": "work",
+      "developer": "Direct Cursus Computer Systems Trading",
+      "rating": 4.8,
+      "ratingCount": 12000,
+      "languages": ["ru", "en", "uk", "kk"],
+      "sizeMb": 302.2,
+      "minIos": "17.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "9.18",
+          "publishedAt": "2026-10-24T09:00:00Z",
+          "changelog": "Исправления и улучшения."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Почтовый клиент с защитой от спама и умной сортировкой.\n\nВозможности:\n• Несколько ящиков в одном приложении\n• Краткий пересказ длинных писем\n• Отложенная отправка и напоминания\n• Календарь и контакты рядом с почтой"
+    },
+    {
+      "slug": "telegram",
+      "name": "Telegram",
+      "subtitle": "Быстрый и надёжный мессенджер",
+      "category": "social",
+      "developer": "Telegram FZ-LLC",
+      "rating": 3.7,
+      "ratingCount": 414000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az"
+      ],
+      "sizeMb": 74.7,
+      "minIos": "15.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "12.2",
+          "publishedAt": "2026-11-05T09:00:00Z",
+          "changelog": "Новые реакции и улучшения чатов."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Мессенджер с облачной синхронизацией, каналами и группами.\n\nОбщение:\n• Чаты, группы до 200 000 участников и каналы\n• Голосовые и видеозвонки\n• Файлы любого размера и типа\n\nУдобство:\n• Папки чатов и архив\n• Синхронизация между всеми устройствами"
+    },
+    {
+      "slug": "whatsapp",
+      "name": "WhatsApp",
+      "subtitle": "Сообщения и звонки",
+      "category": "social",
+      "developer": "WhatsApp Inc.",
+      "rating": 4.7,
+      "ratingCount": 4100000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky",
+        "tg",
+        "tk",
+        "ro",
+        "nl",
+        "sv",
+        "fi",
+        "cs",
+        "sk",
+        "hu",
+        "el",
+        "he",
+        "hi",
+        "id",
+        "ms",
+        "th",
+        "vi",
+        "da",
+        "nb"
+      ],
+      "sizeMb": 157.8,
+      "minIos": "15.1",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "26.21",
+          "publishedAt": "2026-11-09T09:00:00Z",
+          "changelog": "Исправления и улучшения."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Мессенджер для переписки и звонков с родными, друзьями и коллегами.\n\nВозможности:\n• Сообщения, голосовые и видеозвонки\n• Групповые чаты и сообщества\n• Статусы и каналы\n• Сквозное шифрование переписки"
+    },
+    {
+      "slug": "instagram",
+      "name": "Instagram",
+      "subtitle": "Фото, видео и истории",
+      "category": "photo",
+      "developer": "Instagram, Inc.",
+      "rating": 4.7,
+      "ratingCount": 5400000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky",
+        "tg",
+        "tk",
+        "ro",
+        "nl",
+        "sv",
+        "fi",
+        "cs",
+        "sk",
+        "hu",
+        "el",
+        "he",
+        "hi",
+        "id",
+        "ms",
+        "th",
+        "vi",
+        "da",
+        "nb"
+      ],
+      "sizeMb": 351.1,
+      "minIos": "16.3",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "412.0",
+          "publishedAt": "2026-11-03T09:00:00Z",
+          "changelog": "Новые эффекты для историй."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Социальная сеть для фото, коротких видео и историй.\n\nЧто можно делать:\n• Публиковать фото, видео и карусели\n• Снимать Reels с музыкой и эффектами\n• Делиться историями на 24 часа\n• Переписываться в Direct"
+    },
+    {
+      "slug": "kinemaster",
+      "name": "KineMaster",
+      "subtitle": "Видеоредактор для влогов",
+      "category": "photo",
+      "developer": "KineMaster Corporation",
+      "rating": 4.7,
+      "ratingCount": 1800,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky"
+      ],
+      "sizeMb": 144.8,
+      "minIos": "18.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "8.6",
+          "publishedAt": "2026-10-31T09:00:00Z",
+          "changelog": "Новые шаблоны и переходы."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Мощный видеоредактор для монтажа роликов прямо на телефоне.\n\nМонтаж:\n• Многодорожечная шкала, слои и ключевые кадры\n• Хромакей и управление скоростью\n• Автосубтитры и удаление фона\n\nЭкспорт:\n• До 4K и 60 кадров в секунду\n• Готовые форматы для соцсетей"
+    },
+    {
+      "slug": "captions",
+      "name": "Captions",
+      "subtitle": "Видео с субтитрами за минуту",
+      "category": "photo",
+      "developer": "Captions, LLC (US)",
+      "rating": 4.5,
+      "ratingCount": 1900,
+      "languages": [
+        "en",
+        "ru",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar",
+        "zh",
+        "ja",
+        "ko",
+        "hy",
+        "az",
+        "ka",
+        "ky",
+        "tg",
+        "tk",
+        "ro",
+        "nl",
+        "sv",
+        "fi",
+        "cs",
+        "sk",
+        "hu",
+        "el",
+        "he",
+        "hi",
+        "id"
+      ],
+      "sizeMb": 112.0,
+      "minIos": "16.0",
+      "deviceFamily": [1],
+      "versions": [
+        {
+          "version": "7.3",
+          "publishedAt": "2026-10-27T09:00:00Z",
+          "changelog": "Точнее распознаём речь."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Приложение для коротких видео с автоматическими субтитрами.\n\nВозможности:\n• Субтитры на десятках языков\n• Монтаж по тексту: удалите слово — уберётся фрагмент\n• Шаблоны для коротких видео\n• Улучшение звука и шумоподавление"
+    },
+    {
+      "slug": "forest",
+      "name": "Forest",
+      "subtitle": "Помогает не отвлекаться",
+      "category": "work",
+      "developer": "SEEKRTECH CO., LTD.",
+      "rating": 4.8,
+      "ratingCount": 11000,
+      "languages": [
+        "ru",
+        "en",
+        "uk",
+        "kk",
+        "be",
+        "uz",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "tr",
+        "pl",
+        "ar"
+      ],
+      "sizeMb": 360.1,
+      "minIos": "15.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "4.94",
+          "publishedAt": "2026-10-12T09:00:00Z",
+          "changelog": "Новые деревья в коллекции."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Таймер концентрации: пока вы не трогаете телефон, растёт дерево.\n\nКак это работает:\n• Запускаете таймер и сажаете семечко\n• Отвлеклись на телефон — дерево засохнет\n• Из удачных сессий вырастает целый лес\n\nЕщё:\n• Статистика продуктивности по дням\n• Совместные сессии с друзьями"
+    },
+    {
+      "slug": "homescapes",
+      "name": "Homescapes",
+      "subtitle": "Головоломки «три в ряд»",
+      "category": "games",
+      "developer": "Playrix",
+      "rating": 4.7,
+      "ratingCount": 672000,
+      "languages": ["ru", "en", "uk", "kk", "be", "uz", "de", "fr", "es", "it", "pt"],
+      "sizeMb": 195.1,
+      "minIos": "14.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "8.6.1",
+          "publishedAt": "2026-11-04T09:00:00Z",
+          "changelog": "Новое событие и уровни."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Головоломка «три в ряд», в которой вы обустраиваете большой дом.\n\nЧто вас ждёт:\n• Тысячи уровней с бонусами и взрывными комбинациями\n• Ремонт комнат на свой вкус\n• Сезонные события и турниры\n• Можно играть без интернета"
+    },
+    {
+      "slug": "worldbox",
+      "name": "WorldBox",
+      "subtitle": "Симулятор целого мира",
+      "category": "games",
+      "developer": "Maxim Karpenko",
+      "rating": 4.7,
+      "ratingCount": 78000,
+      "languages": ["en"],
+      "sizeMb": 139.4,
+      "minIos": "15.0",
+      "deviceFamily": [1, 2],
+      "versions": [
+        {
+          "version": "0.50",
+          "publishedAt": "2026-10-08T09:00:00Z",
+          "changelog": "Новые существа и катастрофы."
+        }
+      ],
+      "removedFromAppStore": false,
+      "description": "Песочница, где вы создаёте мир и наблюдаете, как он живёт.\n\nВозможности:\n• Рисуйте материки, горы и океаны\n• Заселяйте мир людьми, эльфами, гномами и орками\n• Наблюдайте за войнами, союзами и развитием королевств\n• Устраивайте метеориты, землетрясения и другие катастрофы"
+    }
+  ],
+  "collections": [
+    {
+      "slug": "hero",
+      "title": "Главное",
+      "layout": "banner",
+      "source": "manual",
+      "apps": ["vkontakte", "kinemaster", "2gis"]
+    },
+    {
+      "slug": "top",
+      "title": "Популярное",
+      "layout": "grid3",
+      "source": "top_downloads",
+      "limit": 12
+    },
+    {
+      "slug": "trends",
+      "title": "Набирают популярность",
+      "layout": "icons",
+      "source": "trending"
+    },
+    {
+      "slug": "rated",
+      "title": "Лучшие по оценкам",
+      "layout": "grid3",
+      "source": "top_rated"
+    },
+    {
+      "slug": "removed",
+      "title": "Больше нет в App Store",
+      "layout": "screenshots",
+      "source": "manual",
+      "apps": [
+        "vkontakte",
+        "vk-video",
+        "vk-muzyka",
+        "odnoklassniki",
+        "pochta-mail-ru",
+        "rutube",
+        "avito",
+        "alfa-bank"
+      ]
+    },
+    {
+      "slug": "fresh",
+      "title": "Свежие обновления",
+      "layout": "icons",
+      "source": "recently_updated"
+    },
+    {
+      "slug": "premium",
+      "title": "Premium доступы",
+      "layout": "icons",
+      "source": "manual",
+      "onHome": false,
+      "apps": ["homescapes", "worldbox", "kinemaster", "captions", "forest", "yandex-disk"]
+    }
+  ]
+}

@@ -121,6 +121,7 @@ export async function attachToCatalog(deps: WorkerDeps, upload: IpaUpload): Prom
           build: inspect.build,
           bundleId: inspect.bundleId,
           minIos: inspect.minIos ?? null,
+          deviceFamily: inspect.deviceFamily,
           sizeBytes: BigInt(inspect.sizeBytes),
           sha256: inspect.sha256,
           ipaKey: upload.key,
