@@ -12,7 +12,7 @@ import { EmailCodeService } from './email-code.service.js';
 import { dummyPasswordHash, hashPassword, verifyPassword } from './password.js';
 import { type SessionMeta, SessionService } from './session.service.js';
 
-/** At most this many provisional accounts of one email are tried by a password login. */
+/** At most this many paid provisional accounts of one email are tried, newest payment first. */
 const MAX_PROVISIONAL_CANDIDATES = 5;
 const TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 };
 
@@ -37,12 +37,29 @@ export class CustomerAuthService {
       where: { ...open, email: input.email, isProvisional: false },
       select: { id: true, passwordHash: true },
     });
-    const provisional = await this.prisma.client.user.findMany({
-      where: { ...open, isProvisional: true, checkoutEmail: input.email },
-      select: { id: true, passwordHash: true },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: MAX_PROVISIONAL_CANDIDATES,
+    // Only provisional accounts with a paid order: free unpaid ones cannot crowd out a real one.
+    const paidProvisional = await this.prisma.client.user.findMany({
+      where: {
+        ...open,
+        isProvisional: true,
+        checkoutEmail: input.email,
+        orders: { some: { status: 'paid' } },
+      },
+      select: {
+        id: true,
+        passwordHash: true,
+        orders: {
+          where: { status: 'paid' },
+          select: { paidAt: true },
+          orderBy: { paidAt: 'desc' },
+          take: 1,
+        },
+      },
     });
+    const lastPaid = (u: (typeof paidProvisional)[number]) => u.orders[0]?.paidAt?.getTime() ?? 0;
+    const provisional = paidProvisional
+      .sort((a, b) => lastPaid(b) - lastPaid(a) || (a.id < b.id ? 1 : -1))
+      .slice(0, MAX_PROVISIONAL_CANDIDATES);
     const candidates = verified ? [verified, ...provisional] : provisional;
     if (candidates.length === 0) {
       await verifyPassword(await dummyPasswordHash(), input.password);

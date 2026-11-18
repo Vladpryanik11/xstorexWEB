@@ -9,6 +9,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/auth/password.js';
+import { CheckoutService } from '../src/billing/checkout.service.js';
 import { loadConfig } from '../src/config/config.js';
 import { checkoutBody, cookieExpiry, postCheckout, SITE, seedPlan } from './helpers/billing.js';
 import { TEST_WEBHOOK_SECRET, testEnv } from './test-env.js';
@@ -224,12 +225,12 @@ it('a staff email never gets a buyer session by code', async () => {
   expect(res.headers['set-cookie']).toBeUndefined();
 });
 
-it('sixth wrong code attempt invalidates the code', async () => {
-  // Five wrong attempts are tolerated: the right code still works after them.
+it('sixth code attempt is refused even when correct', async () => {
+  // Five attempts in total: four wrong ones still leave the fifth for the right code.
   const tolerant = rcpt();
   const good = await mailedCode(tolerant);
   const wrongOf = (c: string) => String((Number(c) + 1) % 1_000_000).padStart(6, '0');
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     const res = await post(agentOf(), 'code/verify', { email: tolerant, code: wrongOf(good) });
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('CODE_INVALID');
@@ -239,15 +240,17 @@ it('sixth wrong code attempt invalidates the code', async () => {
   const replay = await post(agentOf(), 'code/verify', { email: tolerant, code: good });
   expect(replay.body.code).toBe('CODE_INVALID');
 
+  // Five wrong attempts use the code up: the right code on the sixth try is refused.
   const email = rcpt();
   const code = await mailedCode(email);
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 5; i += 1) {
     await post(agentOf(), 'code/verify', { email, code: wrongOf(code) });
   }
   const res = await post(agentOf(), 'code/verify', { email, code });
   expect(res.status).toBe(400);
   expect(res.body.code).toBe('CODE_INVALID');
   expect(res.headers['set-cookie']).toBeUndefined();
+  expect(await db.user.count({ where: { email } })).toBe(0);
 });
 
 it('an expired code is rejected', async () => {
@@ -310,14 +313,21 @@ it('old provisional session stops working after claim', async () => {
   const { agent } = await buyAndPay(email);
   expect((await agent.get('/api/v1/auth/me')).status).toBe(200);
   const provisional = await db.user.findFirstOrThrow({ where: { checkoutEmail: email } });
+  expect((await post(agent, 'password', { password: 'provisional pw' })).status).toBe(204);
+  // Before the claim the password opens the provisional account.
+  const before = agentOf();
+  expect((await post(before, 'login', { email, password: 'provisional pw' })).status).toBe(204);
+  expect((await before.get('/api/v1/auth/me')).body.user.id).toBe(provisional.id);
 
   await loginByCode(email);
   expect((await agent.get('/api/v1/auth/me')).status).toBe(401);
+  expect((await before.get('/api/v1/auth/me')).status).toBe(401);
   expect((await agent.get('/api/v1/access')).body).toEqual({ state: { kind: 'none' } });
   expect(await db.session.count({ where: { userId: provisional.id } })).toBe(0);
   // Its password no longer signs in either: the account is closed.
-  const login = await post(agentOf(), 'login', { email, password: 'whatever1' });
+  const login = await post(agentOf(), 'login', { email, password: 'provisional pw' });
   expect(login.status).toBe(401);
+  expect(login.body.code).toBe('INVALID_CREDENTIALS');
 });
 
 it('password shorter than 8 returns WEAK_PASSWORD', async () => {
@@ -343,4 +353,87 @@ it('password recovery is a code login followed by a new password', async () => {
   expect((await post(again, 'password', { password: 'second password' })).status).toBe(204);
   expect((await post(agentOf(), 'login', { email, password: 'first password' })).status).toBe(401);
   expect((await post(agentOf(), 'login', { email, password: 'second password' })).status).toBe(204);
+});
+
+it('a provisional password opens only the provisional account, never the verified one', async () => {
+  const email = rcpt();
+  const verified = await db.user.create({
+    data: { email, role: 'user', passwordHash: await hashPassword('verified pw') },
+  });
+  const { agent } = await buyAndPay(email);
+  expect((await post(agent, 'password', { password: 'provisional pw' })).status).toBe(204);
+  const provisional = await db.user.findFirstOrThrow({ where: { checkoutEmail: email } });
+  expect(provisional.isProvisional).toBe(true);
+
+  const byProvisional = agentOf();
+  expect((await post(byProvisional, 'login', { email, password: 'provisional pw' })).status).toBe(
+    204,
+  );
+  expect((await byProvisional.get('/api/v1/auth/me')).body.user).toEqual({
+    id: provisional.id,
+    email: null,
+    role: 'user',
+  });
+  expect((await byProvisional.get('/api/v1/access')).body.state.kind).toBe('active');
+
+  const byVerified = agentOf();
+  expect((await post(byVerified, 'login', { email, password: 'verified pw' })).status).toBe(204);
+  expect((await byVerified.get('/api/v1/auth/me')).body.user).toEqual({
+    id: verified.id,
+    email,
+    role: 'user',
+  });
+  // The verified account has no purchase of its own: the payment stayed provisional.
+  expect((await byVerified.get('/api/v1/access')).body.state.kind).toBe('none');
+});
+
+it('unpaid provisional accounts do not crowd out a paid one at login', async () => {
+  const email = rcpt();
+  const { agent } = await buyAndPay(email);
+  expect((await post(agent, 'password', { password: 'paid password' })).status).toBe(204);
+  const paid = await db.user.findFirstOrThrow({ where: { checkoutEmail: email } });
+  // Newer, unpaid, with passwords: they are not candidates.
+  const passwordHash = await hashPassword('unpaid password');
+  for (let i = 0; i < 5; i += 1) {
+    await db.user.create({
+      data: { isProvisional: true, checkoutEmail: email, role: 'user', passwordHash },
+    });
+  }
+
+  const other = agentOf();
+  expect((await post(other, 'login', { email, password: 'paid password' })).status).toBe(204);
+  expect((await other.get('/api/v1/auth/me')).body.user.id).toBe(paid.id);
+  const unpaid = await post(agentOf(), 'login', { email, password: 'unpaid password' });
+  expect(unpaid.status).toBe(401);
+  expect(unpaid.body.code).toBe('INVALID_CREDENTIALS');
+});
+
+it('checkout by a provisional buyer closed by a claim is refused and creates no order', async () => {
+  const email = rcpt();
+  await buyAndPay(email);
+  const provisional = await db.user.findFirstOrThrow({ where: { checkoutEmail: email } });
+  await loginByCode(email);
+  expect((await db.user.findUniqueOrThrow({ where: { id: provisional.id } })).blockedAt).not.toBe(
+    null,
+  );
+  const ordersBefore = await db.order.count();
+  const subsBefore = await db.subscription.count();
+
+  // The session was resolved before the claim, as for a request already in flight.
+  const checkout = app.get(CheckoutService);
+  const err = await checkout
+    .openOrder(
+      { checkoutKey: randomUUID(), email, acceptTerms: true },
+      {
+        userId: provisional.id,
+        role: 'user',
+        sessionId: 'gone',
+        kind: 'user',
+        deviceId: null,
+      },
+    )
+    .catch((e: unknown) => e);
+  expect(err).toMatchObject({ code: 'UNAUTHORIZED', status: 401 });
+  expect(await db.order.count()).toBe(ordersBefore);
+  expect(await db.subscription.count()).toBe(subsBefore);
 });

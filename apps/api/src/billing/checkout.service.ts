@@ -112,6 +112,13 @@ export class CheckoutService {
       if (buyer) {
         // One checkout per buyer at a time: no second payment while one is unresolved.
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checkout:${buyer}`}))`;
+        // The session was resolved before this lock; a claim may have closed the buyer since
+        // (claimProvisional takes the same lock). Answer as for a blocked or expired session.
+        const owner = await tx.user.findUnique({
+          where: { id: buyer },
+          select: { blockedAt: true },
+        });
+        if (!owner || owner.blockedAt) throw new DomainError(ErrorCode.UNAUTHORIZED, 401);
         const subscription =
           (await tx.subscription.findFirst({
             where: { userId: buyer },

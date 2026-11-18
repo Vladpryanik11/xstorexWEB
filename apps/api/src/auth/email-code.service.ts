@@ -10,8 +10,8 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_AFTER_SEC = 60;
 /** Codes per email per window (the per-IP limit is on the route). */
 const PER_EMAIL = { limit: 3, windowSec: 10 * 60 };
-/** Five wrong attempts are tolerated; the sixth wrong one uses up the code. */
-const MAX_ATTEMPTS = 6;
+/** Five attempts in total (spec v2): the sixth is refused even with the right code. */
+const MAX_ATTEMPTS = 5;
 
 /** SHA-256 of the email and code: the code itself is never stored. */
 export function hashCode(email: string, code: string): string {
