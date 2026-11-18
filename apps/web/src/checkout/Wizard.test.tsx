@@ -107,6 +107,21 @@ describe('Wizard', () => {
     );
   });
 
+  it('a refunded order says «Оплата возвращена», not «Оплата не прошла»', () => {
+    render(
+      <Wizard
+        initialOrder={order({ status: 'refunded' })}
+        hasPassword={false}
+        getOrder={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Оплата возвращена' })).toBeInTheDocument();
+    expect(screen.getByTestId('wizard-status')).toHaveTextContent('Оплата возвращена');
+    expect(screen.queryByText('Оплата не прошла')).toBeNull();
+    expect(screen.getByText('Деньги вернули, доступ по этой оплате закрыт.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Оплатить снова' })).toBeInTheDocument();
+  });
+
   it('skips the password form for a buyer who has one; the iPhone stub is dev-only', () => {
     const { rerender } = render(
       <Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} devPages={false} />,

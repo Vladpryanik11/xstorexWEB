@@ -8,7 +8,7 @@ import styles from './checkout.module.css';
 import { clearCheckoutKey } from './checkout-key';
 import { PaidStep } from './PaidStep';
 import { StepBar } from './StepBar';
-import { POLL_INTERVAL_MS, POLL_LIMIT_MS, wizardStep } from './wizard-step';
+import { POLL_INTERVAL_MS, POLL_LIMIT_MS, settledTitle, wizardStep } from './wizard-step';
 
 export type WizardProps = {
   initialOrder: OrderView;
@@ -90,9 +90,7 @@ export function Wizard({
         ? `Доступ активен до ${formatRuDate(new Date(order.accessUntil))}`
         : 'Доступ активен'
       : step === 'failed'
-        ? order.status === 'expired'
-          ? 'Время на оплату истекло'
-          : 'Оплата не прошла'
+        ? settledTitle(order.status)
         : timedOut
           ? 'Оплата ещё не подтвердилась'
           : 'Проверяем оплату…';
@@ -114,12 +112,14 @@ export function Wizard({
         />
       ) : step === 'failed' ? (
         <section className={styles.panel}>
-          <h1 className={styles.title}>
-            {order.status === 'expired' ? 'Время на оплату истекло' : 'Оплата не прошла'}
-          </h1>
-          <p className={styles.lead}>Доступ не оформлен. Попробуйте оплатить ещё раз.</p>
+          <h1 className={styles.title}>{settledTitle(order.status)}</h1>
+          {order.status === 'refunded' ? (
+            <p className={styles.lead}>Деньги вернули, доступ по этой оплате закрыт.</p>
+          ) : (
+            <p className={styles.lead}>Доступ не оформлен. Попробуйте оплатить ещё раз.</p>
+          )}
           <Button href={payAgainHref(order.returnTo)} className={styles.wide}>
-            Попробовать ещё раз
+            {order.status === 'refunded' ? 'Оплатить снова' : 'Попробовать ещё раз'}
           </Button>
         </section>
       ) : timedOut ? (

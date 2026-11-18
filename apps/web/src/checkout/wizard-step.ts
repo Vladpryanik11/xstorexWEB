@@ -25,6 +25,13 @@ export function wizardStep(input: { order: OrderView | null; access: AccessState
   return 'pay';
 }
 
+/** Heading of a settled order that gave no access: why, in the buyer's words. */
+export function settledTitle(status: OrderView['status']): string {
+  if (status === 'expired') return 'Время на оплату истекло';
+  if (status === 'refunded') return 'Оплата возвращена';
+  return 'Оплата не прошла';
+}
+
 const rub = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 
 /** «299 ₽»: whole roubles, a non-breaking space before the sign. */

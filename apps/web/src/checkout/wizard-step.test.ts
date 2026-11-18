@@ -1,6 +1,12 @@
 import type { AccessState, OrderView } from '@xstore/shared';
 import { describe, expect, it } from 'vitest';
-import { formatRub, POLL_INTERVAL_MS, POLL_LIMIT_MS, wizardStep } from './wizard-step';
+import {
+  formatRub,
+  POLL_INTERVAL_MS,
+  POLL_LIMIT_MS,
+  settledTitle,
+  wizardStep,
+} from './wizard-step';
 
 const none: AccessState = { kind: 'none' };
 const order = (status: OrderView['status']): OrderView => ({
@@ -11,6 +17,14 @@ const order = (status: OrderView['status']): OrderView => ({
   returnTo: null,
   accessUntil: status === 'paid' ? '2026-12-18T10:00:00.000Z' : null,
   paymentUrl: null,
+});
+
+describe('settledTitle', () => {
+  it('names why the order did not give access', () => {
+    expect(settledTitle('failed')).toBe('Оплата не прошла');
+    expect(settledTitle('expired')).toBe('Время на оплату истекло');
+    expect(settledTitle('refunded')).toBe('Оплата возвращена');
+  });
 });
 
 describe('wizardStep', () => {
@@ -25,6 +39,7 @@ describe('wizardStep', () => {
   it('failed order → failed', () => {
     expect(wizardStep({ order: order('failed'), access: none })).toBe('failed');
     expect(wizardStep({ order: order('expired'), access: none })).toBe('failed');
+    expect(wizardStep({ order: order('refunded'), access: none })).toBe('failed');
   });
 
   it('return before webhook shows checking state', () => {
