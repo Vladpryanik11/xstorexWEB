@@ -44,6 +44,16 @@ const CARD_SELECT = {
 
 type CardRow = Prisma.AppGetPayload<{ select: typeof CARD_SELECT }>;
 
+const SIMILAR_LIMIT = 12;
+
+/** `UIDeviceFamily` (1 iPhone, 2 iPad) → devices shown on the app page; none means iPhone. */
+function devices(family: number[]): AppDetail['devices'] {
+  const list: AppDetail['devices'] = [];
+  if (family.includes(1) || !family.includes(2)) list.push('iphone');
+  if (family.includes(2)) list.push('ipad');
+  return list;
+}
+
 const RANK_SELECT = {
   ...CARD_SELECT,
   versions: {
@@ -134,6 +144,7 @@ export class CatalogService {
         screenshotKeys: true,
         removedFromAppStore: true,
         accessLevel: true,
+        categoryId: true,
         versions: {
           where: { status: 'published' },
           orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
@@ -142,6 +153,7 @@ export class CatalogService {
             build: true,
             sizeBytes: true,
             minIos: true,
+            deviceFamily: true,
             changelog: true,
             publishedAt: true,
           },
@@ -150,6 +162,14 @@ export class CatalogService {
     });
     const latest = row?.versions[0];
     if (!row || !latest) throw notFound();
+    const similar = row.categoryId
+      ? await this.db.app.findMany({
+          where: { ...VISIBLE, categoryId: row.categoryId, id: { not: row.id } },
+          orderBy: [{ rating: { sort: 'desc', nulls: 'last' } }, { name: 'asc' }, { id: 'asc' }],
+          take: SIMILAR_LIMIT,
+          select: CARD_SELECT,
+        })
+      : [];
     return {
       ...this.card(row),
       description: row.description ?? undefined,
@@ -167,6 +187,8 @@ export class CatalogService {
       })),
       removedFromAppStore: row.removedFromAppStore,
       accessLevel: row.accessLevel,
+      devices: devices(latest.deviceFamily),
+      similar: similar.map((r) => this.card(r)),
     };
   }
 

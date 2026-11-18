@@ -1,5 +1,14 @@
+import type { AppDetail } from '@xstore/shared';
 import { describe, expect, it } from 'vitest';
-import { appJsonLd, compatibility, inlineJson, languageFact, languageNames } from './app-facts';
+import {
+  appJsonLd,
+  compatibility,
+  devicesLabel,
+  inlineJson,
+  languageFact,
+  languageNames,
+  updatedLabel,
+} from './app-facts';
 
 describe('languageFact', () => {
   it('shows «Русский» when Russian is among the languages', () => {
@@ -50,6 +59,8 @@ describe('appJsonLd', () => {
     versions: [],
     removedFromAppStore: false,
     accessLevel: 'free',
+    devices: ['iphone'] as AppDetail['devices'],
+    similar: [],
   };
 
   it('describes the app as a SoftwareApplication', () => {
@@ -74,5 +85,25 @@ describe('appJsonLd', () => {
       ratingValue: 4.5,
       ratingCount: 120,
     });
+  });
+});
+
+describe('devicesLabel', () => {
+  it('names the devices the app runs on', () => {
+    expect(devicesLabel(['iphone'])).toBe('iPhone');
+    expect(devicesLabel(['iphone', 'ipad'])).toBe('iPhone, iPad');
+    expect(devicesLabel(['ipad'])).toBe('iPad');
+  });
+});
+
+describe('updatedLabel', () => {
+  it('formats the latest version date in Moscow time', () => {
+    expect(updatedLabel([{ version: '2', build: '2', publishedAt: '2026-11-02T22:30:00Z' }])).toBe(
+      '3 ноября 2026 г.',
+    );
+  });
+
+  it('is undefined without versions', () => {
+    expect(updatedLabel([])).toBeUndefined();
   });
 });

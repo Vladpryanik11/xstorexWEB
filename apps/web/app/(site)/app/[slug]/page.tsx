@@ -9,6 +9,7 @@ import {
   IPhoneFrame,
   MoreText,
   Rail,
+  RowsGrid,
   SectionTitle,
   Stars,
 } from '@xstore/ui';
@@ -17,11 +18,15 @@ import { orNotFound, serverApi } from '../../../../src/api/server';
 import {
   appJsonLd,
   compatibility,
+  devicesLabel,
+  formatDate,
   inlineJson,
   languageFact,
   languageNames,
+  updatedLabel,
 } from '../../../../src/app-page/app-facts';
 import { installButtonState } from '../../../../src/app-page/install-button-state';
+import { AppCardRow } from '../../../../src/catalog/AppCardRow';
 import { categoryHref } from '../../../../src/catalog/links';
 import styles from './page.module.css';
 
@@ -31,13 +36,6 @@ const loadApp = async (params: Props['params']): Promise<AppDetail> => {
   const { slug } = await params;
   return orNotFound((await serverApi()).app(slug));
 };
-
-const dateFormat = new Intl.DateTimeFormat('ru-RU', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'Europe/Moscow',
-});
 
 function summary(app: AppDetail): string {
   const text = app.subtitle ?? app.description ?? `${app.name} для iPhone`;
@@ -71,6 +69,8 @@ export default async function AppPage({ params }: Props) {
   });
   const size = formatBytes(app.sizeBytes);
   const minIos = compatibility(app.minIos);
+  const devices = devicesLabel(app.devices);
+  const updated = updatedLabel(app.versions);
   const info: InfoItem[] = [
     ...(app.developer ? [{ label: 'Разработчик', value: app.developer }] : []),
     { label: 'Размер', value: size },
@@ -87,8 +87,10 @@ export default async function AppPage({ params }: Props) {
         ]
       : []),
     ...(minIos ? [{ label: 'Совместимость', value: minIos }] : []),
+    { label: 'Устройства', value: devices },
     ...(app.languages.length > 0 ? [{ label: 'Языки', value: languageNames(app.languages) }] : []),
     { label: 'Версия', value: app.version },
+    ...(updated ? [{ label: 'Обновлено', value: updated }] : []),
   ];
 
   return (
@@ -103,7 +105,12 @@ export default async function AppPage({ params }: Props) {
         <div className={styles.headText}>
           <h1 className={styles.name}>{app.name}</h1>
           {app.subtitle ? <p className={styles.subtitle}>{app.subtitle}</p> : null}
-          {app.removedFromAppStore ? <p className={styles.badge}>Удалено из App Store</p> : null}
+          {app.removedFromAppStore ? (
+            <>
+              <p className={styles.badge}>Удалено из App Store</p>
+              <p className={styles.note}>Его больше нет в App Store, но установить можно здесь</p>
+            </>
+          ) : null}
           {app.rating !== undefined && app.ratingCount ? (
             <Stars value={app.rating} count={app.ratingCount} />
           ) : null}
@@ -148,6 +155,7 @@ export default async function AppPage({ params }: Props) {
               </IPhoneFrame>
             ))}
           </Rail>
+          <p className={styles.devices}>{devices}</p>
         </section>
       ) : null}
 
@@ -171,7 +179,7 @@ export default async function AppPage({ params }: Props) {
               <div className={styles.versionHead}>
                 <span className={styles.versionName}>Версия {v.version}</span>
                 <time className={styles.versionDate} dateTime={v.publishedAt}>
-                  {dateFormat.format(new Date(v.publishedAt))}
+                  {formatDate(v.publishedAt)}
                 </time>
               </div>
               {v.changelog ? <p className={styles.changelog}>{v.changelog}</p> : null}
@@ -179,6 +187,17 @@ export default async function AppPage({ params }: Props) {
           ))}
         </ol>
       </section>
+
+      {app.similar.length > 0 ? (
+        <section className={styles.section}>
+          <SectionTitle>Похожие приложения</SectionTitle>
+          <RowsGrid label="Похожие приложения">
+            {app.similar.map((card) => (
+              <AppCardRow key={card.slug} app={card} />
+            ))}
+          </RowsGrid>
+        </section>
+      ) : null}
     </article>
   );
 }

@@ -48,6 +48,21 @@
   letter-spacing: var(--x-track-small);
 }
 
+.note {
+  margin: 0;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.devices {
+  margin: 0;
+  padding-inline: var(--x-gutter);
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
 .action {
   margin-top: 0.5rem;
 }

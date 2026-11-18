@@ -178,3 +178,18 @@ test('app screenshots sit in iPhone frames and the rail fits the screen', async 
   expect((await rail.boundingBox())?.width).toBeLessThanOrEqual(390);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('app page shows devices, update date, the App Store note and similar apps', async ({
+  page,
+}) => {
+  await page.goto('/app/testovoe-prilozhenie-1');
+  const main = page.locator('main');
+  await expect(
+    main.getByText('Его больше нет в App Store, но установить можно здесь'),
+  ).toBeVisible();
+  await expect(main.getByText('Устройства', { exact: true })).toBeVisible();
+  await expect(main.getByText('Обновлено', { exact: true })).toBeVisible();
+  const similar = main.getByRole('list', { name: 'Похожие приложения' });
+  await expect(similar.getByRole('link', { name: /Тестовое приложение 4/ })).toBeVisible();
+  await expect(similar.getByRole('link', { name: /^Тестовое приложение 1(?!\d)/ })).toHaveCount(0);
+});
