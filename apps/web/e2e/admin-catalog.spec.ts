@@ -113,8 +113,9 @@ test('admin signs in, uploads an IPA and publishes the app', async ({ page }, in
   await expect(page.getByText('Статус: Опубликовано')).toBeVisible();
   const href = await page.getByRole('link', { name: 'Открыть на сайте' }).getAttribute('href');
   if (!href) throw new Error('Missing public app link');
+  // The public link opens the app's install sheet over the home page.
   await page.goto(href);
-  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+  await expect(page.getByRole('dialog', { name })).toBeVisible();
 });
 
 test('support can read jobs but cannot open the catalog editor', async ({ page }) => {
