@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { createPrismaClient } from '../src/index.js';
 
 // biome-ignore lint/style/noNonNullAssertion: guaranteed by global-setup
@@ -34,8 +34,6 @@ const orderData = (f: Awaited<ReturnType<typeof fixture>>, checkoutKey: string) 
 });
 
 describe('billing model', () => {
-  beforeEach(() => {});
-
   it('entitlement with dates belongs to subscription without device', async () => {
     const f = await fixture();
     const startsAt = new Date();
@@ -54,6 +52,14 @@ describe('billing model', () => {
     });
     expect(sub.deviceId).toBeNull();
     expect(sub.entitlements.map((x) => x.id)).toEqual([e.id]);
+  });
+
+  it('orders block deleting their user and subscription', async () => {
+    const f = await fixture();
+    await db.order.create({ data: orderData(f, 'key-restrict') });
+    await expect(db.user.delete({ where: { id: f.user.id } })).rejects.toThrow();
+    await expect(db.subscription.delete({ where: { id: f.subscription.id } })).rejects.toThrow();
+    expect(await db.user.count({ where: { id: f.user.id } })).toBe(1);
   });
 
   it('duplicate checkoutKey rejected', async () => {

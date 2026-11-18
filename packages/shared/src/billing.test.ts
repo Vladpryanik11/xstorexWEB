@@ -33,3 +33,8 @@ it('has billing error messages', () => {
   expect(errorMessages.PAYMENT_FAILED).toBe('Оплата не прошла. Попробуйте ещё раз');
   expect(errorMessages.WEAK_PASSWORD).toBe('Пароль должен быть от 8 до 128 символов');
 });
+
+it('checkoutRequestSchema normalizes the email', () => {
+  const r = checkoutRequestSchema.parse({ ...base, email: '  A@B.RU ', acceptTerms: true });
+  expect(r.email).toBe('a@b.ru');
+});

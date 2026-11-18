@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emailSchema } from './auth.js';
 
 export const orderStatusSchema = z.enum([
   'created',
@@ -33,7 +34,7 @@ export type OrderView = z.infer<typeof orderViewSchema>;
 
 export const checkoutRequestSchema = z.object({
   checkoutKey: z.uuid(),
-  email: z.email().max(254),
+  email: emailSchema,
   returnTo: z.string().max(500).optional(),
   acceptTerms: z.literal(true),
 });

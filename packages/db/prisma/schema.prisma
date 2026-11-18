@@ -353,9 +353,10 @@ enum OrderStatus {
 model Order {
   id                String        @id @default(cuid())
   userId            String
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Restrict: financial records never disappear with a user or subscription.
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   subscriptionId    String
-  subscription      Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription      Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   planId            String
   plan              Plan          @relation(fields: [planId], references: [id])
   planSnapshot      Json
