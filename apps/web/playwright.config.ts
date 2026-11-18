@@ -81,7 +81,13 @@ export default defineConfig({
       // Not `/`: Playwright starts the servers before global setup migrates and seeds the test
       // database, and every catalog page needs those tables. The dev showcase needs no API.
       url: `http://localhost:${port}/dev/ui`,
-      env: { XSTORE_DEV_PAGES: '1', API_INTERNAL_URL: `http://localhost:${apiPort}` },
+      // SITE_URL: the dev payment page settles fake payments through the API, whose Origin
+      // check expects this site, not the development one from the root .env.
+      env: {
+        XSTORE_DEV_PAGES: '1',
+        API_INTERNAL_URL: `http://localhost:${apiPort}`,
+        SITE_URL: `http://localhost:${port}`,
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
     },
