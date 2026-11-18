@@ -4,6 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ getAccess: vi.fn<() => Promise<AccessResponse>>() }));
 vi.mock('../checkout/browser-api', () => ({ browserApi: () => api }));
+// Records the access every render saw, to catch a frame with a previous answer.
+const seen = vi.hoisted(() => ({ kinds: [] as string[] }));
+vi.mock('../app-page/install-button-state', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../app-page/install-button-state')>();
+  return {
+    installButtonState: (ctx: Parameters<typeof actual.installButtonState>[0]) => {
+      seen.kinds.push(ctx.access.kind);
+      return actual.installButtonState(ctx);
+    },
+  };
+});
 
 const reduced = vi.hoisted(() => ({ value: false }));
 vi.mock('motion/react', async (importOriginal) => ({
@@ -36,6 +47,23 @@ afterEach(() => {
   api.getAccess.mockReset();
 });
 
+const ACTIVE: AccessResponse = {
+  state: {
+    kind: 'active',
+    until: new Date('2026-12-18T10:00:00Z'),
+    subscriptionId: 'sub_1',
+    deviceReady: false,
+  },
+};
+
+function deferred() {
+  let resolve: (value: AccessResponse) => void = () => {};
+  const promise = new Promise<AccessResponse>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
 const openOnIphone = () => {
   ua(IPHONE);
   render(<IconGrid apps={[app]} label="Раздел" />);
@@ -57,7 +85,7 @@ describe('install sheet', () => {
 
   it('on iPhone: three short steps, «Установить» to the wizard and «Войти» for those who paid', async () => {
     const dialog = openOnIphone();
-    const steps = within(dialog).getByRole('list', { name: 'Как установить' });
+    const steps = await within(dialog).findByRole('list', { name: 'Как установить' });
     expect(
       within(steps)
         .getAllByRole('listitem')
@@ -85,12 +113,73 @@ describe('install sheet', () => {
     expect(api.getAccess).not.toHaveBeenCalled();
   });
 
-  it('while access is loading the button is a neutral placeholder without a link', () => {
+  it('while access is loading: the body holds its place blank, no steps, no links', () => {
     api.getAccess.mockReturnValue(new Promise(() => {}));
     const dialog = openOnIphone();
-    expect(within(dialog).queryByRole('link', { name: 'Установить' })).toBeNull();
-    expect(within(dialog).queryByRole('link', { name: 'Войти' })).toBeNull();
-    expect(within(dialog).getByText('Установить')).toHaveAttribute('aria-busy', 'true');
+    // The guest body only holds its place: hidden from assistive tech, drawn blank.
+    expect(within(dialog).queryByRole('list', { name: 'Как установить' })).toBeNull();
+    expect(dialog.querySelector('[data-placeholder]')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(dialog).queryByRole('link')).toBeNull();
+    expect(dialog.querySelector('[aria-busy]:not([aria-live])')).toBeNull();
+    expect(dialog.querySelector('[aria-live="polite"]')).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('on a computer the note waits for the answer too', () => {
+    api.getAccess.mockReturnValue(new Promise(() => {}));
+    ua(WINDOWS);
+    render(<IconGrid apps={[app]} label="Раздел" />);
+    fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
+    const note = screen.getByText(/Установить можно с iPhone или iPad/);
+    expect(note).toHaveAttribute('aria-hidden', 'true');
+    expect(note).toHaveAttribute('data-placeholder');
+  });
+
+  it('the actions are announced politely when the answer arrives', async () => {
+    const dialog = openOnIphone();
+    const link = await within(dialog).findByRole('link', { name: 'Установить' });
+    const live = link.closest('[aria-live]');
+    expect(live).toHaveAttribute('aria-live', 'polite');
+    expect(live).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('when the answer arrives, focus moves from «Закрыть» to the main action', async () => {
+    const answer = deferred();
+    api.getAccess.mockReturnValue(answer.promise);
+    const dialog = openOnIphone();
+    expect(within(dialog).getByRole('button', { name: 'Закрыть' })).toHaveFocus();
+    answer.resolve({ state: { kind: 'none' } });
+    const link = await within(dialog).findByRole('link', { name: 'Установить' });
+    // Focus moves in an effect after the link is in the DOM.
+    await waitFor(() => expect(link).toHaveFocus());
+  });
+
+  it('does not take focus back once the visitor moved it', async () => {
+    const answer = deferred();
+    api.getAccess.mockReturnValue(answer.promise);
+    const dialog = openOnIphone();
+    const close = within(dialog).getByRole('button', { name: 'Закрыть' });
+    fireEvent.keyDown(document, { key: 'Tab' });
+    answer.resolve({ state: { kind: 'none' } });
+    await within(dialog).findByRole('link', { name: 'Установить' });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(close).toHaveFocus();
+  });
+
+  it('a reopened window never shows the previous answer', async () => {
+    reduced.value = true;
+    api.getAccess.mockResolvedValue(ACTIVE);
+    ua(IPHONE);
+    render(<IconGrid apps={[app]} label="Раздел" />);
+    const trigger = screen.getByRole('button', { name: /Тестовое приложение 1/ });
+    fireEvent.click(trigger);
+    await screen.findByText('Скоро можно будет установить');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    api.getAccess.mockReturnValue(new Promise(() => {}));
+    seen.kinds = [];
+    fireEvent.click(trigger);
+    expect(seen.kinds).not.toContain('active');
+    expect(screen.getByRole('dialog')).not.toHaveTextContent('Доступ активен');
   });
 
   it('if access cannot be checked, behaves as for a guest', async () => {
@@ -110,23 +199,18 @@ describe('install sheet', () => {
       '/get/ord_7',
     );
     expect(within(dialog).queryByRole('link', { name: 'Войти' })).toBeNull();
+    expect(within(dialog).queryByRole('list', { name: 'Как установить' })).toBeNull();
+    expect(dialog).toHaveTextContent('Оплата ещё не завершена.');
   });
 
   it('a subscriber sees an inactive «Скоро можно будет установить»', async () => {
-    api.getAccess.mockResolvedValue({
-      state: {
-        kind: 'active',
-        until: new Date('2026-12-18T10:00:00Z'),
-        subscriptionId: 'sub_1',
-        deviceReady: false,
-      },
-    });
+    api.getAccess.mockResolvedValue(ACTIVE);
     const dialog = openOnIphone();
-    expect(await within(dialog).findByText('Скоро можно будет установить')).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    );
+    expect(
+      await within(dialog).findByRole('button', { name: 'Скоро можно будет установить' }),
+    ).toBeDisabled();
     expect(within(dialog).queryByRole('link')).toBeNull();
+    expect(dialog.querySelector('[aria-disabled]')).toBeNull();
     expect(within(dialog).queryByText(/Регистрация не нужна/)).toBeNull();
     expect(dialog).toHaveTextContent('Доступ активен до 18 декабря 2026');
   });
@@ -136,7 +220,7 @@ describe('install sheet', () => {
     render(<IconGrid apps={[app]} label="Раздел" />);
     fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
     const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('Установить можно с iPhone или iPad');
+    await within(dialog).findByText(/Установить можно с iPhone или iPad/);
     expect(within(dialog).queryByRole('list', { name: 'Как установить' })).toBeNull();
     expect(await within(dialog).findByRole('link', { name: 'Оформить доступ' })).toHaveAttribute(
       'href',

@@ -68,6 +68,10 @@ export function AppPreview({
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const primary = useRef<HTMLAnchorElement>(null);
+  // Set once the visitor tabs or taps inside the window: focus is theirs from then on.
+  const focusMoved = useRef(false);
   // The public catalog lists only apps with a published version.
   const latestVersion = { encrypted: false };
   const install = installButtonState({
@@ -79,6 +83,8 @@ export function AppPreview({
 
   const close = useCallback(() => {
     setOpen(false);
+    // Forget the answer here, not in an effect, so a reopened window never shows it for a frame.
+    setAccess(null);
     // A shared link leaves `?app=` behind; closing returns to the plain page.
     if (variant === 'none') window.history.replaceState(null, '', window.location.pathname);
   }, [variant]);
@@ -91,7 +97,6 @@ export function AppPreview({
   useEffect(() => {
     if (!open) return;
     let current = true;
-    setAccess(null);
     browserApi()
       .getAccess()
       .then(
@@ -117,10 +122,22 @@ export function AppPreview({
     return () => window.clearTimeout(timer);
   }, [open, mounted]);
 
+  // While loading only «Закрыть» can hold focus; the main action takes it when it appears,
+  // unless the visitor has already moved it.
+  useEffect(() => {
+    if (!open || access === null || focusMoved.current) return;
+    if (document.activeElement === closeButton.current) primary.current?.focus();
+  }, [open, access]);
+
   useEffect(() => {
     if (!open) return;
     const root = dialog.current;
+    focusMoved.current = false;
     root?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    const onPointer = () => {
+      focusMoved.current = true;
+    };
+    root?.addEventListener('pointerdown', onPointer);
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
 
@@ -131,6 +148,7 @@ export function AppPreview({
         return;
       }
       if (event.key !== 'Tab' || !root) return;
+      focusMoved.current = true;
       const items = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)];
       const first = items[0];
       const last = items[items.length - 1];
@@ -146,6 +164,7 @@ export function AppPreview({
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
+      root?.removeEventListener('pointerdown', onPointer);
       document.body.style.overflow = overflow;
       trigger.current?.focus();
     };
@@ -218,7 +237,29 @@ export function AppPreview({
                       {name}
                     </h2>
                     {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-                    {access?.kind === 'active' ? (
+                    {access === null ? (
+                      phone ? (
+                        <ol
+                          className={`${styles.steps} ${styles.blank}`}
+                          data-placeholder
+                          aria-hidden="true"
+                        >
+                          {INSTALL_STEPS.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p
+                          className={`${styles.note} ${styles.blank}`}
+                          data-placeholder
+                          aria-hidden="true"
+                        >
+                          {DESKTOP_NOTE}
+                        </p>
+                      )
+                    ) : access.kind === 'payment_pending' ? (
+                      <p className={styles.note}>Оплата ещё не завершена.</p>
+                    ) : access.kind === 'active' ? (
                       <p className={styles.note}>
                         Доступ активен до {formatRuDate(access.until)}.
                         {phone ? null : ` ${DESKTOP_NOTE}`}
@@ -232,20 +273,25 @@ export function AppPreview({
                     ) : (
                       <p className={styles.note}>{DESKTOP_NOTE}</p>
                     )}
-                    <div className={styles.actions}>
+                    <div className={styles.actions} aria-live="polite" aria-busy={access === null}>
                       {access === null ? (
-                        <span className={styles.soon} aria-busy="true">
+                        <span className={styles.soon} aria-hidden="true">
                           {install.label}
                         </span>
                       ) : install.href ? (
-                        <a className={styles.install} href={install.href}>
+                        <a ref={primary} className={styles.install} href={install.href}>
                           {install.label}
                         </a>
                       ) : (
-                        <span className={styles.soon} aria-disabled="true">
+                        <button type="button" className={styles.soon} disabled>
                           {install.label}
-                        </span>
+                        </button>
                       )}
+                      {access === null ? (
+                        <p className={`${styles.paid} ${styles.reserve}`} aria-hidden="true">
+                          Уже оплачивали? Войти
+                        </p>
+                      ) : null}
                       {access !== null && install.signinHref ? (
                         <p className={styles.paid}>
                           Уже оплачивали? <a href={install.signinHref}>Войти</a>
@@ -253,6 +299,7 @@ export function AppPreview({
                       ) : null}
                     </div>
                     <button
+                      ref={closeButton}
                       type="button"
                       className={styles.close}
                       aria-label="Закрыть"
