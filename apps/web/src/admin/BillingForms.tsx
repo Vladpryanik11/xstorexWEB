@@ -1,7 +1,7 @@
 'use client';
 import { type AdminPlan, formatRuDate, type GrantResult } from '@xstore/shared';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import s from './admin.module.css';
 import { errorText, mutate } from './api';
 import { FormField } from './FormField';
@@ -9,16 +9,29 @@ import { Switch } from './Switch';
 
 type Outcome = { ok: true; text: string } | { ok: false; text: string } | null;
 
+/** The status region stays mounted while empty, so its later text is announced. */
 function Result({ value }: { value: Outcome }) {
-  if (!value) return null;
-  return value.ok ? (
-    <p role="status" className={s.ok}>
-      {value.text}
-    </p>
-  ) : (
-    <p role="alert" className={s.err}>
-      {value.text}
-    </p>
+  return (
+    <>
+      <p role="status" className={s.ok}>
+        {value?.ok ? value.text : ''}
+      </p>
+      {value && !value.ok && (
+        <p role="alert" className={s.err}>
+          {value.text}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** A revoked period: struck through, and named for screen readers, which skip `<s>`. */
+export function RevokedPeriod({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <s>{children}</s>
+      <span className={s.srOnly}> отозван</span>
+    </>
   );
 }
 
@@ -159,13 +172,28 @@ export function RefundButton({ orderId }: { orderId: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const trigger = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef(false);
+
+  useEffect(() => {
+    if (!open && returnFocus.current) {
+      returnFocus.current = false;
+      trigger.current?.focus();
+    }
+  }, [open]);
 
   if (!open) {
     return (
-      <button type="button" className={s.quiet} onClick={() => setOpen(true)}>
+      <button ref={trigger} type="button" className={s.quiet} onClick={() => setOpen(true)}>
         Отметить возврат
       </button>
     );
+  }
+
+  function cancel() {
+    returnFocus.current = true;
+    setError('');
+    setOpen(false);
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -190,13 +218,14 @@ export function RefundButton({ orderId }: { orderId: string }) {
         Деньги возвращаются в кабинете Platega. Здесь доступ заказа закончится.
       </p>
       <FormField label="Комментарий к возврату">
-        <input name="note" maxLength={500} />
+        {/* biome-ignore lint/a11y/noAutofocus: the field appears on the admin's own click */}
+        <input name="note" maxLength={500} autoFocus />
       </FormField>
       <div className={s.row}>
         <button type="submit" disabled={busy}>
           Подтвердить возврат
         </button>
-        <button type="button" className={s.quiet} disabled={busy} onClick={() => setOpen(false)}>
+        <button type="button" className={s.quiet} disabled={busy} onClick={cancel}>
           Отмена
         </button>
       </div>

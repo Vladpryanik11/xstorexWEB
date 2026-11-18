@@ -19,6 +19,7 @@ import { SessionService } from '../auth/session.service.js';
 import type { Actor } from '../common/actor.js';
 import { DomainError } from '../common/domain-error.js';
 import { PrismaService } from '../infra/prisma.service.js';
+import { rechainAfterRefund } from './rechain.js';
 
 export const ADMIN_BILLING_PAGE_SIZE = 50;
 /** `Entitlement.planCode` of a right an admin gave by hand. */
@@ -131,23 +132,25 @@ export class AdminBillingService {
 
   /** Paid orders keep their `planSnapshot` and `amountRub`; only new checkouts see the change. */
   async updatePlan(patch: UpdatePlan, actor: Actor): Promise<AdminPlan> {
-    const plan = await this.currentPlan();
-    const diff = changes(plan, patch);
-    if (Object.keys(diff).length > 0) {
-      await this.db.$transaction([
-        this.db.plan.update({ where: { id: plan.id }, data: patch }),
-        this.db.auditLog.create({
-          data: {
-            actorId: actor.userId,
-            action: 'plan.update',
-            entity: 'plan',
-            entityId: plan.id,
-            diff: diff as Prisma.InputJsonValue,
-            ip: actor.ip,
-          },
-        }),
-      ]);
-    }
+    const { id } = await this.currentPlan();
+    await this.db.$transaction(async (tx) => {
+      // Row lock: concurrent edits serialize, so each audit `from` is the value it replaced.
+      await tx.$queryRaw`SELECT id FROM "Plan" WHERE id = ${id} FOR UPDATE`;
+      const plan = await tx.plan.findUniqueOrThrow({ where: { id } });
+      const diff = changes(plan, patch);
+      if (Object.keys(diff).length === 0) return;
+      await tx.plan.update({ where: { id }, data: patch });
+      await tx.auditLog.create({
+        data: {
+          actorId: actor.userId,
+          action: 'plan.update',
+          entity: 'plan',
+          entityId: id,
+          diff: diff as Prisma.InputJsonValue,
+          ip: actor.ip,
+        },
+      });
+    }, TX_OPTIONS);
     return this.plan();
   }
 
@@ -209,6 +212,7 @@ export class AdminBillingService {
         entitlements: {
           orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
           select: {
+            id: true,
             startsAt: true,
             expiresAt: true,
             revokedAt: true,
@@ -229,6 +233,7 @@ export class AdminBillingService {
         createdAt: s.createdAt.toISOString(),
         accessUntil: iso(accessUntil(s.entitlements, now)),
         rights: s.entitlements.map((r) => ({
+          id: r.id,
           startsAt: r.startsAt.toISOString(),
           expiresAt: r.expiresAt.toISOString(),
           revokedAt: iso(r.revokedAt),
@@ -254,9 +259,11 @@ export class AdminBillingService {
         where: { email: input.email },
         select: { id: true, role: true, isProvisional: true, blockedAt: true },
       });
-      if (existing && (existing.role !== 'user' || existing.isProvisional)) {
+      if (existing && existing.role !== 'user') {
         throw new DomainError(ErrorCode.GRANT_STAFF_EMAIL, 409);
       }
+      // Provisional buyers keep `email = null`; a row like this is inconsistent data, not staff.
+      if (existing?.isProvisional) throw new DomainError(ErrorCode.CONFLICT, 409);
       if (existing?.blockedAt) throw new DomainError(ErrorCode.ACCOUNT_BLOCKED, 409);
       const user =
         existing ??
@@ -325,8 +332,10 @@ export class AdminBillingService {
   }
 
   /**
-   * Marks a refund already made in the provider's dashboard: the order becomes `refunded` and its
-   * right is revoked. Moves no money. A repeat answers the refunded order and changes nothing.
+   * Marks a refund already made in the provider's dashboard: the order becomes `refunded`, its
+   * right is revoked and the later live rights of the subscription are pulled forward without a
+   * gap (`rechainAfterRefund`), all under the subscription lock. Moves no money. A repeat answers
+   * the refunded order and changes nothing.
    */
   async refund(orderId: string, note: string, actor: Actor): Promise<AdminOrder> {
     const found = await this.db.order.findUnique({
@@ -348,17 +357,48 @@ export class AdminBillingService {
       if (order.status !== 'paid') throw new DomainError(ErrorCode.REFUND_NOT_PAID, 409);
       const now = new Date();
       await tx.order.update({ where: { id: orderId }, data: { status: 'refunded' } });
-      const revoked = await tx.entitlement.updateMany({
-        where: { orderId, revokedAt: null },
-        data: { revokedAt: now },
+      const refunded = await tx.entitlement.findUnique({
+        where: { orderId },
+        select: { id: true, startsAt: true, revokedAt: true },
       });
+      if (refunded && !refunded.revokedAt) {
+        await tx.entitlement.update({ where: { id: refunded.id }, data: { revokedAt: now } });
+      }
+      const moves = refunded
+        ? rechainAfterRefund(
+            await tx.entitlement.findMany({
+              where: { subscriptionId: found.subscriptionId, revokedAt: null },
+              select: { id: true, startsAt: true, expiresAt: true },
+            }),
+            refunded,
+            now,
+          )
+        : [];
+      for (const m of moves) {
+        await tx.entitlement.update({ where: { id: m.id }, data: m.to });
+      }
       await tx.auditLog.create({
         data: {
           actorId: actor.userId,
           action: 'order.refund',
           entity: 'order',
           entityId: orderId,
-          diff: { status: { from: 'paid', to: 'refunded' }, revokedRights: revoked.count, note },
+          diff: {
+            status: { from: 'paid', to: 'refunded' },
+            revokedEntitlementId: refunded?.id ?? null,
+            moved: moves.map((m) => ({
+              entitlementId: m.id,
+              from: {
+                startsAt: m.from.startsAt.toISOString(),
+                expiresAt: m.from.expiresAt.toISOString(),
+              },
+              to: {
+                startsAt: m.to.startsAt.toISOString(),
+                expiresAt: m.to.expiresAt.toISOString(),
+              },
+            })),
+            note,
+          },
           ip: actor.ip,
         },
       });

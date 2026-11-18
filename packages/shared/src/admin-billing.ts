@@ -60,6 +60,7 @@ export type AdminOrder = {
 };
 
 export type AdminRight = {
+  id: string;
   startsAt: string;
   expiresAt: string;
   revokedAt: string | null;

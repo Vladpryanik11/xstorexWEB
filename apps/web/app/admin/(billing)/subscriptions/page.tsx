@@ -1,7 +1,7 @@
 import { type AdminSubscription, formatRuDate, type Page } from '@xstore/shared';
 import Link from 'next/link';
 import s from '../../../../src/admin/admin.module.css';
-import { GrantForm } from '../../../../src/admin/BillingForms';
+import { GrantForm, RevokedPeriod } from '../../../../src/admin/BillingForms';
 import { DataTable } from '../../../../src/admin/DataTable';
 import { FormField } from '../../../../src/admin/FormField';
 import { adminServer } from '../../../../src/admin/server';
@@ -59,9 +59,7 @@ export default async function SubscriptionsPage({
                     r.source === 'order' ? 'оплата' : 'выдано вручную'
                   }${r.note ? ` · ${r.note}` : ''}`;
                   return (
-                    <li key={`${r.startsAt}-${r.expiresAt}`}>
-                      {r.revokedAt ? <s>{text}</s> : text}
-                    </li>
+                    <li key={r.id}>{r.revokedAt ? <RevokedPeriod>{text}</RevokedPeriod> : text}</li>
                   );
                 })}
               </ul>

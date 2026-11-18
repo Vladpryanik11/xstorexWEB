@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GrantForm, PlanForm, RefundButton } from './BillingForms';
+import { GrantForm, PlanForm, RefundButton, RevokedPeriod } from './BillingForms';
 
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
@@ -36,6 +36,8 @@ describe('PlanForm', () => {
   it('sends the price as whole rubles', async () => {
     fetchMock.mockResolvedValue(json({ ...plan, priceRub: 499 }));
     render(<PlanForm initial={plan} />);
+    // The live region is in the page before anything is announced.
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
     fireEvent.change(screen.getByLabelText('Цена, ₽'), { target: { value: '499' } });
     fireEvent.click(screen.getByRole('button', { name: 'Сохранить тариф' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Сохранено');
@@ -67,6 +69,7 @@ describe('GrantForm', () => {
       ),
     );
     render(<GrantForm />);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
     fireEvent.change(screen.getByLabelText('Почта'), { target: { value: 'friend@example.ru' } });
     fireEvent.change(screen.getByLabelText('Дней'), { target: { value: '30' } });
     fireEvent.change(screen.getByLabelText('Комментарий'), { target: { value: 'Тестер' } });
@@ -105,6 +108,7 @@ describe('RefundButton', () => {
     render(<RefundButton orderId="o1" />);
     fireEvent.click(screen.getByRole('button', { name: 'Отметить возврат' }));
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Комментарий к возврату')).toHaveFocus();
     fireEvent.change(screen.getByLabelText('Комментарий к возврату'), {
       target: { value: 'Вернули в Platega' },
     });
@@ -117,11 +121,19 @@ describe('RefundButton', () => {
     });
   });
 
-  it('cancel closes the confirmation without a request', () => {
+  it('cancel closes the confirmation and returns focus to the trigger', () => {
     render(<RefundButton orderId="o1" />);
     fireEvent.click(screen.getByRole('button', { name: 'Отметить возврат' }));
     fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
-    expect(screen.getByRole('button', { name: 'Отметить возврат' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Отметить возврат' })).toHaveFocus();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('RevokedPeriod', () => {
+  it('strikes the period and names it revoked for screen readers', () => {
+    render(<RevokedPeriod>18 ноября 2026 — 18 декабря 2026</RevokedPeriod>);
+    expect(screen.getByText('отозван')).toBeInTheDocument();
+    expect(screen.getByText('18 ноября 2026 — 18 декабря 2026').tagName).toBe('S');
   });
 });

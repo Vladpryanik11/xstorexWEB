@@ -37,15 +37,13 @@ async function cookieFor(userId: string, kind: 'staff' | 'user'): Promise<string
   return `xs_session=${token}`;
 }
 
-/** A buyer with one subscription and a paid order whose right runs `from`..`from + 30d`. */
-async function paidBuyer(email: string, from = new Date()) {
+/** A paid order on `subscriptionId` whose right runs `from`..`from + 30d`. */
+async function paidOrder(userId: string, subscriptionId: string, email: string, from: Date) {
   const plan = await db.plan.findFirstOrThrow();
-  const user = await db.user.create({ data: { email, role: 'user' } });
-  const subscription = await db.subscription.create({ data: { userId: user.id } });
   const order = await db.order.create({
     data: {
-      userId: user.id,
-      subscriptionId: subscription.id,
+      userId,
+      subscriptionId,
       planId: plan.id,
       planSnapshot: {
         code: 'month',
@@ -65,7 +63,7 @@ async function paidBuyer(email: string, from = new Date()) {
   });
   const entitlement = await db.entitlement.create({
     data: {
-      subscriptionId: subscription.id,
+      subscriptionId,
       planCode: 'month',
       durationDays: 30,
       startsAt: from,
@@ -73,6 +71,14 @@ async function paidBuyer(email: string, from = new Date()) {
       orderId: order.id,
     },
   });
+  return { order, entitlement };
+}
+
+/** A buyer with one subscription and a paid order whose right runs `from`..`from + 30d`. */
+async function paidBuyer(email: string, from = new Date()) {
+  const user = await db.user.create({ data: { email, role: 'user' } });
+  const subscription = await db.subscription.create({ data: { userId: user.id } });
+  const { order, entitlement } = await paidOrder(user.id, subscription.id, email, from);
   return { user, subscription, order, entitlement };
 }
 
@@ -122,6 +128,25 @@ describe('plan', () => {
     const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'plan.update' } });
     expect(audit).toMatchObject({ actorId: adminId, entity: 'plan' });
     expect(audit.diff).toEqual({ priceRub: { from: PRICE, to: 499 } });
+  });
+
+  it('concurrent price changes audit an exact from → to chain', async () => {
+    const [a, b] = await Promise.all([
+      admin().patch('/admin/billing/plan', { priceRub: 400 }),
+      admin().patch('/admin/billing/plan', { priceRub: 500 }),
+    ]);
+    expect([a.status, b.status]).toEqual([200, 200]);
+    const audits = await db.auditLog.findMany({
+      where: { action: 'plan.update' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(audits).toHaveLength(2);
+    const [first, second] = audits.map(
+      (x) => (x.diff as { priceRub: { from: number; to: number } }).priceRub,
+    );
+    expect(first?.from).toBe(PRICE);
+    expect(second?.from).toBe(first?.to);
+    expect((await db.plan.findFirstOrThrow()).priceRub).toBe(second?.to);
   });
 
   it('rejects a price that is not a whole positive number', async () => {
@@ -236,6 +261,19 @@ describe('grants', () => {
     expect(await db.entitlement.count()).toBe(0);
   });
 
+  it('a provisional row never holds an email, so only staff get GRANT_STAFF_EMAIL', async () => {
+    // The User CHECK keeps provisional buyers at `email = null`; the service still answers
+    // CONFLICT (never GRANT_STAFF_EMAIL) should such a row appear.
+    await expect(
+      db.user.create({
+        data: { email: 'odd@example.ru', isProvisional: true, checkoutEmail: 'odd@example.ru' },
+      }),
+    ).rejects.toThrow();
+    await db.user.create({ data: { isProvisional: true, checkoutEmail: 'odd@example.ru' } });
+    const res = await admin().post('/admin/billing/grants', { email: 'odd@example.ru', days: 7 });
+    expect(res.status).toBe(201);
+  });
+
   it('does not touch a provisional buyer with the same contact email', async () => {
     const provisional = await db.user.create({
       data: { isProvisional: true, checkoutEmail: 'guest@example.ru' },
@@ -280,6 +318,66 @@ describe('orders', () => {
     expect(await db.auditLog.count({ where: { action: 'order.refund' } })).toBe(1);
     const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'order.refund' } });
     expect(audit).toMatchObject({ actorId: adminId, entity: 'order', entityId: order.id });
+  });
+
+  it('refund of current period pulls the chained period forward', async () => {
+    const start = new Date(Date.now() - 5 * DAY_MS);
+    const a = await paidBuyer('chain@example.ru', start);
+    const b = await paidOrder(
+      a.user.id,
+      a.subscription.id,
+      'chain@example.ru',
+      a.entitlement.expiresAt,
+    );
+    const t0 = Date.now();
+    const res = await admin().post(`/admin/billing/orders/${a.order.id}/refund`, { note: '' });
+    expect(res.status).toBe(201);
+
+    const moved = await db.entitlement.findUniqueOrThrow({ where: { id: b.entitlement.id } });
+    expect(moved.revokedAt).toBeNull();
+    expect(moved.startsAt.getTime()).toBeGreaterThanOrEqual(t0 - 1000);
+    expect(moved.startsAt.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(moved.expiresAt.getTime() - moved.startsAt.getTime()).toBe(30 * DAY_MS);
+
+    const access = await as(await cookieFor(a.user.id, 'user')).get('/access');
+    expect(access.body.state).toMatchObject({
+      kind: 'active',
+      until: moved.expiresAt.toISOString(),
+    });
+
+    const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'order.refund' } });
+    expect((audit.diff as { moved: unknown }).moved).toEqual([
+      {
+        entitlementId: b.entitlement.id,
+        from: {
+          startsAt: b.entitlement.startsAt.toISOString(),
+          expiresAt: b.entitlement.expiresAt.toISOString(),
+        },
+        to: { startsAt: moved.startsAt.toISOString(), expiresAt: moved.expiresAt.toISOString() },
+      },
+    ]);
+  });
+
+  it('refund of a future period leaves the current one untouched', async () => {
+    const a = await paidBuyer('future@example.ru', new Date(Date.now() - 5 * DAY_MS));
+    const b = await paidOrder(
+      a.user.id,
+      a.subscription.id,
+      'future@example.ru',
+      a.entitlement.expiresAt,
+    );
+    const res = await admin().post(`/admin/billing/orders/${b.order.id}/refund`, { note: '' });
+    expect(res.status).toBe(201);
+    expect(await db.entitlement.findUniqueOrThrow({ where: { id: a.entitlement.id } })).toEqual(
+      a.entitlement,
+    );
+    expect(
+      (await db.entitlement.findUniqueOrThrow({ where: { id: b.entitlement.id } })).revokedAt,
+    ).not.toBeNull();
+    const access = await as(await cookieFor(a.user.id, 'user')).get('/access');
+    expect(access.body.state.until).toBe(a.entitlement.expiresAt.toISOString());
+    const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'order.refund' } });
+    expect((audit.diff as { moved: unknown }).moved).toEqual([]);
   });
 
   it('refuses to refund an unpaid order', async () => {
@@ -351,6 +449,7 @@ describe('subscriptions', () => {
       accessUntil: entitlement.expiresAt.toISOString(),
       rights: [
         {
+          id: entitlement.id,
           startsAt: entitlement.startsAt.toISOString(),
           expiresAt: entitlement.expiresAt.toISOString(),
           revokedAt: null,

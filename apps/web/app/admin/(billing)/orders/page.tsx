@@ -2,7 +2,7 @@ import { type AdminOrder, formatRuDate, orderStatusSchema, type Page } from '@xs
 import Link from 'next/link';
 import s from '../../../../src/admin/admin.module.css';
 import { orderStatusLabel, orderStatusTone } from '../../../../src/admin/api';
-import { RefundButton } from '../../../../src/admin/BillingForms';
+import { RefundButton, RevokedPeriod } from '../../../../src/admin/BillingForms';
 import { DataTable } from '../../../../src/admin/DataTable';
 import { FormField } from '../../../../src/admin/FormField';
 import { adminServer } from '../../../../src/admin/server';
@@ -67,7 +67,7 @@ export default async function OrdersPage({
             <td data-label="Доступ">
               {o.accessUntil ? (
                 o.revokedAt ? (
-                  <s>до {date(o.accessUntil)}</s>
+                  <RevokedPeriod>до {date(o.accessUntil)}</RevokedPeriod>
                 ) : (
                   `${date(o.accessStartsAt)} — ${date(o.accessUntil)}`
                 )

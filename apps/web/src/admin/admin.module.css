@@ -316,6 +316,17 @@
   font: var(--x-type-ui);
   letter-spacing: var(--x-track-small);
 }
+.ok:empty {
+  padding: 0;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .ok {
   background: var(--x-ok-bg);
   color: var(--x-ok);
@@ -354,7 +365,7 @@
   display: grid;
   gap: 0.25rem;
 }
-.rights s {
+.table s {
   color: var(--x-text-2);
 }
 /* Versions: rows become cards on phones (spec 2026-11-17 §8). */
