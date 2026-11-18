@@ -1,0 +1,38 @@
+.page {
+  box-sizing: content-box;
+  display: grid;
+  justify-items: start;
+  gap: 0.875rem;
+  max-width: var(--x-column);
+  margin-inline: auto;
+  padding: 2.5rem var(--x-gutter) 4rem;
+}
+
+.badge {
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-warn-bg);
+  color: var(--x-warn);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.title {
+  margin: 0;
+  font: var(--x-type-h1);
+  letter-spacing: var(--x-track-head);
+}
+
+.text {
+  margin: 0;
+  color: var(--x-text-2);
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
