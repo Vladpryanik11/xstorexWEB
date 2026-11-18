@@ -1,8 +1,9 @@
 'use client';
+import { signinMessages } from '@xstore/shared';
 import { useState } from 'react';
 import { safeAdminNext } from '../auth/safe-next';
 import s from './admin.module.css';
-import { errorText, mutate } from './api';
+import { AdminApiError, errorText, mutate } from './api';
 import { FormField } from './FormField';
 
 export function LoginForm({ next }: { next?: string }) {
@@ -24,7 +25,12 @@ export function LoginForm({ next }: { next?: string }) {
           });
           location.assign(safeAdminNext(next));
         } catch (err) {
-          setError(errorText(err));
+          // The shared INVALID_CREDENTIALS text names email and password; staff also type a code.
+          setError(
+            err instanceof AdminApiError && err.status === 401
+              ? signinMessages.STAFF_INVALID_CREDENTIALS
+              : errorText(err),
+          );
           setBusy(false);
         }
       }}

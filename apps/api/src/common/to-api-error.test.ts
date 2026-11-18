@@ -27,7 +27,7 @@ it('hides unknown errors', () => {
 it('maps DomainError to its code and shared message', () => {
   expect(toApiError(new DomainError(ErrorCode.INVALID_CREDENTIALS, 401))).toEqual({
     status: 401,
-    body: { code: 'INVALID_CREDENTIALS', message: 'Неверная почта, пароль или код' },
+    body: { code: 'INVALID_CREDENTIALS', message: 'Неверная почта или пароль' },
   });
 });
 

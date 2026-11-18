@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { apiErrorSchema, ErrorCode, errorMessages } from './errors.js';
+import { apiErrorSchema, ErrorCode, errorMessages, signinMessages } from './errors.js';
 
 it('accepts a known error', () => {
   expect(apiErrorSchema.parse({ code: 'NOT_FOUND', message: 'Не найдено' })).toEqual({
@@ -20,7 +20,8 @@ it('has a Russian message for every code', () => {
   for (const code of Object.values(ErrorCode)) {
     expect(errorMessages[code]).toMatch(/[А-Яа-яЁё]/);
   }
-  expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта, пароль или код');
+  expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта или пароль');
+  expect(errorMessages.CODE_INVALID).toBe('Неверный или устаревший код');
   expect(errorMessages.CONFLICT).toBe('Конфликт данных');
   expect(errorMessages.DUPLICATE_VERSION).toBe('Эта версия уже загружена');
   expect(errorMessages.IPA_ZIP_BOMB).toBe('Архив подозрительно сильно сжат и отклонён');
@@ -35,4 +36,14 @@ it('carries publish blockers in details', () => {
       details: ['NO_ICON'],
     }).details,
   ).toEqual(['NO_ICON']);
+});
+
+it('sign-in texts live here too', () => {
+  expect(signinMessages.TOO_MANY_ATTEMPTS).toBe('Слишком много попыток, попробуйте позже');
+  // Staff sign in with a TOTP code as well, so their wrong-credentials text names it.
+  expect(signinMessages.STAFF_INVALID_CREDENTIALS).toBe(
+    'Неверная почта, пароль или код из приложения',
+  );
+  expect(signinMessages.CHECK_EMAIL).toMatch(/почт/);
+  expect(signinMessages.FAILED).toMatch(/Не получилось войти/);
 });

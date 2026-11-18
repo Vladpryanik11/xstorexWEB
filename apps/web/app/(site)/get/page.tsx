@@ -57,6 +57,7 @@ export default async function GetPage({ searchParams }: { searchParams: Promise<
           app={app ? { name: app.name, iconUrl: app.iconUrl } : null}
           returnTo={app ? `/app/${app.slug}` : undefined}
           defaultEmail={access.email ?? ''}
+          renewUntil={access.state.kind === 'active' ? access.state.until : undefined}
         />
       ) : (
         <section className={styles.panel}>

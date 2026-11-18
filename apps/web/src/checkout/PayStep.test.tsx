@@ -94,4 +94,18 @@ describe('PayStep', () => {
     const [first, second] = checkout.mock.calls.map((c) => c[0] as CheckoutRequest);
     expect(second?.checkoutKey).not.toBe(first?.checkoutKey);
   });
+
+  it('renewal: the new end date instead of «Подписка начнётся сразу после оплаты»', () => {
+    render(
+      <PayStep
+        plan={plan}
+        renewUntil={new Date('2026-12-18T12:00:00Z')}
+        checkout={vi.fn()}
+        navigate={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Продление доступа' })).toBeInTheDocument();
+    expect(screen.getByText('Доступ продлится до 17 января 2027')).toBeInTheDocument();
+    expect(screen.queryByText('Подписка начнётся сразу после оплаты')).toBeNull();
+  });
 });

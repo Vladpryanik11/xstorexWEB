@@ -51,6 +51,23 @@ describe('/get', () => {
     expect(screen.getByRole('button', { name: /Оплатить 299/ })).toBeInTheDocument();
   });
 
+  it('renewal says when the access will end, not that it starts after payment', async () => {
+    api.getAccess.mockResolvedValue({
+      state: {
+        kind: 'active',
+        until: new Date('2026-12-18T12:00:00Z'),
+        subscriptionId: 's',
+        deviceReady: false,
+      },
+      email: 'buyer@example.com',
+      hasPassword: true,
+    });
+    const { default: Page } = await import('./page');
+    render(await Page({ searchParams: Promise.resolve({ renew: '1' }) }));
+    expect(screen.getByText('Доступ продлится до 17 января 2027')).toBeInTheDocument();
+    expect(screen.queryByText('Подписка начнётся сразу после оплаты')).toBeNull();
+  });
+
   it('shows the payment step to a visitor without access', async () => {
     api.getAccess.mockResolvedValue({ state: { kind: 'none' } });
     const { default: Page } = await import('./page');

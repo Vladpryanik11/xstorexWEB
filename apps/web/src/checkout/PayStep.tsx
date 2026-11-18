@@ -5,6 +5,7 @@ import {
   type CheckoutResponse,
   ErrorCode,
   errorMessages,
+  formatRuDate,
   type PlanView,
 } from '@xstore/shared';
 import { AppIcon, Button } from '@xstore/ui';
@@ -21,9 +22,13 @@ export type PayStepProps = {
   /** Where the wizard leads after payment, e.g. `/app/<slug>`. */
   returnTo?: string;
   defaultEmail?: string;
+  /** «Продлить»: the current end of access; the plan's days are added after it. */
+  renewUntil?: Date;
   checkout?: (body: CheckoutRequest) => Promise<CheckoutResponse>;
   navigate?: (url: string) => void;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const looksLikeEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
@@ -54,6 +59,7 @@ export function PayStep({
   app,
   returnTo,
   defaultEmail = '',
+  renewUntil,
   checkout = defaultCheckout,
   navigate = defaultNavigate,
 }: PayStepProps) {
@@ -117,7 +123,7 @@ export function PayStep({
   return (
     <section className={styles.panel} aria-labelledby={`${emailId}-title`}>
       <h1 id={`${emailId}-title`} className={styles.title}>
-        Доступ ко всему каталогу
+        {renewUntil ? 'Продление доступа' : 'Доступ ко всему каталогу'}
       </h1>
 
       {app ? (
@@ -137,7 +143,12 @@ export function PayStep({
           <li className={styles.fact}>для одного iPhone</li>
           <li className={styles.fact}>все приложения каталога</li>
         </ul>
-        <p className={styles.note}>Подписка начнётся сразу после оплаты</p>
+        <p className={styles.note}>
+          {renewUntil
+            ? // Renewal starts at the end of the current term (Global Constraints, N1).
+              `Доступ продлится до ${formatRuDate(new Date(renewUntil.getTime() + plan.durationDays * DAY_MS))}`
+            : 'Подписка начнётся сразу после оплаты'}
+        </p>
       </div>
 
       {error ? (

@@ -19,8 +19,15 @@ export type SigninFormProps = {
 
 const defaultGo = (url: string) => window.location.assign(url);
 
+/** Lazy: the browser client is created on the first call, not while the module loads. */
+const defaultApi: SigninApi = {
+  login: (body) => browserApi().login(body),
+  requestCode: (body) => browserApi().requestCode(body),
+  verifyCode: (body) => browserApi().verifyCode(body),
+};
+
 /** `/signin`: email and password, or a code from the email (spec v2 §5). */
-export function SigninForm({ next, api = browserApi(), go = defaultGo }: SigninFormProps) {
+export function SigninForm({ next, api = defaultApi, go = defaultGo }: SigninFormProps) {
   const id = useId();
   const [mode, setMode] = useState<'password' | 'code'>('password');
   const [email, setEmail] = useState('');

@@ -90,7 +90,7 @@ it('rejects a wrong code with the uniform message', async () => {
   expect(res.status).toBe(401);
   expect(res.body).toEqual({
     code: 'INVALID_CREDENTIALS',
-    message: 'Неверная почта, пароль или код',
+    message: 'Неверная почта или пароль',
   });
 });
 

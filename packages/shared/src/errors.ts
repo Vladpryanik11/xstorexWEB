@@ -44,7 +44,7 @@ export const errorMessages: Record<ErrorCode, string> = {
   VALIDATION: 'Некорректные данные',
   INTERNAL: 'Внутренняя ошибка сервера',
   CONFLICT: 'Конфликт данных',
-  INVALID_CREDENTIALS: 'Неверная почта, пароль или код',
+  INVALID_CREDENTIALS: 'Неверная почта или пароль',
   UPLOAD_TOO_LARGE: 'Файл больше допустимого размера',
   IPA_NOT_ZIP: 'Файл не является IPA-архивом или повреждён',
   IPA_UNSAFE_PATH: 'В архиве есть недопустимые пути к файлам',
@@ -69,6 +69,16 @@ export const errorMessages: Record<ErrorCode, string> = {
   PAYMENT_PROVIDER_DOWN: 'Платёжный сервис не отвечает. Попробуйте через минуту',
   WEAK_PASSWORD: 'Пароль должен быть от 8 до 128 символов',
 };
+
+/** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */
+export const signinMessages = {
+  /** Any 429 on a sign-in step (password, code request, code check). */
+  TOO_MANY_ATTEMPTS: 'Слишком много попыток, попробуйте позже',
+  /** Staff sign in with a TOTP code as well; INVALID_CREDENTIALS covers all three fields. */
+  STAFF_INVALID_CREDENTIALS: 'Неверная почта, пароль или код из приложения',
+  CHECK_EMAIL: 'Проверьте почту и попробуйте ещё раз',
+  FAILED: 'Не получилось войти. Попробуйте ещё раз.',
+} as const;
 
 export const apiErrorSchema = z.object({
   code: z.enum(ErrorCode),
