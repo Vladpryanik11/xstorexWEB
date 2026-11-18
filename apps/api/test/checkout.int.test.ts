@@ -124,7 +124,22 @@ it('guest checkout creates provisional user, order and session cookie', async ()
     paidAt: null,
     returnTo: '/app/telegram',
     accessUntil: null,
+    // The payment page saved at checkout: the wizard links back to it while the order is open.
+    paymentUrl: order.redirectUrl,
   });
+  expect(order.redirectUrl).toMatch(/\/dev\/pay\//);
+
+  // An order whose 24 hours have passed is no longer payable, even before reconciliation.
+  await db.order.update({ where: { id: order.id }, data: { expiresAt: new Date(Date.now() - 1) } });
+  const stale = await request(app.getHttpServer())
+    .get(`/api/v1/billing/orders/${order.id}`)
+    .set('Cookie', `xs_session=${token}`);
+  expect(stale.body.paymentUrl).toBeNull();
+  await db.order.update({ where: { id: order.id }, data: { status: 'expired' } });
+  const expired = await request(app.getHttpServer())
+    .get(`/api/v1/billing/orders/${order.id}`)
+    .set('Cookie', `xs_session=${token}`);
+  expect(expired.body).toMatchObject({ status: 'expired', paymentUrl: null });
 });
 
 it('checkout requires terms, a valid key and the site origin', async () => {
@@ -227,8 +242,10 @@ it('foreign order id returns 404', async () => {
   await postCheckout(b, checkoutBody(randomUUID()));
   const own = await a.get(`/api/v1/billing/orders/${orderA.body.orderId}`);
   expect(own.status).toBe(200);
+  expect(own.body.paymentUrl).toBe(orderA.body.redirectUrl);
   const foreign = await b.get(`/api/v1/billing/orders/${orderA.body.orderId}`);
   expect(foreign.status).toBe(404);
+  expect(foreign.body).not.toHaveProperty('paymentUrl');
   expect(foreign.body.code).toBe('NOT_FOUND');
   const anonymous = await request(app.getHttpServer()).get(
     `/api/v1/billing/orders/${orderA.body.orderId}`,

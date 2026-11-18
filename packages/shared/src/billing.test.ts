@@ -19,6 +19,7 @@ it('orderViewSchema accepts paid order with null returnTo', () => {
       paidAt: '2026-11-18T10:00:00.000Z',
       returnTo: null,
       accessUntil: null,
+      paymentUrl: null,
     }).success,
   ).toBe(true);
 });

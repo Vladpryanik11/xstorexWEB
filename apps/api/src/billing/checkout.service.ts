@@ -237,6 +237,10 @@ export class CheckoutService {
       paidAt: order.paidAt?.toISOString() ?? null,
       returnTo: order.returnTo,
       accessUntil: until?.toISOString() ?? null,
+      // Saved at checkout with the payment (`paymentRedirect`); only the owner gets here, and
+      // only an order that can still be paid gets the link back to its payment page.
+      paymentUrl:
+        order.status === 'pending' && order.expiresAt > new Date() ? order.redirectUrl : null,
     };
   }
 

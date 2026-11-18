@@ -109,6 +109,7 @@ describe('billing', () => {
       paidAt: null,
       returnTo: null,
       accessUntil: null,
+      paymentUrl: null,
     };
     const f2 = fakeFetch(200, order);
     expect(await createApiClient({ baseUrl: 'http://api', fetch: f2 }).getOrder('o/1')).toEqual(

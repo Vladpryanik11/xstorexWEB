@@ -30,6 +30,8 @@ export const orderViewSchema = z.object({
   paidAt: z.string().nullable(),
   returnTo: z.string().nullable(),
   accessUntil: z.string().nullable(),
+  /** The provider's payment page while the order is open (pending, not expired); else null. */
+  paymentUrl: z.string().nullable(),
 });
 export type OrderView = z.infer<typeof orderViewSchema>;
 

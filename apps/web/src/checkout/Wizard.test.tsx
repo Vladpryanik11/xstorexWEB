@@ -11,12 +11,14 @@ const order = (over: Partial<OrderView> = {}): OrderView => ({
   paidAt: null,
   returnTo: null,
   accessUntil: null,
+  paymentUrl: 'http://localhost:3000/dev/pay/p1',
   ...over,
 });
 const paid = order({
   status: 'paid',
   paidAt: '2026-11-18T10:00:00.000Z',
   accessUntil: '2026-12-18T10:00:00.000Z',
+  paymentUrl: null,
 });
 
 beforeEach(() => {
@@ -50,6 +52,27 @@ describe('Wizard', () => {
       'Доступ активен до 18 декабря 2026',
     );
     expect(sessionStorage.getItem(CHECKOUT_KEY_STORAGE)).toBeNull();
+  });
+
+  it('while checking, offers the way back to the payment page from the start', async () => {
+    const getOrder = vi.fn().mockResolvedValue(order());
+    render(<Wizard initialOrder={order()} hasPassword={false} getOrder={getOrder} />);
+    expect(screen.getByRole('link', { name: 'Вернуться к оплате' })).toHaveAttribute(
+      'href',
+      'http://localhost:3000/dev/pay/p1',
+    );
+    await tick(120_000);
+    expect(screen.getByRole('button', { name: 'Проверить ещё раз' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Вернуться к оплате' })).toBeInTheDocument();
+  });
+
+  it('no way back without a payment page, or once the order is settled', () => {
+    const { rerender } = render(
+      <Wizard initialOrder={order({ paymentUrl: null })} hasPassword={false} getOrder={vi.fn()} />,
+    );
+    expect(screen.queryByRole('link', { name: 'Вернуться к оплате' })).not.toBeInTheDocument();
+    rerender(<Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} />);
+    expect(screen.queryByRole('link', { name: 'Вернуться к оплате' })).not.toBeInTheDocument();
   });
 
   it('after 2 minutes stops calmly and can check again', async () => {

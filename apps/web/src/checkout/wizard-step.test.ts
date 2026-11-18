@@ -10,6 +10,7 @@ const order = (status: OrderView['status']): OrderView => ({
   paidAt: status === 'paid' ? '2026-11-18T10:00:00.000Z' : null,
   returnTo: null,
   accessUntil: status === 'paid' ? '2026-12-18T10:00:00.000Z' : null,
+  paymentUrl: null,
 });
 
 describe('wizardStep', () => {

@@ -106,6 +106,7 @@ it('webhook paid grants access visible in GET /access', async () => {
     amountRub: PRICE,
     paidAt: paidAt.toISOString(),
     accessUntil: until.toISOString(),
+    paymentUrl: null,
   });
   const events = await db.paymentEvent.findMany();
   expect(events).toMatchObject([{ provider: 'fake', eventKey: 'fake:ev-1', result: 'granted' }]);
@@ -208,6 +209,8 @@ it('dev fake payment routes exist only with dev pages', async () => {
   expect((await db.order.findUniqueOrThrow({ where: { id: other.order.id } })).status).toBe(
     'failed',
   );
+  const failedView = await other.agent.get(`/api/v1/billing/orders/${other.order.id}`);
+  expect(failedView.body).toMatchObject({ status: 'failed', paymentUrl: null });
   const unknown = await request(devApp.getHttpServer())
     .post('/api/v1/billing/dev/fake-payments/nope/pay')
     .set('Origin', SITE);

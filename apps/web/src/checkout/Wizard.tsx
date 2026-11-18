@@ -26,6 +26,9 @@ function payAgainHref(returnTo: string | null): string {
   return slug ? `/get?app=${slug}` : '/get';
 }
 
+/** The provider's payment page, only as a plain web link. */
+const payable = (url: string | null): url is string => !!url && /^https?:\/\//.test(url);
+
 /** `/get/[orderId]`: waits for the provider's confirmation, then shows the access. */
 export function Wizard({
   initialOrder,
@@ -39,6 +42,12 @@ export function Wizard({
   const [attempt, setAttempt] = useState(0);
   const step = wizardStep({ order, access: { kind: 'none' } });
   const orderId = order.id;
+  // A buyer who left the payment page can always go back to it while the order is open.
+  const backToPayment = payable(order.paymentUrl) ? (
+    <Button variant="quiet" href={order.paymentUrl} className={styles.wide}>
+      Вернуться к оплате
+    </Button>
+  ) : null;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` restarts the two-minute window after «Проверить ещё раз»
   useEffect(() => {
@@ -129,6 +138,7 @@ export function Wizard({
           >
             Проверить ещё раз
           </Button>
+          {backToPayment}
         </section>
       ) : (
         <section className={styles.panel} aria-busy="true">
@@ -137,6 +147,7 @@ export function Wizard({
           <p className={styles.lead}>
             Обычно это занимает несколько секунд. Не закрывайте страницу.
           </p>
+          {backToPayment}
         </section>
       )}
     </div>
