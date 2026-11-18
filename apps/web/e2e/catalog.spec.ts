@@ -152,9 +152,7 @@ test('an app morphs into its sheet; Escape closes it and returns focus', async (
   const dialog = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
   await expect(dialog).toBeVisible();
   // The button waits for the access check; a guest then gets the payment link.
-  await expect(
-    dialog.getByRole('link', { name: /^(Установить|Оформить доступ)$/ }),
-  ).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^(Установить|Оформить доступ)$/ })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
