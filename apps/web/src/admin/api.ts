@@ -52,3 +52,18 @@ export const errorText = (err: unknown): string =>
     : err instanceof Error
       ? err.message
       : 'Не удалось выполнить действие';
+
+export const orderStatusLabel: Record<string, string> = {
+  created: 'Создан',
+  pending: 'Ждёт оплаты',
+  paid: 'Оплачен',
+  failed: 'Не прошёл',
+  expired: 'Истёк',
+  refunded: 'Возврат',
+};
+export const orderStatusTone: Record<string, 'ok' | 'warn' | 'err' | undefined> = {
+  pending: 'warn',
+  paid: 'ok',
+  failed: 'err',
+  refunded: 'err',
+};

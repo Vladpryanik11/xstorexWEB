@@ -1,4 +1,5 @@
 export * from './access.js';
+export * from './admin-billing.js';
 export * from './admin-catalog.js';
 export * from './auth.js';
 export * from './billing.js';

@@ -23,13 +23,16 @@ export function AdminShell({
           ['/admin/collections', 'Подборки'],
           ['/admin/categories', 'Категории'],
           ['/admin/jobs', 'Задания'],
+          ['/admin/plan', 'Тариф'],
+          ['/admin/orders', 'Заказы'],
+          ['/admin/subscriptions', 'Подписки'],
         ]
       : [['/admin/jobs', 'Задания']];
   return (
     <div className={s.shell}>
       <header className={s.header}>
         <Link href="/">Xstore</Link>
-        <span>Управление каталогом</span>
+        <span>Управление магазином</span>
         <button
           type="button"
           disabled={busy}

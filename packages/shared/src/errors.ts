@@ -31,6 +31,8 @@ export const ErrorCode = {
   PAYMENT_FAILED: 'PAYMENT_FAILED',
   PAYMENT_PROVIDER_DOWN: 'PAYMENT_PROVIDER_DOWN',
   WEAK_PASSWORD: 'WEAK_PASSWORD',
+  GRANT_STAFF_EMAIL: 'GRANT_STAFF_EMAIL',
+  REFUND_NOT_PAID: 'REFUND_NOT_PAID',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -68,6 +70,8 @@ export const errorMessages: Record<ErrorCode, string> = {
   PAYMENT_FAILED: 'Оплата не прошла. Попробуйте ещё раз',
   PAYMENT_PROVIDER_DOWN: 'Платёжный сервис не отвечает. Попробуйте через минуту',
   WEAK_PASSWORD: 'Пароль должен быть от 8 до 128 символов',
+  GRANT_STAFF_EMAIL: 'Эта почта принадлежит сотруднику, выдать на неё доступ нельзя',
+  REFUND_NOT_PAID: 'Отметить возврат можно только у оплаченного заказа',
 };
 
 /** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */
