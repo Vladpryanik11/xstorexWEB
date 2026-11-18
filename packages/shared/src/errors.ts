@@ -25,6 +25,12 @@ export const ErrorCode = {
   ACCOUNT_BLOCKED: 'ACCOUNT_BLOCKED',
   CODE_INVALID: 'CODE_INVALID',
   EMAIL_TAKEN: 'EMAIL_TAKEN',
+  CHECKOUT_IN_PROGRESS: 'CHECKOUT_IN_PROGRESS',
+  PLAN_UNAVAILABLE: 'PLAN_UNAVAILABLE',
+  PAYMENT_PENDING: 'PAYMENT_PENDING',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  PAYMENT_PROVIDER_DOWN: 'PAYMENT_PROVIDER_DOWN',
+  WEAK_PASSWORD: 'WEAK_PASSWORD',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -56,6 +62,12 @@ export const errorMessages: Record<ErrorCode, string> = {
   ACCOUNT_BLOCKED: 'Аккаунт заблокирован',
   CODE_INVALID: 'Неверный или устаревший код',
   EMAIL_TAKEN: 'Эта почта уже привязана к другому аккаунту',
+  CHECKOUT_IN_PROGRESS: 'Оплата уже начата, подождите несколько секунд',
+  PLAN_UNAVAILABLE: 'Подписка сейчас недоступна',
+  PAYMENT_PENDING: 'Проверяем оплату',
+  PAYMENT_FAILED: 'Оплата не прошла. Попробуйте ещё раз',
+  PAYMENT_PROVIDER_DOWN: 'Платёжный сервис не отвечает. Попробуйте через минуту',
+  WEAK_PASSWORD: 'Пароль должен быть от 8 до 128 символов',
 };
 
 export const apiErrorSchema = z.object({
