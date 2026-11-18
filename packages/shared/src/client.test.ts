@@ -168,3 +168,63 @@ describe('billing', () => {
     expect(none).toEqual({ state: { kind: 'none' } });
   });
 });
+
+describe('buyer sign-in', () => {
+  const noContent = () =>
+    vi.fn(
+      async (_url: string | URL | Request, _init?: RequestInit) =>
+        new Response(null, { status: 204 }),
+    );
+
+  it.each([
+    [
+      'login',
+      (api: ReturnType<typeof createApiClient>) => api.login({ email: 'a@b.ru', password: 'p' }),
+      '/api/v1/auth/login',
+      { email: 'a@b.ru', password: 'p' },
+    ],
+    [
+      'requestCode',
+      (api: ReturnType<typeof createApiClient>) => api.requestCode({ email: 'a@b.ru' }),
+      '/api/v1/auth/code/request',
+      { email: 'a@b.ru' },
+    ],
+    [
+      'verifyCode',
+      (api: ReturnType<typeof createApiClient>) =>
+        api.verifyCode({ email: 'a@b.ru', code: '123456' }),
+      '/api/v1/auth/code/verify',
+      { email: 'a@b.ru', code: '123456' },
+    ],
+    [
+      'setPassword',
+      (api: ReturnType<typeof createApiClient>) => api.setPassword({ password: 'secret12' }),
+      '/api/v1/auth/password',
+      { password: 'secret12' },
+    ],
+    [
+      'logout',
+      (api: ReturnType<typeof createApiClient>) => api.logout(),
+      '/api/v1/auth/logout',
+      {},
+    ],
+  ])('%s posts to its path and resolves on 204', async (_name, call, path, body) => {
+    const fetch = noContent();
+    await expect(call(createApiClient({ baseUrl: 'http://api', fetch }))).resolves.toBeUndefined();
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(String(url)).toBe(`http://api${path}`);
+    expect(init?.method).toBe('POST');
+    expect(JSON.parse(String(init?.body))).toEqual(body);
+  });
+
+  it('surfaces sign-in errors', async () => {
+    const fetch = fakeFetch(401, { code: 'INVALID_CREDENTIALS', message: 'x' });
+    await expect(
+      createApiClient({ baseUrl: 'http://api', fetch }).login({ email: 'a@b.ru', password: 'p' }),
+    ).rejects.toMatchObject({ status: 401, code: 'INVALID_CREDENTIALS' });
+    const weak = fakeFetch(400, { code: 'WEAK_PASSWORD', message: 'x' });
+    await expect(
+      createApiClient({ baseUrl: 'http://api', fetch: weak }).setPassword({ password: 'x' }),
+    ).rejects.toMatchObject({ status: 400, code: 'WEAK_PASSWORD' });
+  });
+});

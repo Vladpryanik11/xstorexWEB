@@ -5,7 +5,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { DomainError } from '../common/domain-error.js';
 import { PrismaService } from '../infra/prisma.service.js';
 import { REDIS, redisReady } from '../infra/redis.provider.js';
-import { hashPassword, verifyPassword } from './password.js';
+import { dummyPasswordHash, verifyPassword } from './password.js';
 import { type SessionMeta, SessionService } from './session.service.js';
 import { verifyTotp } from './totp.js';
 
@@ -15,9 +15,6 @@ const TOTP_REPLAY_TTL_SEC = 90;
 
 @Injectable()
 export class StaffAuthService {
-  /** Verified when the email is unknown, so both failures take about the same time. */
-  private dummyHash: Promise<string> | undefined;
-
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REDIS) private readonly redis: Redis,
@@ -27,9 +24,9 @@ export class StaffAuthService {
 
   async login(input: StaffLogin, meta: SessionMeta): Promise<{ token: string; expiresAt: Date }> {
     const user = await this.prisma.client.user.findUnique({ where: { email: input.email } });
-    this.dummyHash ??= hashPassword('xstore-dummy-password');
+    // An unknown email is checked against a dummy hash, so both failures take the same time.
     const passwordOk = await verifyPassword(
-      user?.passwordHash ?? (await this.dummyHash),
+      user?.passwordHash ?? (await dummyPasswordHash()),
       input.password,
     );
     const eligible =
