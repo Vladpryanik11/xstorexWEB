@@ -1,5 +1,7 @@
 # M3 Apple Account Pool Implementation Plan
 
+> **Заменено 2026-11-18:** продукт, сценарии и порядок вех теперь задают [спецификация v2](../specs/2026-11-18-xstore-v2-design.md) и [план v2](2026-11-18-v2-roadmap.md). Этот документ остаётся справочником по техническим решениям.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** The admin adds Apple Developer accounts by App Store Connect API key; the worker keeps each account ready to sign (wildcard App ID, distribution certificate, Ad Hoc profile), registers devices into the right account, watches certificates through OCSP and reacts to revocation, blocked accounts and expiring memberships.

@@ -1,5 +1,7 @@
 # M7 Content, Operations and Launch Implementation Plan
 
+> **Заменено 2026-11-18:** продукт, сценарии и порядок вех теперь задают [спецификация v2](../specs/2026-11-18-xstore-v2-design.md) и [план v2](2026-11-18-v2-roadmap.md). Этот документ остаётся справочником по техническим решениям.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Xstore is ready for real users on its own VPS: blog, FAQ, support and legal pages managed from the admin; every email logged; an admin dashboard, audit log and settings; SEO (sitemap, robots, OpenGraph, PWA web clip); error tracking and health checks; daily backups with a tested restore; deploys from GitHub Actions over SSH with migrations and rollback.
