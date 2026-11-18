@@ -316,7 +316,10 @@
   font: var(--x-type-ui);
   letter-spacing: var(--x-track-small);
 }
+/* The empty status region stays mounted for screen readers (BillingForms `Result`); out of the
+   flow, it adds no grid gap under the form's buttons. Not `display: none`: that drops the live region. */
 .ok:empty {
+  position: absolute;
   padding: 0;
 }
 .srOnly {
