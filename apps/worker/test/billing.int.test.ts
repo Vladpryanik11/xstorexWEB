@@ -123,6 +123,44 @@ it('reconcile grants access for missed webhook', async () => {
   expect(await deps.db.entitlement.count({ where: { orderId: order.id } })).toBe(1);
 });
 
+it('reconcile with provider failed marks the order failed', async () => {
+  const { order, paymentId } = await makeOrder(11 * MIN);
+  await fake.setStatus(paymentId, 'failed');
+
+  await reconcileOrders(deps);
+
+  expect((await deps.db.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe(
+    'failed',
+  );
+});
+
+it('reconcile reaches orders beyond the first batch', async () => {
+  // Older abandoned orders stay pending at the provider and fill the first batches.
+  await makeOrder(3 * HOUR);
+  await makeOrder(2 * HOUR);
+  const late = await makeOrder(11 * MIN);
+  await fake.setStatus(late.paymentId, 'paid', new Date(Date.now() - 2 * MIN));
+
+  await reconcileOrders(deps, new Date(), 2);
+
+  expect((await deps.db.order.findUniqueOrThrow({ where: { id: late.order.id } })).status).toBe(
+    'paid',
+  );
+});
+
+it('expireOrders reaches orders beyond the first batch', async () => {
+  await makeOrder(27 * HOUR);
+  await makeOrder(26 * HOUR);
+  const late = await makeOrder(25 * HOUR);
+  await fake.setStatus(late.paymentId, 'failed');
+
+  await expireOrders(deps, new Date(), 2);
+
+  expect((await deps.db.order.findUniqueOrThrow({ where: { id: late.order.id } })).status).toBe(
+    'expired',
+  );
+});
+
 it('reconcile leaves fresh and still-pending orders alone', async () => {
   const fresh = await makeOrder(5 * MIN);
   await fake.setStatus(fresh.paymentId, 'paid');

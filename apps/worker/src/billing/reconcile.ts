@@ -2,7 +2,7 @@ import { applyPayment } from '@xstore/billing';
 import type { WorkerDeps } from '../deps.js';
 
 export const RECONCILE_AFTER_MS = 10 * 60 * 1000;
-const BATCH = 200;
+export const BATCH = 200;
 
 export type ReconcileOutcome = { checked: number; granted: number; errors: number };
 
@@ -15,6 +15,7 @@ export type ReconcileOutcome = { checked: number; granted: number; errors: numbe
 export async function reconcileOrders(
   deps: WorkerDeps,
   now: Date = new Date(),
+  batch: number = BATCH,
 ): Promise<ReconcileOutcome> {
   const { db, logger, payments } = deps;
   const outcome: ReconcileOutcome = { checked: 0, granted: 0, errors: 0 };
@@ -22,32 +23,42 @@ export async function reconcileOrders(
     logger.warn('billing:reconcile skipped: payment provider adapter is not configured');
     return outcome;
   }
-  const orders = await db.order.findMany({
-    where: {
-      status: 'pending',
-      providerPaymentId: { not: null },
-      createdAt: { lt: new Date(now.getTime() - RECONCILE_AFTER_MS) },
-    },
-    orderBy: { createdAt: 'asc' },
-    take: BATCH,
-    select: { id: true, providerPaymentId: true },
-  });
-  for (const order of orders) {
-    if (!order.providerPaymentId) continue;
-    outcome.checked += 1;
-    try {
-      const res = await applyPayment(db, payments, order.providerPaymentId, { kind: 'reconcile' });
-      if (res.result === 'granted') outcome.granted += 1;
-      if (res.result === 'mismatch') {
-        logger.warn({ orderId: order.id }, 'billing:reconcile payment amount mismatch');
+  let cursor: string | undefined;
+  for (;;) {
+    // Keyset paging over the whole backlog: abandoned payments stay `pending` forever and must
+    // not starve newer orders.
+    const orders = await db.order.findMany({
+      where: {
+        status: 'pending',
+        providerPaymentId: { not: null },
+        createdAt: { lt: new Date(now.getTime() - RECONCILE_AFTER_MS) },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: batch,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: { id: true, providerPaymentId: true },
+    });
+    for (const order of orders) {
+      if (!order.providerPaymentId) continue;
+      outcome.checked += 1;
+      try {
+        const res = await applyPayment(db, payments, order.providerPaymentId, {
+          kind: 'reconcile',
+        });
+        if (res.result === 'granted') outcome.granted += 1;
+        if (res.result === 'mismatch') {
+          logger.warn({ orderId: order.id }, 'billing:reconcile payment amount mismatch');
+        }
+      } catch (err) {
+        outcome.errors += 1;
+        logger.warn(
+          { orderId: order.id, err: err instanceof Error ? err.message : String(err) },
+          'billing:reconcile failed for order',
+        );
       }
-    } catch (err) {
-      outcome.errors += 1;
-      logger.warn(
-        { orderId: order.id, err: err instanceof Error ? err.message : String(err) },
-        'billing:reconcile failed for order',
-      );
     }
+    if (orders.length < batch) break;
+    cursor = orders[orders.length - 1]?.id;
   }
   return outcome;
 }
