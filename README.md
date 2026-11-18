@@ -8,7 +8,7 @@
 
 Три сценария и их проверки: [M5, задачи 7–9](docs/superpowers/plans/2026-11-05-m5-billing.md). Основа аккаунта и подключения: [M2](docs/superpowers/plans/2026-11-05-m2-auth-cabinet.md). Это план будущей реализации; текущий публичный каталог ещё не выполняет пользовательский checkout.
 
-Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA, только для Node), `infra/`.
+Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA), `packages/billing` (платёжные провайдеры fake и Platega), `packages/mail` (письма по SMTP), `infra/`. Пакеты `ios`, `billing` и `mail` — только для Node (API и воркер), в `apps/web` их не импортируем.
 
 ## Требования
 
@@ -84,7 +84,7 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 ### Оплата в разработке
 
-`PAYMENT_PROVIDER=fake` (по умолчанию в `.env.example`) хранит платежи в Redis и подписывает вебхуки ключом `FAKE_PAYMENT_WEBHOOK_SECRET`. При `NODE_ENV=production` API с `fake` не запускается; production compose задаёт `PAYMENT_PROVIDER=platega`. С `XSTORE_DEV_PAGES=1` API открывает `POST /api/v1/billing/dev/fake-payments/<id>/pay` и `/fail`: они меняют статус фейкового платежа и проводят его тем же путём, что и вебхук.
+`PAYMENT_PROVIDER=fake` (по умолчанию в `.env.example`) хранит платежи в Redis и подписывает вебхуки ключом `FAKE_PAYMENT_WEBHOOK_SECRET`. При `NODE_ENV=production` API с `fake` не запускается; production compose задаёт `PAYMENT_PROVIDER=platega`. С `XSTORE_DEV_PAGES=1` API открывает `POST /api/v1/billing/dev/fake-payments/<id>/pay` и `/fail`: они меняют статус фейкового платежа и проводят его тем же путём, что и вебхук. Страница `/dev/pay/<id>` на сайте (тоже только с `XSTORE_DEV_PAGES=1`) играет платёжную страницу: кнопки «Оплатить» и «Отказать» вызывают эти маршруты с сервера Next.js и возвращают в мастер `/get/<orderId>`. Так весь путь «Оплата → Мой доступ» проходится локально без ключей Platega; e2e-тесты (`purchase-*.spec.ts`) идут тем же путём и читают письма с кодом входа из Mailpit (`MAILPIT_API_URL`).
 
 ### Письма
 

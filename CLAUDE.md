@@ -47,14 +47,14 @@
 
 ## Структура и команды
 
-Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA, только для Node), `infra/`. Требуется Node 24, pnpm 12.16.1, Docker Desktop. Подробнее для разработчика: `README.md`.
+Монорепо pnpm + Turborepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ + zsign), `packages/shared`, `packages/db`, `packages/ui`, `packages/ios` (разбор IPA), `packages/billing` (провайдеры fake и Platega), `packages/mail` (письма SMTP), `infra/`. `ios`, `billing`, `mail` — только для Node (API и воркер), не для `apps/web`. Требуется Node 24, pnpm 12.16.1, Docker Desktop. Подробнее для разработчика: `README.md`.
 
-Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль). Тестовый e2e-сервер web: 3100.
+Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль), Mailpit 1025 (SMTP) и 8025 (письма). Тестовые e2e-серверы: web 3100, api 3101.
 
 Команды из корня:
 
 - `cp .env.example .env`, `pnpm install` — первая настройка.
-- `pnpm infra:up` / `pnpm infra:down` — Postgres, Redis, MinIO для разработки (`infra/docker-compose.dev.yml`, только 127.0.0.1).
+- `pnpm infra:up` / `pnpm infra:down` — Postgres, Redis, MinIO, Mailpit для разработки (`infra/docker-compose.dev.yml`, только 127.0.0.1).
 - `pnpm db:migrate` — миграции Prisma.
 - `pnpm dev` — web, api и worker; `pnpm build` — сборка.
 - `pnpm lint` (Biome), `pnpm format`, `pnpm typecheck`.
@@ -62,6 +62,7 @@
 - Полный набор перед «готово»: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`.
 - M1: админка `/admin` (пароль + TOTP); создать сотрудника: `pnpm --filter @xstore/api admin:create -- --email <почта>` после сборки API. Поддержка читает только задания, редакторы доступны администратору.
 - Перед E2E: `pnpm infra:up`, `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium`. Playwright запускает API, web и воркер; использует `DATABASE_URL_TEST`, `REDIS_URL_TEST`, `S3_BUCKET_PREFIX_TEST`. Не запускать `test:int` и `test:e2e` одновременно — оба очищают тестовую базу.
+- Оплата в разработке: `PAYMENT_PROVIDER=fake` и `XSTORE_DEV_PAGES=1` (в API и web) — страница `/dev/pay/<id>` вместо Platega; с `fake` при `NODE_ENV=production` API не стартует. E2E включают это сами.
 - M1 окружение: `API_INTERNAL_URL` для SSR и прокси `/api`; `S3_ENDPOINT` для сервера, `S3_PUBLIC_URL` для браузера, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET_PREFIX`. CORS MinIO разрешает origin сайта; все секреты — в `.env`. Подробности в `README.md` и `.env.example`.
 
 Production: `docker compose -f infra/docker-compose.yml --env-file .env up -d --build` (порты 80/443 публикует только Caddy), проверка `bash infra/smoke.sh`. Образы собираются из корня: `docker build -f apps/api/Dockerfile .`.
