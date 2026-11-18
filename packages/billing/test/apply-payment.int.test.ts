@@ -214,6 +214,38 @@ describe('applyPayment', () => {
     );
   });
 
+  it('event first seen while pending grants when replayed after payment', async () => {
+    const s = await subscription();
+    const o = await order(s);
+    const eventKey = `fake:${randomUUID()}`;
+    const source = { kind: 'webhook' as const, eventKey };
+
+    const early = await applyPayment(db, provider, o.paymentId, source);
+    await provider.setStatus(o.paymentId, 'paid');
+    const replay = await applyPayment(db, provider, o.paymentId, source);
+
+    expect(early.result).toBe('pending');
+    expect(replay.result).toBe('granted');
+    expect(await db.entitlement.count({ where: { subscriptionId: s.subscriptionId } })).toBe(1);
+    const event = await db.paymentEvent.findUniqueOrThrow({ where: { eventKey } });
+    expect(event.result).toBe('granted');
+  });
+
+  it('event key reused by another order does not block either grant', async () => {
+    const a = await order(await subscription());
+    const b = await order(await subscription());
+    await provider.setStatus(a.paymentId, 'paid');
+    await provider.setStatus(b.paymentId, 'paid');
+    const eventKey = `fake:${randomUUID()}`;
+
+    const results = await Promise.all(
+      [a, b].map((o) => applyPayment(db, provider, o.paymentId, { kind: 'webhook', eventKey })),
+    );
+
+    expect(results.map((r) => r.result)).toEqual(['granted', 'granted']);
+    expect(await db.paymentEvent.count({ where: { eventKey } })).toBe(1);
+  });
+
   it('unknown payment id returns unknown_order without writes', async () => {
     const eventKey = `fake:${randomUUID()}`;
     const r = await applyPayment(db, provider, `missing-${randomUUID()}`, {

@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@xstore/db';
+import type { Prisma, PrismaClient } from '@xstore/db';
 import { nextWindow, planViewSchema } from '@xstore/shared';
 import type { PaymentProvider } from './provider.js';
 
@@ -36,74 +36,73 @@ export async function applyPayment(
   // Network call outside the transaction: it must not hold the lock or a connection.
   const payment = await provider.getPayment(providerPaymentId);
 
-  try {
-    return await db.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${found.subscriptionId}))`;
+  // A seen eventKey does not short-circuit: the order state decides, so a webhook first seen while
+  // the payment was pending still grants on replay, and a repeat after the grant returns `already`.
+  // Entitlement duplicates are excluded by the lock and the paid/paidAt check, so any unique
+  // violation here is a bug and is rethrown.
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${found.subscriptionId}))`;
 
-      if (source.eventKey) {
-        const seen = await tx.paymentEvent.findUnique({ where: { eventKey: source.eventKey } });
-        if (seen) return already(tx, found.id);
-      }
-
-      const order = await tx.order.findUniqueOrThrow({ where: { id: found.id } });
-      const record = async (result: ApplyPaymentResult): Promise<ApplyPaymentResult> => {
-        if (source.eventKey) {
-          await tx.paymentEvent.create({
-            data: {
-              provider: provider.name,
-              eventKey: source.eventKey,
-              payload: (source.payload ?? {}) as Prisma.InputJsonValue,
-              result: result.result,
-              processedAt: new Date(),
-            },
-          });
-        }
-        return result;
-      };
-
-      if (order.status === 'paid' || order.status === 'refunded' || order.paidAt) {
-        return record(await already(tx, order.id));
-      }
-      if (payment.amountRub !== order.amountRub || payment.currency !== 'RUB') {
-        return record({ result: 'mismatch', orderId: order.id });
-      }
-      if (payment.status === 'pending') {
-        return record({ result: 'pending', orderId: order.id });
-      }
-      if (payment.status === 'failed') {
-        if (order.status === 'created' || order.status === 'pending') {
-          await tx.order.update({ where: { id: order.id }, data: { status: 'failed' } });
-        }
-        return record({ result: 'failed', orderId: order.id });
-      }
-
-      const plan = planViewSchema.parse(order.planSnapshot);
-      const paidAt = payment.paidAt ?? new Date();
-      const existing = await tx.entitlement.findMany({
-        where: { subscriptionId: order.subscriptionId },
-        select: { startsAt: true, expiresAt: true, revokedAt: true },
-      });
-      const window = nextWindow(existing, plan.durationDays, paidAt);
-      await tx.entitlement.create({
+    const order = await tx.order.findUniqueOrThrow({ where: { id: found.id } });
+    const record = async (result: ApplyPaymentResult): Promise<ApplyPaymentResult> => {
+      if (!source.eventKey) return result;
+      // ON CONFLICT DO NOTHING: a replayed or concurrently reused key must not abort the grant.
+      const { count } = await tx.paymentEvent.createMany({
         data: {
-          subscriptionId: order.subscriptionId,
-          planCode: plan.code,
-          durationDays: plan.durationDays,
-          startsAt: window.startsAt,
-          expiresAt: window.expiresAt,
-          orderId: order.id,
+          provider: provider.name,
+          eventKey: source.eventKey,
+          payload: (source.payload ?? {}) as Prisma.InputJsonValue,
+          result: result.result,
+          processedAt: new Date(),
         },
+        skipDuplicates: true,
       });
-      await tx.order.update({ where: { id: order.id }, data: { status: 'paid', paidAt } });
-      return record({ result: 'granted', orderId: order.id, accessUntil: window.expiresAt });
-    }, TX_OPTIONS);
-  } catch (e) {
-    // The same eventKey was recorded concurrently for another order (keys are globally unique).
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-      return already(db, found.id);
+      if (count === 0 && result.result === 'granted') {
+        // The event was first seen before the payment completed; record that it granted now.
+        await tx.paymentEvent.update({
+          where: { eventKey: source.eventKey },
+          data: { result: 'granted', processedAt: new Date() },
+        });
+      }
+      return result;
+    };
+
+    if (order.status === 'paid' || order.status === 'refunded' || order.paidAt) {
+      return record(await already(tx, order.id));
     }
-    throw e;
-  }
+    if (payment.amountRub !== order.amountRub || payment.currency !== 'RUB') {
+      return record({ result: 'mismatch', orderId: order.id });
+    }
+    if (payment.status === 'pending') {
+      return record({ result: 'pending', orderId: order.id });
+    }
+    if (payment.status === 'failed') {
+      if (order.status === 'created' || order.status === 'pending') {
+        await tx.order.update({ where: { id: order.id }, data: { status: 'failed' } });
+      }
+      return record({ result: 'failed', orderId: order.id });
+    }
+
+    const plan = planViewSchema.parse(order.planSnapshot);
+    const paidAt = payment.paidAt ?? new Date();
+    const existing = await tx.entitlement.findMany({
+      where: { subscriptionId: order.subscriptionId },
+      select: { startsAt: true, expiresAt: true, revokedAt: true },
+    });
+    const window = nextWindow(existing, plan.durationDays, paidAt);
+    await tx.entitlement.create({
+      data: {
+        subscriptionId: order.subscriptionId,
+        planCode: plan.code,
+        durationDays: plan.durationDays,
+        startsAt: window.startsAt,
+        expiresAt: window.expiresAt,
+        orderId: order.id,
+      },
+    });
+    await tx.order.update({ where: { id: order.id }, data: { status: 'paid', paidAt } });
+    return record({ result: 'granted', orderId: order.id, accessUntil: window.expiresAt });
+  }, TX_OPTIONS);
 }
 
 type Reader = Pick<PrismaClient, 'entitlement'>;
