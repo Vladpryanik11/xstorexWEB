@@ -193,3 +193,31 @@ test('app page shows devices, update date, the App Store note and similar apps',
   await expect(similar.getByRole('link', { name: /Тестовое приложение 4/ })).toBeVisible();
   await expect(similar.getByRole('link', { name: /^Тестовое приложение 1(?!\d)/ })).toHaveCount(0);
 });
+
+test('home tiles open the catalog sections, shown as icons', async ({ page }) => {
+  await page.goto('/');
+  const tiles = page.getByRole('navigation', { name: 'Разделы каталога' });
+  await tiles.getByRole('link', { name: /Удалённые из App Store/ }).click();
+  await expect(page).toHaveURL(/\/removed$/);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Удалённые из App Store' }),
+  ).toBeVisible();
+  const grid = page.getByRole('list', { name: 'Удалённые из App Store' });
+  await expect(grid.getByRole('link', { name: /^Тестовое приложение 1$/ })).toBeVisible();
+  await expect(grid.getByRole('link', { name: /^Тестовое приложение 5$/ })).toHaveCount(0);
+
+  await page.goto('/catalog');
+  await expect(page.getByRole('list', { name: 'Весь каталог' }).getByRole('link')).toHaveCount(12);
+  await page.goto('/premium');
+  await expect(page.getByText('Здесь пока пусто. Скоро добавим приложения.')).toBeVisible();
+});
+
+test('category chips do not widen the catalog and category pages', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ['/catalog', '/category/igry']) {
+    await page.goto(path);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+});

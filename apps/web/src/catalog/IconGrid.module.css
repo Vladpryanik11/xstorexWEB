@@ -1,0 +1,20 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+  gap: 1.25rem 0.75rem;
+  margin: 0;
+  padding: 0 var(--x-gutter);
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  justify-items: center;
+}
+
+@media (min-width: 48em) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: 1.75rem 1rem;
+  }
+}

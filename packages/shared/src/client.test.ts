@@ -76,6 +76,11 @@ describe('endpoints', () => {
       '/api/v1/catalog/categories/social?cursor=c1',
     ],
     [
+      'section',
+      (api: ReturnType<typeof createApiClient>) => api.section('removed', 'c2'),
+      '/api/v1/catalog/sections/removed?cursor=c2',
+    ],
+    [
       'list',
       (api: ReturnType<typeof createApiClient>) => api.list('top'),
       '/api/v1/catalog/lists/top',

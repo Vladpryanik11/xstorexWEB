@@ -74,6 +74,7 @@ const catalogSchema = z.object({
       layout: z.enum(['grid3', 'icons', 'screenshots', 'banner']),
       source: z.enum(['manual', 'top_downloads', 'trending', 'top_rated', 'recently_updated']),
       limit: z.number().int().optional(),
+      onHome: z.boolean().optional(),
       apps: z.array(z.string()).optional(),
     }),
   ),
@@ -205,6 +206,7 @@ async function main(): Promise<void> {
           source: collection.source,
           sort,
           ...(collection.limit && { limit: collection.limit }),
+          ...(collection.onHome !== undefined && { onHome: collection.onHome }),
           items: { create: items },
         },
       });

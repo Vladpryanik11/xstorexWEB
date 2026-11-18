@@ -9,3 +9,9 @@
 5. **Демо-каталог.** `packages/db/demo/catalog.ts` (данные), `packages/db/demo/media/`, `packages/db/prisma/seed-demo.ts`, скрипты `seed:demo` и `db:seed:demo`, раздел в README.
 6. **CLAUDE.md.** Уточнить правило про файлы DIYORDE: иконки и скриншоты приложений из App Store можно, логотип, оформление и тексты — нет.
 7. **Проверки.** lint, typecheck, test, test:int, e2e (Chromium локально), скриншоты страницы приложения и главной на демо-каталоге.
+
+## Дополнение: разделы каталога
+
+8. API `GET /catalog/sections/:slug` + интеграционные тесты; клиент `section()`.
+9. Web: `sections.ts`, `SectionTiles` на главной, пункты меню iPhone, страницы `/removed`, `/premium`, `/popular`, `/catalog` (`SectionPage`), `IconGrid` для разделов и категорий. Модульные и E2E-тесты.
+10. Демо: подборка `premium` (скрыта с главной).

@@ -6,6 +6,7 @@ import { CategoryChips } from '../../src/catalog/CategoryChips';
 import { CollectionSection } from '../../src/catalog/CollectionSection';
 import { HeroCarousel } from '../../src/catalog/HeroCarousel';
 import { HowItWorks } from '../../src/catalog/HowItWorks';
+import { SectionTiles } from '../../src/catalog/SectionTiles';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -38,6 +39,7 @@ export default async function HomePage() {
         </div>
       </section>
       <div className={styles.shelves}>
+        <SectionTiles />
         <HeroCarousel banners={home.banners} />
         {home.collections.map((c, i) => (
           <Fragment key={c.slug}>

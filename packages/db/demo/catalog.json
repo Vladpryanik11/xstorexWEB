@@ -854,6 +854,14 @@
       "title": "Свежие обновления",
       "layout": "icons",
       "source": "recently_updated"
+    },
+    {
+      "slug": "premium",
+      "title": "Premium доступы",
+      "layout": "icons",
+      "source": "manual",
+      "onHome": false,
+      "apps": ["homescapes", "worldbox", "kinemaster", "captions", "forest", "yandex-disk"]
     }
   ]
 }

@@ -108,7 +108,13 @@ describe('MobileMenu', () => {
       within(card)
         .getAllByRole('link')
         .map((link) => link.textContent);
-    expect(labels(cards[0] as HTMLElement)).toEqual(['Главная', 'Поиск']);
+    expect(labels(cards[0] as HTMLElement)).toEqual([
+      'Весь каталог',
+      'Удалённые из App Store',
+      'Premium доступы',
+      'Популярные',
+      'Поиск',
+    ]);
     expect(labels(cards[1] as HTMLElement)).toEqual(['Ваши устройства', 'Профиль', 'Выйти']);
     expect(labels(cards[2] as HTMLElement)).toEqual(['Блог', 'Вопросы', 'Поддержка']);
     expect(within(sheet).getByRole('link', { name: 'Ваши устройства' })).toHaveAttribute(

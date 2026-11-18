@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { orNotFound, serverApi } from '../../../../src/api/server';
-import { AppGrid } from '../../../../src/catalog/AppGrid';
 import { CatalogPage, EmptyState, MoreLink } from '../../../../src/catalog/CatalogPage';
 import { CategoryChips } from '../../../../src/catalog/CategoryChips';
+import { IconGrid } from '../../../../src/catalog/IconGrid';
 import { categoryHref } from '../../../../src/catalog/links';
 import { one, type SearchParams } from '../../../../src/catalog/search-params';
 
@@ -34,7 +34,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       lead={<CategoryChips categories={categories} active={category.slug} />}
     >
       {page.items.length > 0 ? (
-        <AppGrid apps={page.items} label={category.name} />
+        <IconGrid apps={page.items} label={category.name} />
       ) : (
         <EmptyState>Здесь пока пусто. Загляните позже или выберите другую категорию.</EmptyState>
       )}

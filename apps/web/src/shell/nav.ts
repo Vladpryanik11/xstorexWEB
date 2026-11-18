@@ -1,3 +1,5 @@
+import { SECTIONS } from '../catalog/sections';
+
 export type NavItem = { href: string; label: string };
 
 const accountItems: NavItem[] = [
@@ -28,7 +30,8 @@ export function menuCards(signedIn: boolean): MenuCard[] {
     {
       title: 'Каталог',
       items: [
-        { href: '/', label: 'Главная' },
+        { href: '/catalog', label: 'Весь каталог' },
+        ...SECTIONS.filter((s) => s.slug !== 'all').map((s) => ({ href: s.href, label: s.title })),
         { href: '/search', label: 'Поиск' },
       ],
     },
