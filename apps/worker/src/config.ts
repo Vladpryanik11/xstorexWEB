@@ -16,6 +16,11 @@ const envSchema = z.object({
     .string()
     .regex(/^[a-z0-9][a-z0-9-]{0,40}$/)
     .default('xstore-'),
+  NODE_ENV: z.string().optional(),
+  PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
+  FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
+  /** Only the fake provider's redirect links use it; the worker creates no payments. */
+  SITE_URL: z.url({ protocol: /^https?$/ }).default('http://localhost:3000'),
 });
 
 export type WorkerS3Config = {
@@ -26,6 +31,13 @@ export type WorkerS3Config = {
   bucketPrefix: string;
 };
 
+export type WorkerPaymentConfig = {
+  provider: 'fake' | 'platega';
+  /** HMAC key of fake webhooks; set only with the fake provider. */
+  fakeWebhookSecret: string | null;
+  siteUrl: string;
+};
+
 export type WorkerConfig = {
   redisUrl: string;
   databaseUrl: string;
@@ -33,6 +45,7 @@ export type WorkerConfig = {
   concurrency: number;
   tmpDir: string;
   s3: WorkerS3Config;
+  payment: WorkerPaymentConfig;
 };
 
 export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
@@ -42,6 +55,13 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
     throw new Error(`Invalid environment variables: ${names.join(', ')}`);
   }
   const e = parsed.data;
+  const invalid = (name: string): Error => new Error(`Invalid environment variables: ${name}`);
+  if (e.PAYMENT_PROVIDER === 'fake' && e.NODE_ENV === 'production') {
+    throw invalid('PAYMENT_PROVIDER');
+  }
+  if (e.PAYMENT_PROVIDER === 'fake' && !e.FAKE_PAYMENT_WEBHOOK_SECRET) {
+    throw invalid('FAKE_PAYMENT_WEBHOOK_SECRET');
+  }
   return {
     redisUrl: e.REDIS_URL,
     databaseUrl: e.DATABASE_URL,
@@ -54,6 +74,12 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
       accessKey: e.S3_ACCESS_KEY,
       secretKey: e.S3_SECRET_KEY,
       bucketPrefix: e.S3_BUCKET_PREFIX,
+    },
+    payment: {
+      provider: e.PAYMENT_PROVIDER,
+      fakeWebhookSecret:
+        e.PAYMENT_PROVIDER === 'fake' ? (e.FAKE_PAYMENT_WEBHOOK_SECRET ?? null) : null,
+      siteUrl: new URL(e.SITE_URL).origin,
     },
   };
 }

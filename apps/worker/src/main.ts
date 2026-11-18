@@ -1,6 +1,8 @@
+import { QueueName } from '@xstore/shared';
 import { pino } from 'pino';
 import { loadWorkerConfig } from './config.js';
 import { closeWorkerDeps, createWorkerDeps } from './deps.js';
+import { createBillingWorker, scheduleBillingJobs } from './queues/billing.js';
 import { createIpaWorker } from './queues/ipa.js';
 import { createSystemWorker } from './queues/system.js';
 
@@ -11,6 +13,7 @@ const deps = createWorkerDeps(config, logger);
 const workers = [
   createSystemWorker(deps.connection, { concurrency: config.concurrency }),
   createIpaWorker(deps),
+  createBillingWorker(deps),
 ];
 for (const worker of workers) {
   worker.on('failed', (job, err) =>
@@ -42,6 +45,7 @@ process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
 
 await Promise.all(workers.map((worker) => worker.waitUntilReady()));
+await scheduleBillingJobs(deps.queues[QueueName.billing]);
 logger.info(
   { queues: workers.map((w) => w.name), concurrency: config.concurrency },
   'worker started',

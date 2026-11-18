@@ -8,6 +8,8 @@ const env = {
   S3_ENDPOINT: 'http://minio:9000',
   S3_ACCESS_KEY: 'key',
   S3_SECRET_KEY: 'secret',
+  PAYMENT_PROVIDER: 'fake',
+  FAKE_PAYMENT_WEBHOOK_SECRET: 'test-fake-webhook-secret',
 };
 
 describe('loadWorkerConfig', () => {
@@ -35,6 +37,11 @@ describe('loadWorkerConfig', () => {
         secretKey: 'secret',
         bucketPrefix: 'xstore-',
       },
+      payment: {
+        provider: 'fake',
+        fakeWebhookSecret: 'test-fake-webhook-secret',
+        siteUrl: 'http://localhost:3000',
+      },
     });
   });
 
@@ -46,5 +53,16 @@ describe('loadWorkerConfig', () => {
     const c = loadWorkerConfig({ ...env, TMP_DIR: '/data/tmp', S3_BUCKET_PREFIX: 'test-' });
     expect(c.tmpDir).toBe('/data/tmp');
     expect(c.s3.bucketPrefix).toBe('test-');
+  });
+
+  it('requires a payment provider and refuses the fake one in production', () => {
+    const { PAYMENT_PROVIDER: _p, ...rest } = env;
+    expect(() => loadWorkerConfig(rest)).toThrow(/PAYMENT_PROVIDER/);
+    expect(() => loadWorkerConfig({ ...env, NODE_ENV: 'production' })).toThrow(/PAYMENT_PROVIDER/);
+    expect(() => loadWorkerConfig({ ...env, FAKE_PAYMENT_WEBHOOK_SECRET: undefined })).toThrow(
+      /FAKE_PAYMENT_WEBHOOK_SECRET/,
+    );
+    const c = loadWorkerConfig({ ...env, PAYMENT_PROVIDER: 'platega', NODE_ENV: 'production' });
+    expect(c.payment).toMatchObject({ provider: 'platega', fakeWebhookSecret: null });
   });
 });
