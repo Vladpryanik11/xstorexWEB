@@ -253,9 +253,16 @@ button.soon:disabled {
  * While access is checked the guest body stays in place as a blank ice block (its text is
  * transparent and hidden from assistive tech), so nothing jumps when the answer arrives.
  */
+.blank {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Forced colours would repaint the hidden text; the block keeps its own palette there. */
 .blank,
 .blank li::before {
   color: transparent;
+  forced-color-adjust: none;
 }
 
 .blank li::before {

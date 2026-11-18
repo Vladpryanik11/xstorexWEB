@@ -182,6 +182,17 @@ describe('install sheet', () => {
     expect(screen.getByRole('dialog')).not.toHaveTextContent('Доступ активен');
   });
 
+  it('closing keeps the answer while the window animates away: no flash of the blank body', async () => {
+    api.getAccess.mockResolvedValue(ACTIVE);
+    render(<AppCardRow app={app} />);
+    fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
+    await screen.findByText('Скоро можно будет установить');
+    seen.kinds = [];
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(seen.kinds).not.toContain('none');
+  });
+
   it('if access cannot be checked, behaves as for a guest', async () => {
     api.getAccess.mockRejectedValue(new Error('offline'));
     const dialog = openOnIphone();

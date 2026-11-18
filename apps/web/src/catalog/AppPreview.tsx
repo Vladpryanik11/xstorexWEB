@@ -81,10 +81,15 @@ export function AppPreview({
   });
   const phone = device === 'ios';
 
+  // Forget the previous answer in the same update that opens the window: a reopened window never
+  // shows it for a frame, and a closing one keeps its content while it animates away.
+  const show = useCallback(() => {
+    setAccess(null);
+    setOpen(true);
+  }, []);
+
   const close = useCallback(() => {
     setOpen(false);
-    // Forget the answer here, not in an effect, so a reopened window never shows it for a frame.
-    setAccess(null);
     // A shared link leaves `?app=` behind; closing returns to the plain page.
     if (variant === 'none') window.history.replaceState(null, '', window.location.pathname);
   }, [variant]);
@@ -109,8 +114,8 @@ export function AppPreview({
   }, [open]);
   // After hydration, so the server and the first client render match.
   useEffect(() => {
-    if (initialOpen) setOpen(true);
-  }, [initialOpen]);
+    if (initialOpen) show();
+  }, [initialOpen, show]);
 
   useEffect(() => {
     if (open) {
@@ -189,7 +194,7 @@ export function AppPreview({
           className={styles[variant]}
           aria-haspopup="dialog"
           aria-expanded={open}
-          onClick={() => setOpen(true)}
+          onClick={show}
         >
           {icon}
           {variant === 'tile' ? <span className={styles.tileName}>{name}</span> : null}
