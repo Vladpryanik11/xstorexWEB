@@ -106,6 +106,31 @@ describe('accessState', () => {
       deviceReady: true,
     });
   });
+  it('доступ — непрерывная цепочка прав всех подписок покупателя', () => {
+    const state = accessState({
+      signedIn: true,
+      subscriptions: [
+        {
+          id: 'paid',
+          deviceReady: false,
+          rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')],
+        },
+        {
+          id: 'grant',
+          deviceReady: false,
+          rights: [right('2026-12-10T00:00:00Z', '2027-01-09T00:00:00Z')],
+        },
+      ],
+      pendingOrderId: null,
+      now,
+    });
+    expect(state).toEqual({
+      kind: 'active',
+      until: d('2027-01-09T00:00:00Z'),
+      subscriptionId: 'grant',
+      deviceReady: false,
+    });
+  });
   it('payment_pending без действующей подписки', () => {
     expect(accessState({ signedIn: true, subscriptions: [], pendingOrderId: 'o1', now })).toEqual({
       kind: 'payment_pending',
@@ -137,6 +162,14 @@ describe('pickSubscription', () => {
       { id: 's2', rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')] },
     ];
     expect(pickSubscription(subs, now)).toBe('s1');
+  });
+  it('подписка, чьи права кончаются позже всех (даже если начинаются в будущем)', () => {
+    // После присоединения: оплата гостя идёт сейчас, выданные дни — после неё в другой подписке.
+    const subs = [
+      { id: 'grant', rights: [right('2026-12-10T00:00:00Z', '2027-01-09T00:00:00Z')] },
+      { id: 'paid', rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')] },
+    ];
+    expect(pickSubscription(subs, now)).toBe('grant');
   });
   it('без действующих — с самым свежим правом', () => {
     const subs = [

@@ -9,6 +9,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/auth/password.js';
+import { SessionService } from '../src/auth/session.service.js';
 import { CheckoutService } from '../src/billing/checkout.service.js';
 import { loadConfig } from '../src/config/config.js';
 import { checkoutBody, cookieExpiry, postCheckout, SITE, seedPlan } from './helpers/billing.js';
@@ -436,4 +437,61 @@ it('checkout by a provisional buyer closed by a claim is refused and creates no 
   expect(err).toMatchObject({ code: 'UNAUTHORIZED', status: 401 });
   expect(await db.order.count()).toBe(ordersBefore);
   expect(await db.subscription.count()).toBe(subsBefore);
+});
+
+it("a grant to a guest buyer's email before the code login chains after the paid period", async () => {
+  const email = rcpt();
+  const { order, until: paidEnd } = await buyAndPay(email);
+  const guest = order.userId;
+
+  const staff = await db.user.create({
+    data: { email: `admin-${randomUUID()}@xstorex.ru`, role: 'admin' },
+  });
+  const { token } = await app.get(SessionService).create(staff.id, 'staff', {});
+  const grant = await request(app.getHttpServer())
+    .post('/api/v1/admin/billing/grants')
+    .set('Origin', SITE)
+    .set('Cookie', `xs_session=${token}`)
+    .send({ email, days: 30, note: 'Компенсация' });
+  expect(grant.status).toBe(201);
+  // The compensation starts where the guest's paid period ends, not now.
+  expect(grant.body.startsAt).toBe(paidEnd);
+  const grantEnd = new Date(new Date(paidEnd).getTime() + 30 * DAY_MS).toISOString();
+  expect(grant.body.expiresAt).toBe(grantEnd);
+  // The guest account itself is untouched until the claim.
+  expect(await db.user.findUniqueOrThrow({ where: { id: guest } })).toMatchObject({
+    isProvisional: true,
+    email: null,
+    blockedAt: null,
+  });
+  expect(await db.subscription.count({ where: { userId: guest } })).toBe(1);
+
+  const agent = await loginByCode(email);
+  const access = await agent.get('/api/v1/access');
+  expect(access.body.state).toMatchObject({ kind: 'active', until: grantEnd });
+  const rights = await db.entitlement.findMany({
+    where: { revokedAt: null },
+    orderBy: { startsAt: 'asc' },
+  });
+  expect(rights).toHaveLength(2);
+  expect(rights[1]?.startsAt).toEqual(rights[0]?.expiresAt);
+
+  // A renewal now chains after the whole chain, not inside it.
+  const renew = await postCheckout(agent, checkoutBody(randomUUID(), { email }));
+  expect(renew.status).toBe(200);
+  const renewal = await db.order.findUniqueOrThrow({ where: { id: renew.body.orderId } });
+  await fake.setStatus(renewal.providerPaymentId ?? '', 'paid', new Date());
+  const raw = Buffer.from(
+    JSON.stringify({ paymentId: renewal.providerPaymentId, eventId: `ev-${renewal.id}` }),
+  );
+  const hook = await request(app.getHttpServer())
+    .post('/api/v1/billing/webhooks/fake')
+    .set('content-type', 'application/json')
+    .set('x-fake-signature', fakeWebhookSignature(TEST_WEBHOOK_SECRET, raw))
+    .send(raw.toString('utf8'));
+  expect(hook.status).toBe(204);
+  const renewed = await db.entitlement.findUniqueOrThrow({ where: { orderId: renewal.id } });
+  expect(renewed.startsAt.toISOString()).toBe(grantEnd);
+  const after = await agent.get('/api/v1/access');
+  expect(after.body.state.until).toBe(renewed.expiresAt.toISOString());
 });

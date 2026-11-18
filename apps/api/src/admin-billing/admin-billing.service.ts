@@ -283,7 +283,7 @@ export class AdminBillingService {
   /**
    * Gives `days` of access to the verified buyer with `email`, created if there is none. It goes
    * to the subscription `/access` shows (`buyerSubscription`) and starts at `max(now, end of its
-   * live rights)`, as a renewal would.
+   * live rights, end of the live rights of guests who paid with this email)`, as a renewal would.
    * Provisional buyers who paid with this email are left alone: their purchases merge into the
    * verified buyer at their next code login (`claimProvisional`).
    */
@@ -314,9 +314,33 @@ export class AdminBillingService {
       const subscription = await buyerSubscription(tx, user.id);
 
       // 3. The applyPayment lock: a payment and a grant on one subscription never interleave.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${subscription.id}))`;
+      // Guests who paid with this email and have not signed in yet are claimed into this buyer at
+      // their code login: the grant chains after their periods too, or it would overlap them. The
+      // email lock keeps the claim out; their subscription locks keep their payments out. Their
+      // accounts are only read.
+      const guests = await tx.subscription.findMany({
+        where: {
+          user: {
+            isProvisional: true,
+            email: null,
+            checkoutEmail: input.email,
+            role: 'user',
+            blockedAt: null,
+          },
+          orders: { some: { status: 'paid' } },
+        },
+        orderBy: { id: 'asc' },
+        select: { id: true },
+      });
+      const locked = [
+        subscription.id,
+        ...guests.map((g) => g.id).filter((id) => id !== subscription.id),
+      ];
+      for (const id of locked) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+      }
       const rights = await tx.entitlement.findMany({
-        where: { subscriptionId: subscription.id },
+        where: { subscriptionId: { in: locked } },
         select: { startsAt: true, expiresAt: true, revokedAt: true },
       });
       const window = nextWindow(rights, input.days, new Date());

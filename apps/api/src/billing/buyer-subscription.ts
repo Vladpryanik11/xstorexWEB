@@ -25,7 +25,7 @@ export async function buyerSubscription(tx: Tx, userId: string, now = new Date()
   return tx.subscription.create({ data: { userId }, select: { id: true } });
 }
 
-/** The live access end over all of a buyer's subscriptions: what `/access` shows. */
+/** The buyer's access end, the same as `/access`: the chain of live rights of all subscriptions. */
 export async function buyerAccessUntil(
   db: Pick<Prisma.TransactionClient, 'entitlement'>,
   userId: string,
@@ -33,16 +33,7 @@ export async function buyerAccessUntil(
 ): Promise<Date | null> {
   const rights = await db.entitlement.findMany({
     where: { subscription: { userId } },
-    select: { subscriptionId: true, startsAt: true, expiresAt: true, revokedAt: true },
+    select: { startsAt: true, expiresAt: true, revokedAt: true },
   });
-  const bySubscription = new Map<string, typeof rights>();
-  for (const r of rights) {
-    bySubscription.set(r.subscriptionId, [...(bySubscription.get(r.subscriptionId) ?? []), r]);
-  }
-  let best: Date | null = null;
-  for (const list of bySubscription.values()) {
-    const until = accessUntil(list, now);
-    if (until && (!best || until > best)) best = until;
-  }
-  return best;
+  return accessUntil(rights, now);
 }
