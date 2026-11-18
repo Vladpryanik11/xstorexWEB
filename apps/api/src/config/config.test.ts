@@ -45,12 +45,18 @@ it('names a bad variable without echoing its value', () => {
   );
 });
 
+const prodMail = {
+  SMTP_URL: 'smtps://user:pw@smtp.example.ru:465',
+  MAIL_FROM: 'Xstore <noreply@xstorex.ru>',
+};
+
 it('fake provider refused in production', () => {
   expect(() => loadConfig({ ...valid, NODE_ENV: 'production' })).toThrow(
     /^Invalid environment variables: PAYMENT_PROVIDER$/,
   );
   expect(
-    loadConfig({ ...valid, NODE_ENV: 'production', PAYMENT_PROVIDER: 'platega' }).payment,
+    loadConfig({ ...valid, ...prodMail, NODE_ENV: 'production', PAYMENT_PROVIDER: 'platega' })
+      .payment,
   ).toEqual({ provider: 'platega', fakeWebhookSecret: null });
 });
 
@@ -64,4 +70,29 @@ it('requires a payment provider and the fake webhook secret', () => {
 it('dev pages only with XSTORE_DEV_PAGES=1', () => {
   expect(loadConfig({ ...valid, XSTORE_DEV_PAGES: '1' }).devPages).toBe(true);
   expect(loadConfig({ ...valid, XSTORE_DEV_PAGES: '0' }).devPages).toBe(false);
+});
+
+it('mail defaults to the local Mailpit outside production', () => {
+  expect(loadConfig(valid).mail).toEqual({
+    smtpUrl: 'smtp://127.0.0.1:1025',
+    from: 'Xstore <noreply@xstorex.ru>',
+  });
+  expect(loadConfig({ ...valid, ...prodMail }).mail).toEqual({
+    smtpUrl: prodMail.SMTP_URL,
+    from: prodMail.MAIL_FROM,
+  });
+});
+
+it('production requires SMTP_URL and MAIL_FROM', () => {
+  const prod = { ...valid, NODE_ENV: 'production', PAYMENT_PROVIDER: 'platega' };
+  expect(() => loadConfig(prod)).toThrow(/^Invalid environment variables: SMTP_URL, MAIL_FROM$/);
+  expect(() => loadConfig({ ...prod, SMTP_URL: prodMail.SMTP_URL })).toThrow(
+    /^Invalid environment variables: MAIL_FROM$/,
+  );
+});
+
+it('refuses a non-SMTP mail URL without echoing it', () => {
+  expect(() => loadConfig({ ...valid, SMTP_URL: 'http://user:hunter2@x' })).toThrow(
+    /^Invalid environment variables: SMTP_URL$/,
+  );
 });

@@ -25,7 +25,17 @@ const envSchema = z.object({
   PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
   FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
   XSTORE_DEV_PAGES: z.string().optional(),
+  /** smtp(s)://user:password@host:port; may hold a password, never logged. */
+  SMTP_URL: z
+    .string()
+    .regex(/^smtps?:\/\/[^\s]+$/)
+    .optional(),
+  MAIL_FROM: z.string().min(3).optional(),
 });
+
+/** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
+const DEV_SMTP_URL = 'smtp://127.0.0.1:1025';
+const DEV_MAIL_FROM = 'Xstore <noreply@xstorex.ru>';
 
 export type S3Config = {
   /** Server-side endpoint (MinIO inside the network). */
@@ -45,6 +55,12 @@ export type PaymentConfig = {
   fakeWebhookSecret: string | null;
 };
 
+export type MailConfig = {
+  /** Contains the SMTP password when there is one: never log it. */
+  smtpUrl: string;
+  from: string;
+};
+
 export type AppConfig = {
   databaseUrl: string;
   redisUrl: string;
@@ -53,6 +69,7 @@ export type AppConfig = {
   siteUrl: string;
   s3: S3Config;
   payment: PaymentConfig;
+  mail: MailConfig;
   /** `XSTORE_DEV_PAGES=1`: development-only routes such as the fake payment buttons. */
   devPages: boolean;
 };
@@ -71,6 +88,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
   }
   if (e.PAYMENT_PROVIDER === 'fake' && !e.FAKE_PAYMENT_WEBHOOK_SECRET) {
     throw invalid(['FAKE_PAYMENT_WEBHOOK_SECRET']);
+  }
+  if (e.NODE_ENV === 'production') {
+    const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
+    if (missing.length > 0) throw invalid([...missing]);
   }
   return {
     databaseUrl: e.DATABASE_URL,
@@ -91,6 +112,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
       fakeWebhookSecret:
         e.PAYMENT_PROVIDER === 'fake' ? (e.FAKE_PAYMENT_WEBHOOK_SECRET ?? null) : null,
     },
+    mail: { smtpUrl: e.SMTP_URL ?? DEV_SMTP_URL, from: e.MAIL_FROM ?? DEV_MAIL_FROM },
     devPages: e.XSTORE_DEV_PAGES === '1',
   };
 }

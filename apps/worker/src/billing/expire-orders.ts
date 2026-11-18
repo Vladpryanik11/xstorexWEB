@@ -1,5 +1,6 @@
 import { applyPayment } from '@xstore/billing';
 import type { WorkerDeps } from '../deps.js';
+import { notifyPaid } from './notify.js';
 
 export const ORDER_TTL_MS = 24 * 60 * 60 * 1000;
 export const BATCH = 200;
@@ -60,7 +61,10 @@ export async function expireOrders(
           // Reuse the payment just read: one provider call per order.
           const known = { ...payments, getPayment: async () => payment };
           const res = await applyPayment(db, known, paymentId, { kind: 'reconcile' });
-          if (res.result === 'granted') outcome.granted += 1;
+          if (res.result === 'granted') {
+            outcome.granted += 1;
+            if (res.orderId) await notifyPaid(deps, res.orderId);
+          }
         } else if (payment.status === 'failed') {
           const { count } = await db.order.updateMany({
             where: { id: order.id, status: { in: ['created', 'pending'] }, paidAt: null },

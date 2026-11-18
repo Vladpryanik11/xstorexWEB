@@ -27,6 +27,9 @@ export const e2eApiEnv = (env: NodeJS.ProcessEnv = process.env): Record<string, 
     // E2E pays through the development-only fake provider; the key signs only fake webhooks.
     PAYMENT_PROVIDER: 'fake',
     FAKE_PAYMENT_WEBHOOK_SECRET: 'e2e-fake-webhook-secret',
+    // Letters go to the test Mailpit; a missing one only logs failed sends.
+    SMTP_URL: env.SMTP_URL_TEST ?? 'smtp://127.0.0.1:1025',
+    MAIL_FROM: 'Xstore <noreply@xstorex.test>',
   };
 };
 

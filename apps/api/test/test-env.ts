@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { testSmtpUrl } from '@xstore/mail/testing';
 
 const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
 if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
@@ -25,6 +26,8 @@ export function testEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     S3_BUCKET_PREFIX: env.S3_BUCKET_PREFIX_TEST,
     PAYMENT_PROVIDER: 'fake',
     FAKE_PAYMENT_WEBHOOK_SECRET: TEST_WEBHOOK_SECRET,
+    SMTP_URL: testSmtpUrl(),
+    MAIL_FROM: 'Xstore <noreply@xstorex.test>',
     ...overrides,
   };
 }

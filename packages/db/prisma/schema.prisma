@@ -422,8 +422,10 @@ model NotificationLog {
   template  String
   to        String
   subject   String
-  /// sent | failed
+  /// sending | sent | failed. `sending` is the claim taken before the SMTP call.
   status    String
   error     String?
+  /// Set for letters sent at most once (`payment_paid:<orderId>`); null for repeatable ones.
+  dedupeKey String?  @unique
   createdAt DateTime @default(now())
 }

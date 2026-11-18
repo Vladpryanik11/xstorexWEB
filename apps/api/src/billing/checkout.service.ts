@@ -23,6 +23,7 @@ import type { AuthContext } from '../common/http.js';
 import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
 import { PrismaService } from '../infra/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { PAYMENT_PROVIDER } from './provider.provider.js';
 
 /** An unpaid order lives 24 hours; while it does, no second payment is created. */
@@ -54,6 +55,7 @@ export class CheckoutService {
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     private readonly prisma: PrismaService,
     private readonly sessions: SessionService,
+    private readonly mail: MailService,
   ) {
     this.site = new URL(config.siteUrl).origin;
   }
@@ -287,12 +289,24 @@ export class CheckoutService {
     return result;
   }
 
+  /**
+   * Follow-ups of a grant. The payment is already applied, so their errors are logged and never
+   * fail the webhook: a retry would find the order paid and not run them again.
+   */
   private async afterGranted(orderId: string): Promise<void> {
-    const order = await this.prisma.client.order.findUniqueOrThrow({
-      where: { id: orderId },
-      select: { userId: true },
-    });
-    await this.sessions.extendUserSessions(order.userId);
-    // Task 6 hooks the «Оплата прошла» email in here (once per granted order).
+    try {
+      const order = await this.prisma.client.order.findUniqueOrThrow({
+        where: { id: orderId },
+        select: { userId: true },
+      });
+      await this.sessions.extendUserSessions(order.userId);
+    } catch (err) {
+      this.logger.error({ orderId, err: (err as Error).message }, 'session extension failed');
+    }
+    try {
+      await this.mail.paymentPaid(orderId);
+    } catch (err) {
+      this.logger.error({ orderId, err: (err as Error).message }, 'payment_paid mail failed');
+    }
   }
 }

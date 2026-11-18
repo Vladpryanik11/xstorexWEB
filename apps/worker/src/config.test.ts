@@ -12,6 +12,11 @@ const env = {
   FAKE_PAYMENT_WEBHOOK_SECRET: 'test-fake-webhook-secret',
 };
 
+const prodMail = {
+  SMTP_URL: 'smtps://user:pw@smtp.example.ru:465',
+  MAIL_FROM: 'Xstore <noreply@xstorex.ru>',
+};
+
 describe('loadWorkerConfig', () => {
   it('requires REDIS_URL', () => {
     expect(() => loadWorkerConfig({})).toThrow(/REDIS_URL/);
@@ -42,6 +47,7 @@ describe('loadWorkerConfig', () => {
         fakeWebhookSecret: 'test-fake-webhook-secret',
         siteUrl: 'http://localhost:3000',
       },
+      mail: { smtpUrl: 'smtp://127.0.0.1:1025', from: 'Xstore <noreply@xstorex.ru>' },
     });
   });
 
@@ -62,7 +68,26 @@ describe('loadWorkerConfig', () => {
     expect(() => loadWorkerConfig({ ...env, FAKE_PAYMENT_WEBHOOK_SECRET: undefined })).toThrow(
       /FAKE_PAYMENT_WEBHOOK_SECRET/,
     );
-    const c = loadWorkerConfig({ ...env, PAYMENT_PROVIDER: 'platega', NODE_ENV: 'production' });
+    const c = loadWorkerConfig({
+      ...env,
+      ...prodMail,
+      PAYMENT_PROVIDER: 'platega',
+      NODE_ENV: 'production',
+    });
     expect(c.payment).toMatchObject({ provider: 'platega', fakeWebhookSecret: null });
+  });
+
+  it('takes the mail settings and requires them in production', () => {
+    expect(loadWorkerConfig({ ...env, ...prodMail }).mail).toEqual({
+      smtpUrl: prodMail.SMTP_URL,
+      from: prodMail.MAIL_FROM,
+    });
+    const prod = { ...env, PAYMENT_PROVIDER: 'platega', NODE_ENV: 'production' };
+    expect(() => loadWorkerConfig(prod)).toThrow(
+      /^Invalid environment variables: SMTP_URL, MAIL_FROM$/,
+    );
+    expect(() => loadWorkerConfig({ ...env, SMTP_URL: 'http://u:hunter2@x' })).toThrow(
+      /^Invalid environment variables: SMTP_URL$/,
+    );
   });
 });

@@ -19,9 +19,19 @@ const envSchema = z.object({
   NODE_ENV: z.string().optional(),
   PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
   FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
-  /** Only the fake provider's redirect links use it; the worker creates no payments. */
+  /** The site address in letters and the fake provider's redirect links. */
   SITE_URL: z.url({ protocol: /^https?$/ }).default('http://localhost:3000'),
+  /** smtp(s)://user:password@host:port; may hold a password, never logged. */
+  SMTP_URL: z
+    .string()
+    .regex(/^smtps?:\/\/[^\s]+$/)
+    .optional(),
+  MAIL_FROM: z.string().min(3).optional(),
 });
+
+/** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
+const DEV_SMTP_URL = 'smtp://127.0.0.1:1025';
+const DEV_MAIL_FROM = 'Xstore <noreply@xstorex.ru>';
 
 export type WorkerS3Config = {
   endpoint: string;
@@ -38,6 +48,12 @@ export type WorkerPaymentConfig = {
   siteUrl: string;
 };
 
+export type WorkerMailConfig = {
+  /** Contains the SMTP password when there is one: never log it. */
+  smtpUrl: string;
+  from: string;
+};
+
 export type WorkerConfig = {
   redisUrl: string;
   databaseUrl: string;
@@ -46,6 +62,7 @@ export type WorkerConfig = {
   tmpDir: string;
   s3: WorkerS3Config;
   payment: WorkerPaymentConfig;
+  mail: WorkerMailConfig;
 };
 
 export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
@@ -61,6 +78,10 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
   }
   if (e.PAYMENT_PROVIDER === 'fake' && !e.FAKE_PAYMENT_WEBHOOK_SECRET) {
     throw invalid('FAKE_PAYMENT_WEBHOOK_SECRET');
+  }
+  if (e.NODE_ENV === 'production') {
+    const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
+    if (missing.length > 0) throw invalid(missing.join(', '));
   }
   return {
     redisUrl: e.REDIS_URL,
@@ -81,5 +102,6 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
         e.PAYMENT_PROVIDER === 'fake' ? (e.FAKE_PAYMENT_WEBHOOK_SECRET ?? null) : null,
       siteUrl: new URL(e.SITE_URL).origin,
     },
+    mail: { smtpUrl: e.SMTP_URL ?? DEV_SMTP_URL, from: e.MAIL_FROM ?? DEV_MAIL_FROM },
   };
 }

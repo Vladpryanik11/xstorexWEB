@@ -1,7 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createFakeProvider, type FakeProvider } from '@xstore/billing';
+import { applyPayment, createFakeProvider, type FakeProvider } from '@xstore/billing';
 import { resetDatabase } from '@xstore/db/testing';
+import { sendPaymentPaid } from '@xstore/mail';
+import { mailpitMessages, testSmtpUrl, waitForMail } from '@xstore/mail/testing';
 import { QueueName } from '@xstore/shared';
 import { pino } from 'pino';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
@@ -18,6 +21,8 @@ const SECRET = 'test-fake-webhook-secret';
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 const dbUrl = process.env.DATABASE_URL_TEST ?? '';
+/** Mailpit is shared and never cleared: recipients are unique per run. */
+const RUN = randomUUID().slice(0, 8);
 
 let deps: WorkerDeps;
 let fake: FakeProvider;
@@ -37,6 +42,8 @@ function env(overrides: Record<string, string> = {}) {
     LOG_LEVEL: 'error',
     PAYMENT_PROVIDER: 'fake',
     FAKE_PAYMENT_WEBHOOK_SECRET: SECRET,
+    SMTP_URL: testSmtpUrl(),
+    MAIL_FROM: 'Xstore <noreply@xstorex.test>',
     ...overrides,
   });
 }
@@ -76,7 +83,7 @@ async function makeOrder(
 ) {
   const n = ++seq;
   const user = await deps.db.user.create({
-    data: { isProvisional: true, checkoutEmail: `b${n}@example.ru` },
+    data: { isProvisional: true, checkoutEmail: `b${n}-${RUN}@example.ru` },
   });
   const sub = await deps.db.subscription.create({ data: { userId: user.id } });
   const createdAt = new Date(Date.now() - ageMs);
@@ -97,7 +104,7 @@ async function makeOrder(
       subscriptionId: sub.id,
       planId,
       planSnapshot: { code: 'month', title: 'Подписка на месяц', durationDays: 30, priceRub: 1 },
-      checkoutEmail: `b${n}@example.ru`,
+      checkoutEmail: `b${n}-${RUN}@example.ru`,
       checkoutKey: `key-${n}`,
       amountRub: 1,
       status: opts.status ?? 'pending',
@@ -180,7 +187,6 @@ it('reconcile leaves fresh and still-pending orders alone', async () => {
 it('reconcile and webhook together create one entitlement', async () => {
   const { order, paymentId } = await makeOrder(11 * MIN);
   await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 2 * MIN));
-  const { applyPayment } = await import('@xstore/billing');
 
   await Promise.all([
     reconcileOrders(deps),
@@ -190,6 +196,69 @@ it('reconcile and webhook together create one entitlement', async () => {
 
   expect(await deps.db.entitlement.count({ where: { orderId: order.id } })).toBe(1);
   expect((await deps.db.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('paid');
+});
+
+it('reconcile grant sends payment_paid mail', async () => {
+  const { order, paymentId } = await makeOrder(11 * MIN);
+  await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 2 * MIN));
+
+  await reconcileOrders(deps);
+
+  const [mail] = await waitForMail(order.checkoutEmail);
+  expect(mail?.subject).toMatch(/^Оплата прошла, доступ до \d{1,2} [а-я]+ \d{4}$/);
+  expect(
+    await deps.db.notificationLog.findMany({ where: { to: order.checkoutEmail } }),
+  ).toMatchObject([
+    { template: 'payment_paid', status: 'sent', dedupeKey: `payment_paid:${order.id}` },
+  ]);
+});
+
+it('expireOrders grant sends payment_paid mail', async () => {
+  const { order, paymentId } = await makeOrder(25 * HOUR);
+  await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 3 * HOUR));
+
+  await expireOrders(deps);
+
+  expect(await waitForMail(order.checkoutEmail)).toHaveLength(1);
+});
+
+it('webhook and reconcile together send one payment_paid mail', async () => {
+  const { order, paymentId } = await makeOrder(11 * MIN);
+  await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 2 * MIN));
+  // The API webhook path: apply, then the same `sendPaymentPaid` on a grant.
+  const webhook = async () => {
+    const res = await applyPayment(deps.db, fake, paymentId, { kind: 'webhook', eventKey: 'ev' });
+    if (res.result === 'granted') await sendPaymentPaid(deps.mail, order.id);
+  };
+
+  await Promise.all([reconcileOrders(deps), webhook(), reconcileOrders(deps)]);
+  // Even a second grant notice for the same order sends nothing.
+  expect(await sendPaymentPaid(deps.mail, order.id)).toBe('duplicate');
+
+  await waitForMail(order.checkoutEmail);
+  await new Promise((r) => setTimeout(r, 300));
+  expect(await mailpitMessages(order.checkoutEmail)).toHaveLength(1);
+  expect(await deps.db.notificationLog.count({ where: { to: order.checkoutEmail } })).toBe(1);
+});
+
+it('a failed mail does not fail reconcile', async () => {
+  const down = createWorkerDeps(env({ SMTP_URL: 'smtp://127.0.0.1:1' }), pino({ level: 'silent' }));
+  try {
+    const { order, paymentId } = await makeOrder(11 * MIN);
+    await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 2 * MIN));
+
+    const outcome = await reconcileOrders(down);
+
+    expect(outcome).toMatchObject({ granted: 1, errors: 0 });
+    expect((await deps.db.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe(
+      'paid',
+    );
+    expect(
+      await deps.db.notificationLog.findMany({ where: { to: order.checkoutEmail } }),
+    ).toMatchObject([{ status: 'failed' }]);
+  } finally {
+    await closeWorkerDeps(down);
+  }
 });
 
 it('order older than 24h with provider failed becomes expired', async () => {

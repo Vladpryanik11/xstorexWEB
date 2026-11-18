@@ -21,12 +21,12 @@
 ```bash
 cp .env.example .env
 pnpm install
-pnpm infra:up      # Postgres, Redis, MinIO на 127.0.0.1
+pnpm infra:up      # Postgres, Redis, MinIO, Mailpit на 127.0.0.1
 pnpm db:migrate    # миграции Prisma в базу xstore
 pnpm dev           # web, api и worker
 ```
 
-Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль). Остановить хранилища: `pnpm infra:down`.
+Порты: web 3000, api 3001, Postgres 5432, Redis 6379, MinIO 9000 (S3) и 9001 (консоль), Mailpit 1025 (SMTP) и 8025 (письма в браузере). Остановить хранилища: `pnpm infra:down`.
 
 ## Команды
 
@@ -38,7 +38,7 @@ pnpm dev           # web, api и worker
 | `pnpm format` | Biome: автоформатирование |
 | `pnpm typecheck` | проверка типов TypeScript |
 | `pnpm test` | модульные тесты (Vitest) |
-| `pnpm test:int` | интеграционные тесты, нужны Postgres, Redis и MinIO (`pnpm infra:up`) |
+| `pnpm test:int` | интеграционные тесты, нужны Postgres, Redis, MinIO и Mailpit (`pnpm infra:up`) |
 | `pnpm test:e2e` | Playwright (`mobile-webkit` и `desktop-chromium`), собирает и запускает API, web (3100) и воркер |
 | `pnpm infra:up` / `pnpm infra:down` | хранилища для разработки |
 | `pnpm db:migrate` | миграции базы разработки |
@@ -80,6 +80,10 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 ### Оплата в разработке
 
 `PAYMENT_PROVIDER=fake` (по умолчанию в `.env.example`) хранит платежи в Redis и подписывает вебхуки ключом `FAKE_PAYMENT_WEBHOOK_SECRET`. При `NODE_ENV=production` API с `fake` не запускается; production compose задаёт `PAYMENT_PROVIDER=platega`. С `XSTORE_DEV_PAGES=1` API открывает `POST /api/v1/billing/dev/fake-payments/<id>/pay` и `/fail`: они меняют статус фейкового платежа и проводят его тем же путём, что и вебхук.
+
+### Письма
+
+Пакет `@xstore/mail` (только API и воркер) отправляет письма «Оплата прошла, доступ до <дата>» и «Код для входа» по SMTP: адрес `SMTP_URL`, отправитель `MAIL_FROM`. В разработке письма ловит Mailpit из `pnpm infra:up`: http://127.0.0.1:8025. Каждое письмо пишется в `NotificationLog` (тема, адрес, статус, ошибка; текст письма и код входа не хранятся). «Оплата прошла» уходит не больше одного раза на заказ (`dedupeKey`), каким бы путём ни прошла оплата; неудачная отправка остаётся со статусом `failed` и сама не повторяется. Ошибка почты не роняет вебхук и задания сверки. Интеграционные тесты читают письма через API Mailpit (`MAILPIT_API_URL`, `SMTP_URL_TEST`) и не очищают его: каждый тест пишет на свой адрес. В production `SMTP_URL` и `MAIL_FROM` обязательны.
 
 ## Production-стек
 

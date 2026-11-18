@@ -1,5 +1,6 @@
 import { applyPayment } from '@xstore/billing';
 import type { WorkerDeps } from '../deps.js';
+import { notifyPaid } from './notify.js';
 
 export const RECONCILE_AFTER_MS = 10 * 60 * 1000;
 export const BATCH = 200;
@@ -45,7 +46,10 @@ export async function reconcileOrders(
         const res = await applyPayment(db, payments, order.providerPaymentId, {
           kind: 'reconcile',
         });
-        if (res.result === 'granted') outcome.granted += 1;
+        if (res.result === 'granted') {
+          outcome.granted += 1;
+          if (res.orderId) await notifyPaid(deps, res.orderId);
+        }
         if (res.result === 'mismatch') {
           logger.warn({ orderId: order.id }, 'billing:reconcile payment amount mismatch');
         }

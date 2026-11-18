@@ -1,5 +1,6 @@
 import type { PaymentProvider } from '@xstore/billing';
 import { createPrismaClient, type PrismaClient } from '@xstore/db';
+import { createSmtpMailer, type MailDeps } from '@xstore/mail';
 import { defaultJobOptions, QueueName } from '@xstore/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
@@ -13,6 +14,8 @@ export type WorkerDeps = {
   s3: WorkerS3;
   /** Null while the Platega adapter is not wired in: billing jobs then do nothing. */
   payments: PaymentProvider | null;
+  /** Letters: SMTP mailer, the same database and the site address. */
+  mail: MailDeps;
   /** Producers, for jobs that enqueue follow-up jobs. */
   queues: Record<QueueName, Queue>;
   /** Shared by workers and producers; BullMQ needs `maxRetriesPerRequest: null` on it. */
@@ -31,10 +34,17 @@ export function createWorkerDeps(config: WorkerConfig, logger: Logger): WorkerDe
       return [name, queue] as const;
     }),
   ) as Record<QueueName, Queue>;
+  const db = createPrismaClient(config.databaseUrl);
   return {
-    db: createPrismaClient(config.databaseUrl),
+    db,
     s3: createWorkerS3(config.s3),
     payments: createWorkerPaymentProvider(config.payment, connection),
+    mail: {
+      db,
+      mailer: createSmtpMailer(config.mail),
+      siteUrl: config.payment.siteUrl,
+      logger,
+    },
     queues,
     connection,
     logger,
@@ -45,6 +55,7 @@ export function createWorkerDeps(config: WorkerConfig, logger: Logger): WorkerDe
 /** Closes what `createWorkerDeps` opened; close the workers first. */
 export async function closeWorkerDeps(deps: WorkerDeps): Promise<void> {
   await Promise.all(Object.values(deps.queues).map((q) => q.close()));
+  deps.mail.mailer.close();
   await deps.db.$disconnect();
   deps.s3.destroy();
   await deps.connection.quit();
