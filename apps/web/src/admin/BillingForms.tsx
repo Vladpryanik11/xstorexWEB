@@ -35,8 +35,13 @@ export function RevokedPeriod({ children }: { children: ReactNode }) {
   );
 }
 
-/** «Тариф»: title, price in whole rubles, on sale or not. Paid orders keep their own price. */
+/**
+ * «Тариф»: title, price in whole rubles, on sale or not. Paid orders keep their own price. Without
+ * a plan (`id` is null) the first save creates it; it needs a price and stays off sale until turned on.
+ */
 export function PlanForm({ initial }: { initial: AdminPlan }) {
+  const router = useRouter();
+  const draft = initial.id === null;
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>(null);
 
@@ -51,7 +56,8 @@ export function PlanForm({ initial }: { initial: AdminPlan }) {
         priceRub: Number(form.get('priceRub')),
         active: form.get('active') === 'on',
       });
-      setOutcome({ ok: true, text: 'Сохранено' });
+      setOutcome({ ok: true, text: draft ? 'Тариф создан' : 'Сохранено' });
+      router.refresh();
     } catch (err) {
       setOutcome({ ok: false, text: errorText(err) });
     } finally {
@@ -74,10 +80,16 @@ export function PlanForm({ initial }: { initial: AdminPlan }) {
             max="1000000"
             step="1"
             required
-            defaultValue={initial.priceRub}
+            defaultValue={initial.priceRub ?? undefined}
           />
         </FormField>
       </div>
+      {draft && (
+        <p className={s.muted}>
+          Тариф ещё не создан. Укажите цену и сохраните — продажа начнётся, когда вы включите её
+          переключателем.
+        </p>
+      )}
       <p className={s.muted}>
         Срок — {initial.durationDays} дней. Новая цена действует для новых оплат, оплаченные заказы
         не меняются.
@@ -87,7 +99,7 @@ export function PlanForm({ initial }: { initial: AdminPlan }) {
       </Switch>
       <div>
         <button type="submit" disabled={busy}>
-          Сохранить тариф
+          {draft ? 'Создать тариф' : 'Сохранить тариф'}
         </button>
       </div>
       <Result value={outcome} />

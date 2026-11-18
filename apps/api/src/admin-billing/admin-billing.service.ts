@@ -7,6 +7,7 @@ import {
   type AdminSubscription,
   type AdminSubscriptionsQuery,
   accessUntil,
+  DEFAULT_PLAN,
   ErrorCode,
   type GrantRequest,
   type GrantResult,
@@ -121,20 +122,53 @@ export class AdminBillingService {
 
   /** The plan the site sells: the same ordering as checkout, active or not. */
   private async currentPlan() {
-    const plan = await this.db.plan.findFirst({ orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }] });
-    if (!plan) throw new DomainError(ErrorCode.PLAN_UNAVAILABLE, 404);
-    return plan;
+    return this.db.plan.findFirst({ orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }] });
   }
 
+  /** The plan, or a draft of the single `month` plan when none was created yet. */
   async plan(): Promise<AdminPlan> {
-    const { id, code, title, durationDays, priceRub, active } = await this.currentPlan();
+    const plan = await this.currentPlan();
+    if (!plan) return { id: null, ...DEFAULT_PLAN, priceRub: null, active: false };
+    const { id, code, title, durationDays, priceRub, active } = plan;
     return { id, code, title, durationDays, priceRub, active };
   }
 
-  /** Paid orders keep their `planSnapshot` and `amountRub`; only new checkouts see the change. */
+  /**
+   * Paid orders keep their `planSnapshot` and `amountRub`; only new checkouts see the change.
+   * Without a plan the first save creates the single `month` plan: it needs a price and stays off
+   * sale unless `active` is given. Concurrent first saves create one plan.
+   */
   async updatePlan(patch: UpdatePlan, actor: Actor): Promise<AdminPlan> {
-    const { id } = await this.currentPlan();
     await this.db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plan:create'))`;
+      const current = await tx.plan.findFirst({
+        orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }],
+        select: { id: true },
+      });
+      if (!current) {
+        if (patch.priceRub === undefined) {
+          throw new DomainError(ErrorCode.PLAN_PRICE_REQUIRED, 400);
+        }
+        const data = {
+          ...DEFAULT_PLAN,
+          title: patch.title ?? DEFAULT_PLAN.title,
+          priceRub: patch.priceRub,
+          active: patch.active ?? false,
+        };
+        const created = await tx.plan.create({ data });
+        await tx.auditLog.create({
+          data: {
+            actorId: actor.userId,
+            action: 'plan.create',
+            entity: 'plan',
+            entityId: created.id,
+            diff: data,
+            ip: actor.ip,
+          },
+        });
+        return;
+      }
+      const { id } = current;
       // Row lock: concurrent edits serialize, so each audit `from` is the value it replaced.
       await tx.$queryRaw`SELECT id FROM "Plan" WHERE id = ${id} FOR UPDATE`;
       const plan = await tx.plan.findUniqueOrThrow({ where: { id } });

@@ -3,14 +3,25 @@ import { emailSchema } from './auth.js';
 import { type OrderStatus, orderStatusSchema } from './billing.js';
 
 /** `GET/PATCH /admin/billing/plan`: the one plan the site sells. */
+/**
+ * The plan the site sells. Before the admin first saves it, `id` and `priceRub` are `null`: a
+ * draft of the single `month` plan, not yet in the database (a plan never exists without a price).
+ */
 export type AdminPlan = {
-  id: string;
+  id: string | null;
   code: string;
   title: string;
   durationDays: number;
-  priceRub: number;
+  priceRub: number | null;
   active: boolean;
 };
+
+/** The single plan of Н1, created by the admin's first save (never seeded in production). */
+export const DEFAULT_PLAN = {
+  code: 'month',
+  title: 'Подписка на месяц',
+  durationDays: 30,
+} as const;
 
 export const updatePlanSchema = z
   .strictObject({

@@ -56,6 +56,33 @@ describe('PlanForm', () => {
   });
 });
 
+describe('PlanForm without a plan', () => {
+  const draft = { ...plan, id: null, priceRub: null, active: false };
+
+  it('offers to create the plan with an empty price, off sale', () => {
+    render(<PlanForm initial={draft} />);
+    expect(screen.getByText(/Тариф ещё не создан/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Цена, ₽')).toHaveValue(null);
+    expect(screen.getByLabelText('Цена, ₽')).toBeRequired();
+    expect(screen.getByRole('switch', { name: 'Продаётся на сайте' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Создать тариф' })).toBeInTheDocument();
+  });
+
+  it('creates the plan and refreshes the page', async () => {
+    fetchMock.mockResolvedValue(json({ ...plan, id: 'p1', priceRub: 390, active: false }));
+    render(<PlanForm initial={draft} />);
+    fireEvent.change(screen.getByLabelText('Цена, ₽'), { target: { value: '390' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тариф' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Тариф создан');
+    expect(sent()).toEqual({
+      url: '/api/v1/admin/billing/plan',
+      method: 'PATCH',
+      body: { title: 'Подписка на месяц', priceRub: 390, active: false },
+    });
+    expect(refresh).toHaveBeenCalled();
+  });
+});
+
 describe('GrantForm', () => {
   it('grants days to an email and names the new end date', async () => {
     fetchMock.mockResolvedValue(

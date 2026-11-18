@@ -150,6 +150,67 @@ describe('plan', () => {
     expect((await db.plan.findFirstOrThrow()).priceRub).toBe(second?.to);
   });
 
+  it('without a plan: GET answers a draft, PATCH with a price creates it unsold and audited', async () => {
+    await db.plan.deleteMany();
+    const draft = await admin().get('/admin/billing/plan');
+    expect(draft.status).toBe(200);
+    expect(draft.body).toEqual({
+      id: null,
+      code: 'month',
+      title: 'Подписка на месяц',
+      durationDays: 30,
+      priceRub: null,
+      active: false,
+    });
+    expect(await db.plan.count()).toBe(0);
+
+    // The price is required: a plan never exists without one.
+    const noPrice = await admin().patch('/admin/billing/plan', { active: true });
+    expect(noPrice.status).toBe(400);
+    expect(noPrice.body.code).toBe('PLAN_PRICE_REQUIRED');
+    expect(await db.plan.count()).toBe(0);
+
+    const created = await admin().patch('/admin/billing/plan', { priceRub: 390 });
+    expect(created.status).toBe(200);
+    expect(created.body).toMatchObject({
+      code: 'month',
+      title: 'Подписка на месяц',
+      durationDays: 30,
+      priceRub: 390,
+      active: false,
+    });
+    expect(created.body.id).toEqual(expect.any(String));
+    // Not on sale until the admin turns it on.
+    expect((await request(app.getHttpServer()).get('/api/v1/billing/plan')).status).toBe(404);
+    const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'plan.create' } });
+    expect(audit).toMatchObject({ actorId: adminId, entity: 'plan', entityId: created.body.id });
+    expect(audit.diff).toMatchObject({ code: 'month', priceRub: 390, active: false });
+
+    const on = await admin().patch('/admin/billing/plan', { active: true });
+    expect(on.status).toBe(200);
+    expect((await request(app.getHttpServer()).get('/api/v1/billing/plan')).body.priceRub).toBe(
+      390,
+    );
+    expect(await db.plan.count()).toBe(1);
+  });
+
+  it('concurrent first saves create one plan', async () => {
+    await db.plan.deleteMany();
+    const results = await Promise.all([
+      admin().patch('/admin/billing/plan', { priceRub: 100, active: true }),
+      admin().patch('/admin/billing/plan', { priceRub: 200 }),
+    ]);
+    expect(results.map((r) => r.status)).toEqual([200, 200]);
+    expect(await db.plan.count()).toBe(1);
+    expect(await db.auditLog.count({ where: { action: 'plan.create' } })).toBe(1);
+  });
+
+  it('support cannot create the plan', async () => {
+    await db.plan.deleteMany();
+    expect((await support().patch('/admin/billing/plan', { priceRub: 100 })).status).toBe(403);
+    expect(await db.plan.count()).toBe(0);
+  });
+
   it('rejects a price that is not a whole positive number', async () => {
     for (const priceRub of [0, -5, 12.5, '300']) {
       const res = await admin().patch('/admin/billing/plan', { priceRub });
