@@ -1,6 +1,7 @@
 import type { CollectionView } from '@xstore/shared';
-import { Cover, IconTile, Rail, RowsGrid, SectionTitle, SpotBanner } from '@xstore/ui';
+import { Cover, Rail, RowsGrid, SectionTitle, SpotBanner } from '@xstore/ui';
 import { AppCardRow } from './AppCardRow';
+import { AppPreview } from './AppPreview';
 import styles from './CollectionSection.module.css';
 import { appHref, listHref } from './links';
 
@@ -20,11 +21,12 @@ export function CollectionSection({ collection }: { collection: CollectionView }
       ) : collection.layout === 'icons' ? (
         <Rail label={title}>
           {items.map((app) => (
-            <IconTile
+            <AppPreview
               key={app.slug}
-              href={appHref(app.slug)}
-              iconSrc={app.iconUrl}
+              slug={app.slug}
               name={app.name}
+              subtitle={app.subtitle ?? app.category?.name}
+              iconUrl={app.iconUrl}
             />
           ))}
         </Rail>
