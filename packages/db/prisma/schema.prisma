@@ -62,17 +62,17 @@ model User {
 
 model Session {
   /// sha256 hex of the cookie token; the token itself is never stored.
-  id                  String              @id
-  userId              String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind                SessionKind
-  deviceId            String?
-  device              Device?             @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  expiresAt           DateTime
-  ip                  String?
-  userAgent           String?
-  createdAt           DateTime            @default(now())
-  lastSeenAt          DateTime            @default(now())
+  id                 String              @id
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind               SessionKind
+  deviceId           String?
+  device             Device?             @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  expiresAt          DateTime
+  ip                 String?
+  userAgent          String?
+  createdAt          DateTime            @default(now())
+  lastSeenAt         DateTime            @default(now())
   enrollmentSessions EnrollmentSession[]
 
   @@index([userId])
@@ -236,22 +236,24 @@ model App {
 }
 
 model AppVersion {
-  id          String        @id @default(cuid())
-  appId       String
-  app         App           @relation(fields: [appId], references: [id], onDelete: Cascade)
-  version     String
-  build       String
-  bundleId    String
-  minIos      String?
-  sizeBytes   BigInt
-  sha256      String
-  ipaKey      String
-  icon57Key   String?
-  encrypted   Boolean
-  changelog   String?
-  status      VersionStatus @default(draft)
-  publishedAt DateTime?
-  createdAt   DateTime      @default(now())
+  id           String        @id @default(cuid())
+  appId        String
+  app          App           @relation(fields: [appId], references: [id], onDelete: Cascade)
+  version      String
+  build        String
+  bundleId     String
+  minIos       String?
+  /// `UIDeviceFamily` from the IPA: 1 iPhone, 2 iPad.
+  deviceFamily Int[]         @default([1])
+  sizeBytes    BigInt
+  sha256       String
+  ipaKey       String
+  icon57Key    String?
+  encrypted    Boolean
+  changelog    String?
+  status       VersionStatus @default(draft)
+  publishedAt  DateTime?
+  createdAt    DateTime      @default(now())
 
   @@unique([bundleId, version, build])
   @@index([bundleId])

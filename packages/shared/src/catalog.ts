@@ -64,6 +64,10 @@ export const appDetailSchema = appCardSchema.extend({
   versions: z.array(versionViewSchema),
   removedFromAppStore: z.boolean(),
   accessLevel: accessLevelSchema,
+  /** From the latest published version's IPA. */
+  devices: z.array(z.enum(['iphone', 'ipad'])),
+  /** Up to 12 visible apps of the same category, best rated first. */
+  similar: z.array(appCardSchema),
 });
 export type AppDetail = z.infer<typeof appDetailSchema>;
 

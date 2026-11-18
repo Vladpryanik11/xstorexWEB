@@ -104,6 +104,8 @@ export function createApiClient(opts: ApiClientOptions) {
     categories: (): Promise<CategoryView[]> => get('/catalog/categories', categoryList),
     category: (slug: string, cursor?: string): Promise<Page<AppCard>> =>
       get(`/catalog/categories/${seg(slug)}`, appPage, { cursor }),
+    section: (slug: string, cursor?: string): Promise<Page<AppCard>> =>
+      get(`/catalog/sections/${seg(slug)}`, appPage, { cursor }),
     list: (slug: string): Promise<CollectionView> =>
       get(`/catalog/lists/${seg(slug)}`, collectionViewSchema),
     search: (q: string, cursor?: string): Promise<Page<AppCard>> =>

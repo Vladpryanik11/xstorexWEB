@@ -6,8 +6,8 @@ const text = 'Первая строка описания.\nВторая стро
 
 describe('MoreText', () => {
   it('expands on «ещё»', () => {
-    render(<MoreText text={text} />);
-    const paragraph = screen.getByText(/Первая строка/);
+    const { container } = render(<MoreText text={text} />);
+    const paragraph = container.querySelector('[data-expanded]') as HTMLElement;
     expect(paragraph).toHaveAttribute('data-expanded', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'ещё' }));
     expect(screen.queryByRole('button', { name: 'ещё' })).not.toBeInTheDocument();
@@ -16,7 +16,20 @@ describe('MoreText', () => {
   });
 
   it('passes the line count to CSS', () => {
-    render(<MoreText text={text} lines={5} />);
-    expect(screen.getByText(/Первая строка/).style.getPropertyValue('--lines')).toBe('5');
+    const { container } = render(<MoreText text={text} lines={5} />);
+    expect(
+      (container.querySelector('[data-expanded]') as HTMLElement).style.getPropertyValue('--lines'),
+    ).toBe('5');
+  });
+});
+
+describe('MoreText with groups', () => {
+  it('renders headings and lists from the text', () => {
+    render(<MoreText text={'Вступление.\nЧто внутри:\n• Чаты\n• Звонки'} />);
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'ещё' }));
+    expect(screen.getByText('Что внутри').tagName).toBe('H3');
+    expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Чаты', 'Звонки']);
+    expect(screen.getByText('Вступление.').tagName).toBe('P');
   });
 });

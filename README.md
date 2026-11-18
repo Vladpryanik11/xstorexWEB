@@ -42,12 +42,17 @@ pnpm dev           # web, api и worker
 | `pnpm test:e2e` | Playwright (`mobile-webkit` и `desktop-chromium`), собирает и запускает API, web (3100) и воркер |
 | `pnpm infra:up` / `pnpm infra:down` | хранилища для разработки |
 | `pnpm db:migrate` | миграции базы разработки |
+| `pnpm db:seed:demo` | демо-каталог: 23 приложения с иконками, скриншотами и текстами (нужна сборка `@xstore/db`) |
 
 Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. CI (`.github/workflows/ci.yml`) на pull request и на push в `main` проверяет почти то же. Job `check` вместо `pnpm lint` (`biome check .`) запускает `pnpm biome ci .`: те же правила Biome в режиме CI, только чтение. Затем идут `pnpm typecheck` и `pnpm test`. `integration` запускает `pnpm test:int`, `e2e` запускает `pnpm test:e2e`, `docker` собирает production-стек через Compose, запускает его с миграциями и проверяет `infra/smoke.sh`, затем удаляет тестовые контейнеры и volumes. Проверка использует `.env.example` и localhost в изолированном runner; локальный набор образы не собирает.
 
 Первый запуск Playwright: `pnpm infra:up`, затем `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium` (установка системных библиотек Linux требует прав администратора). Сборка web берёт шрифты из Google Fonts, нужен интернет.
 
 E2E очищает и наполняет синтетическими данными только базу из `DATABASE_URL_TEST` (имя должно оканчиваться на `_test`), использует `REDIS_URL_TEST` и бакеты с `S3_BUCKET_PREFIX_TEST`. Эти значения должны быть отделены от рабочих данных. Интеграционные и E2E-тесты запускайте последовательно: оба набора очищают тестовую базу. Небольшие IPA в `apps/web/e2e/fixtures` содержат созданные для тестов plist, иконку и синтетический Mach-O, без сторонних приложений.
+
+### Демо-каталог
+
+`pnpm db:seed:demo` заменяет каталог локальной базы (приложения, версии, категории, подборки, установки) на 23 настоящих приложения: иконки и скриншоты из App Store, тексты написаны для Xstore. Сотрудники и настройки остаются. Скрипт работает только с базой на `localhost`. Данные и картинки лежат в `packages/db/demo/` (`catalog.json`, `media/<slug>/`). IPA в демо нет: страницы приложений открываются, установка не работает.
 
 ### Учётная запись админа
 

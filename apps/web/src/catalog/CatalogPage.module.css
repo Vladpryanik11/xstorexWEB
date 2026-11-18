@@ -11,6 +11,8 @@
 
 .head {
   display: grid;
+  /* minmax(0, …): the chips rail must not widen the page to its full length */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   padding-inline: var(--x-gutter);
 }

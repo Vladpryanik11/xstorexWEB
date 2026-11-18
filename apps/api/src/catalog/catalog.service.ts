@@ -44,6 +44,24 @@ const CARD_SELECT = {
 
 type CardRow = Prisma.AppGetPayload<{ select: typeof CARD_SELECT }>;
 
+const SIMILAR_LIMIT = 12;
+
+/** Slug of the manual collection behind «Premium доступы». */
+export const PREMIUM_COLLECTION = 'premium';
+
+const SECTION_FILTERS = {
+  removed: { removedFromAppStore: true },
+  all: {},
+} satisfies Record<string, Prisma.AppWhereInput>;
+
+/** `UIDeviceFamily` (1 iPhone, 2 iPad) → devices shown on the app page; none means iPhone. */
+function devices(family: number[]): AppDetail['devices'] {
+  const list: AppDetail['devices'] = [];
+  if (family.includes(1) || !family.includes(2)) list.push('iphone');
+  if (family.includes(2)) list.push('ipad');
+  return list;
+}
+
 const RANK_SELECT = {
   ...CARD_SELECT,
   versions: {
@@ -57,6 +75,8 @@ const RANK_SELECT = {
 type RankRow = Prisma.AppGetPayload<{ select: typeof RANK_SELECT }>;
 
 type CollectionWithItems = Collection & { items: CollectionItem[] };
+/** What ranking needs from a collection. */
+type RankedCollection = Pick<CollectionWithItems, 'id' | 'source' | 'items'>;
 
 export const searchQuerySchema = z.string().trim().min(2).max(64);
 
@@ -134,6 +154,7 @@ export class CatalogService {
         screenshotKeys: true,
         removedFromAppStore: true,
         accessLevel: true,
+        categoryId: true,
         versions: {
           where: { status: 'published' },
           orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
@@ -142,6 +163,7 @@ export class CatalogService {
             build: true,
             sizeBytes: true,
             minIos: true,
+            deviceFamily: true,
             changelog: true,
             publishedAt: true,
           },
@@ -150,6 +172,14 @@ export class CatalogService {
     });
     const latest = row?.versions[0];
     if (!row || !latest) throw notFound();
+    const similar = row.categoryId
+      ? await this.db.app.findMany({
+          where: { ...VISIBLE, categoryId: row.categoryId, id: { not: row.id } },
+          orderBy: [{ rating: { sort: 'desc', nulls: 'last' } }, { name: 'asc' }, { id: 'asc' }],
+          take: SIMILAR_LIMIT,
+          select: CARD_SELECT,
+        })
+      : [];
     return {
       ...this.card(row),
       description: row.description ?? undefined,
@@ -167,6 +197,8 @@ export class CatalogService {
       })),
       removedFromAppStore: row.removedFromAppStore,
       accessLevel: row.accessLevel,
+      devices: devices(latest.deviceFamily),
+      similar: similar.map((r) => this.card(r)),
     };
   }
 
@@ -179,13 +211,46 @@ export class CatalogService {
   }
 
   async category(slug: string, rawCursor?: unknown): Promise<Page<AppCard>> {
-    const cursor = decodeCursor(rawCursor, categoryCursorSchema);
     const category = await this.db.category.findUnique({ where: { slug }, select: { id: true } });
     if (!category) throw notFound();
+    return this.byName({ categoryId: category.id }, rawCursor);
+  }
+
+  /**
+   * Catalog sections (owner 2026-11-18): removed from the App Store and the whole catalog page by
+   * name; popular ranks by installs (up to 100); premium is the admin's manual «premium»
+   * collection, so one app can sit there and in its category at once.
+   */
+  async section(slug: string, rawCursor?: unknown): Promise<Page<AppCard>> {
+    if (slug === 'premium') {
+      const collection = await this.db.collection.findUnique({
+        where: { slug: PREMIUM_COLLECTION },
+        include: { items: true },
+      });
+      if (!collection) return { items: [], nextCursor: null };
+      const ranked = await this.rankMany([collection], () => LIST_LIMIT);
+      return {
+        items: (ranked.get(collection.id) ?? []).map((r) => this.card(r)),
+        nextCursor: null,
+      };
+    }
+    if (slug === 'popular') {
+      const popular: RankedCollection = { id: 'popular', source: 'top_downloads', items: [] };
+      const ranked = await this.rankMany([popular], () => LIST_LIMIT);
+      return { items: (ranked.get(popular.id) ?? []).map((r) => this.card(r)), nextCursor: null };
+    }
+    const where = SECTION_FILTERS[slug as keyof typeof SECTION_FILTERS];
+    if (!where) throw notFound();
+    return this.byName(where, rawCursor);
+  }
+
+  /** Visible apps matching `where`, 24 per page by name. */
+  private async byName(where: Prisma.AppWhereInput, rawCursor?: unknown): Promise<Page<AppCard>> {
+    const cursor = decodeCursor(rawCursor, categoryCursorSchema);
     const rows = await this.db.app.findMany({
       where: {
         ...VISIBLE,
-        categoryId: category.id,
+        ...where,
         ...(cursor && {
           OR: [{ name: { gt: cursor.n } }, { name: cursor.n, id: { gt: cursor.i } }],
         }),
@@ -251,9 +316,9 @@ export class CatalogService {
   }
 
   /** Orders each collection's visible apps; download counts come from one grouped query. */
-  private async rankMany(
-    collections: CollectionWithItems[],
-    limitOf: (c: CollectionWithItems) => number,
+  private async rankMany<C extends RankedCollection>(
+    collections: C[],
+    limitOf: (c: C) => number,
   ): Promise<Map<string, RankRow[]>> {
     const out = new Map<string, RankRow[]>();
     if (collections.length === 0) return out;

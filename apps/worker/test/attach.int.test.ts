@@ -138,6 +138,7 @@ it('creates a draft app for a new bundle id', async () => {
     version: '1.2',
     build: '45',
     minIos: '15.0',
+    deviceFamily: [1, 2],
     encrypted: false,
     status: 'draft',
     ipaKey: row.key,
