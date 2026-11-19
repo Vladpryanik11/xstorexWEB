@@ -130,6 +130,45 @@ it('reconcile grants access for missed webhook', async () => {
   expect(await deps.db.entitlement.count({ where: { orderId: order.id } })).toBe(1);
 });
 
+/** A live buyer session of the order's buyer that ends in a day. */
+async function shortSession(userId: string) {
+  return deps.db.session.create({
+    data: {
+      id: `s-${randomUUID()}`,
+      userId,
+      kind: 'user',
+      expiresAt: new Date(Date.now() + 24 * HOUR),
+    },
+  });
+}
+
+/** The session now lasts to the end of paid access plus 7 days, as after a webhook. */
+async function expectExtended(sessionId: string, orderId: string) {
+  const right = await deps.db.entitlement.findUniqueOrThrow({ where: { orderId } });
+  const session = await deps.db.session.findUniqueOrThrow({ where: { id: sessionId } });
+  expect(session.expiresAt.getTime()).toBe(right.expiresAt.getTime() + 7 * 24 * HOUR);
+}
+
+it('reconcile grant extends the buyer sessions to paid access plus 7 days', async () => {
+  const { order, paymentId } = await makeOrder(11 * MIN);
+  const session = await shortSession(order.userId);
+  await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 2 * MIN));
+
+  await reconcileOrders(deps);
+
+  await expectExtended(session.id, order.id);
+});
+
+it('expireOrders grant extends the buyer sessions to paid access plus 7 days', async () => {
+  const { order, paymentId } = await makeOrder(25 * HOUR);
+  const session = await shortSession(order.userId);
+  await fake.setStatus(paymentId, 'paid', new Date(Date.now() - 3 * HOUR));
+
+  await expireOrders(deps);
+
+  await expectExtended(session.id, order.id);
+});
+
 it('reconcile with provider failed marks the order failed', async () => {
   const { order, paymentId } = await makeOrder(11 * MIN);
   await fake.setStatus(paymentId, 'failed');

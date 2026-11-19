@@ -1,6 +1,6 @@
 import { applyPayment } from '@xstore/billing';
 import type { WorkerDeps } from '../deps.js';
-import { notifyPaid } from './notify.js';
+import { afterGranted } from './notify.js';
 
 export const ORDER_TTL_MS = 24 * 60 * 60 * 1000;
 export const BATCH = 200;
@@ -64,7 +64,7 @@ export async function expireOrders(
           const res = await applyPayment(db, known, paymentId, { kind: 'reconcile' });
           if (res.result === 'granted') {
             outcome.granted += 1;
-            if (res.orderId) await notifyPaid(deps, res.orderId);
+            if (res.orderId) await afterGranted(deps, res.orderId);
           }
         } else if (payment.status === 'failed') {
           const { count } = await db.order.updateMany({

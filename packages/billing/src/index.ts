@@ -10,3 +10,4 @@ export type {
   ProviderPayment,
   ProviderPaymentStatus,
 } from './provider.js';
+export { extendUserSessions, userSessionEnd } from './sessions.js';

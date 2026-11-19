@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import { extendUserSessions, userSessionEnd } from '@xstore/billing';
 import type { SessionKind } from '@xstore/db';
-import { accessUntil, userSessionExpiry } from '@xstore/shared';
 import type { AuthContext } from '../common/http.js';
 import { PrismaService } from '../infra/prisma.service.js';
 
@@ -86,25 +86,13 @@ export class SessionService {
   }
 
   /** `max(now + 30 days, end of paid access + 7 days)` over all the user's subscriptions. */
-  async userExpiry(userId: string, now = new Date()): Promise<Date> {
-    const rights = await this.prisma.client.entitlement.findMany({
-      where: { subscription: { userId } },
-      select: { startsAt: true, expiresAt: true, revokedAt: true },
-    });
-    return userSessionExpiry(now, accessUntil(rights, now));
+  userExpiry(userId: string, now = new Date()): Promise<Date> {
+    return userSessionEnd(this.prisma.client, userId, now);
   }
 
-  /**
-   * After a payment: moves every live buyer session of the user up to the new expiry. Never
-   * shortens a session and never revives an expired one.
-   */
-  async extendUserSessions(userId: string): Promise<void> {
-    const now = new Date();
-    const expiresAt = await this.userExpiry(userId, now);
-    await this.prisma.client.session.updateMany({
-      where: { userId, kind: 'user', expiresAt: { gt: now, lt: expiresAt } },
-      data: { expiresAt },
-    });
+  /** After a payment or a grant: see `extendUserSessions` in `@xstore/billing` (shared with the worker). */
+  extendUserSessions(userId: string): Promise<void> {
+    return extendUserSessions(this.prisma.client, userId);
   }
 
   async revoke(sessionId: string): Promise<void> {
