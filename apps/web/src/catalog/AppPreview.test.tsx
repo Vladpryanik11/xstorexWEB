@@ -266,7 +266,7 @@ describe('install sheet', () => {
     );
     const dialog = openOnIphone();
     expect(
-      await within(dialog).findByRole('button', { name: 'Готовим ваш iPhone, до 24 часов' }),
+      await within(dialog).findByRole('button', { name: 'Готовим ваш iPhone, обычно до 24 часов' }),
     ).toBeDisabled();
     expect(within(dialog).queryByRole('link')).toBeNull();
   });

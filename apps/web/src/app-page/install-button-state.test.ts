@@ -74,11 +74,11 @@ describe('installButtonState', () => {
     });
   });
 
-  it('a device being prepared: an inactive «Готовим ваш iPhone, до 24 часов» everywhere', () => {
+  it('a device being prepared: an inactive «Готовим ваш iPhone, обычно до 24 часов» everywhere', () => {
     for (const device of ['ios', 'desktop'] as const) {
       expect(installButtonState({ device, access: iphone(), app: app() })).toEqual({
         kind: 'preparing',
-        label: 'Готовим ваш iPhone, до 24 часов',
+        label: 'Готовим ваш iPhone, обычно до 24 часов',
       });
     }
   });
@@ -87,7 +87,7 @@ describe('installButtonState', () => {
     for (const family of ['iphone', 'ipad'] as const) {
       expect(installButtonState({ device: 'ios', family, access: ipad(), app: app() })).toEqual({
         kind: 'preparing',
-        label: 'Готовим ваш iPad, до 24 часов',
+        label: 'Готовим ваш iPad, обычно до 24 часов',
       });
     }
   });

@@ -1,5 +1,6 @@
 import type { DeviceFamily } from '@xstore/shared';
 import styles from './checkout.module.css';
+import { familyName } from './connect-step';
 
 /**
  * «1 Оплата · 2 iPhone · 3 Установка» («iPad» on an iPad); `current` is the index of the open
@@ -12,7 +13,7 @@ export function StepBar({
   current: 0 | 1 | 2;
   family?: DeviceFamily;
 }) {
-  const steps = ['Оплата', family === 'ipad' ? 'iPad' : 'iPhone', 'Установка'];
+  const steps = ['Оплата', familyName(family), 'Установка'];
   return (
     <ol className={styles.steps} aria-label="Шаги">
       {steps.map((title, i) => {

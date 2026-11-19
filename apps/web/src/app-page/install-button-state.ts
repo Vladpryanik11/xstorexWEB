@@ -1,4 +1,5 @@
-import type { AccessState, DeviceFamily } from '@xstore/shared';
+import { type AccessState, type DeviceFamily, deviceStatusText } from '@xstore/shared';
+import { familyName } from '../checkout/connect-step';
 import type { DeviceKind } from './device';
 
 /**
@@ -26,7 +27,6 @@ export type InstallState = {
 };
 
 const SOON: InstallState = { kind: 'soon', label: 'Скоро можно будет установить' };
-const familyName = (family: DeviceFamily): string => (family === 'ipad' ? 'iPad' : 'iPhone');
 
 function subscriberState(
   device: DeviceKind,
@@ -42,7 +42,7 @@ function subscriberState(
   }
   if (bound.ready) return SOON;
   if (bound.needsHelp) return { kind: 'help', label: 'Написать в поддержку', href: '/support' };
-  return { kind: 'preparing', label: `Готовим ваш ${familyName(bound.family)}, до 24 часов` };
+  return { kind: 'preparing', label: deviceStatusText('pending', bound.family) };
 }
 
 export function installButtonState({

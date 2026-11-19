@@ -91,6 +91,26 @@ describe('ConnectStep', () => {
     );
   });
 
+  it('a device that needs a hand: «Нужна помощь поддержки» with a link to support', () => {
+    const access: AccessState = {
+      kind: 'active',
+      until,
+      subscriptionId: 's1',
+      device: { model: 'iPad Air', family: 'ipad', ready: false, needsHelp: true },
+    };
+    const { container } = render(
+      <ConnectStep access={access} result="connected" device="ios" getAccess={vi.fn()} />,
+    );
+    expect(screen.getByRole('heading', { name: 'Нужна помощь поддержки' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Написать в поддержку' })).toHaveAttribute(
+      'href',
+      '/support',
+    );
+    expect(screen.getByTestId('connect-status')).toHaveTextContent('Нужна помощь поддержки');
+    expect(container.textContent).toContain('iPad');
+    expect(container.textContent).not.toMatch(/Готовим|аккаунт|UDID|профил|сертификат|блок/i);
+  });
+
   it('?r=connected: «Готово, iPhone подключён», then «Готовим ваш iPhone»', () => {
     render(
       <ConnectStep access={withDevice()} result="connected" device="ios" getAccess={vi.fn()} />,

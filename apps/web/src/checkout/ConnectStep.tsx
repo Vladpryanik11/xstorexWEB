@@ -68,6 +68,8 @@ function statusText(step: ConnectStepState, name: string, error: string): string
       return `Готовим ваш ${name}, обычно до 24 часов`;
     case 'ready':
       return `${name} готов`;
+    case 'help':
+      return 'Нужна помощь поддержки';
     case 'open_on_phone':
       return 'Откройте сайт на iPhone, чтобы подключить его';
     case 'error':
@@ -254,6 +256,17 @@ export function ConnectStep({
           </p>
           <Button href="/" className={styles.wide}>
             В каталог
+          </Button>
+          {toAccess}
+        </section>
+      ) : step === 'help' ? (
+        <section className={styles.panel}>
+          <h1 className={styles.title}>Нужна помощь поддержки</h1>
+          <p className={styles.lead}>
+            {name} уже подключён к вашему доступу. Напишите нам, и мы поможем закончить подготовку.
+          </p>
+          <Button href="/support" className={styles.wide}>
+            Написать в поддержку
           </Button>
           {toAccess}
         </section>

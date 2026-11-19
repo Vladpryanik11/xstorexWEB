@@ -8,6 +8,7 @@ export type ConnectStepState =
   | 'waiting'
   | 'connected'
   | 'preparing'
+  | 'help'
   | 'ready'
   | 'open_on_phone'
   | 'error';
@@ -53,6 +54,8 @@ export function connectStep(input: {
   if (access.kind !== 'active') return 'no_access';
   // A device on the access is the truth: a stale `?r=<error>` (history, bookmark) is ignored.
   if (access.device?.ready) return 'ready';
+  // Registration stopped: only support moves it on, as «Мой доступ» says.
+  if (access.device?.needsHelp) return 'help';
   if (access.device) return waiting || result === 'connected' ? 'connected' : 'preparing';
   if (isConnectError(result)) return 'error';
   if (result === 'connected') return 'connected';

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bindDecision, deviceFamily, deviceStatusLabel, renameDeviceSchema } from './devices.js';
+import {
+  bindDecision,
+  deviceFamily,
+  deviceStatusLabel,
+  deviceStatusText,
+  renameDeviceSchema,
+} from './devices.js';
 
 it('trims device names and accepts up to 40 characters', () => {
   expect(renameDeviceSchema.parse({ name: '  My iPhone  ' }).name).toBe('My iPhone');
@@ -27,6 +33,15 @@ describe('deviceStatusLabel', () => {
     expect(deviceStatusLabel.processing).toBe('Готовим ваш iPhone, обычно до 24 часов');
     expect(deviceStatusLabel.active).toBe('iPhone готов');
     expect(Object.values(deviceStatusLabel).join(' ')).not.toMatch(/72|UDID|профиль|сертификат/i);
+  });
+});
+
+describe('deviceStatusText', () => {
+  it('на iPad везде «iPad» вместо «iPhone»', () => {
+    expect(deviceStatusText('pending', 'ipad')).toBe('Готовим ваш iPad, обычно до 24 часов');
+    expect(deviceStatusText('active', 'ipad')).toBe('iPad готов');
+    expect(deviceStatusText('active', 'iphone')).toBe('iPhone готов');
+    expect(deviceStatusText('blocked', 'ipad')).toBe('Заблокировано');
   });
 });
 

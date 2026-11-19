@@ -121,6 +121,12 @@ export const deviceStatusLabel: Record<DeviceStatus, string> = {
   expired: 'Срок истёк',
 };
 
+/** `deviceStatusLabel` for the given device: «iPad» instead of «iPhone» on an iPad. */
+export function deviceStatusText(status: DeviceStatus, family: DeviceFamily): string {
+  const text = deviceStatusLabel[status];
+  return family === 'ipad' ? text.replaceAll('iPhone', 'iPad') : text;
+}
+
 export const renameDeviceSchema = z.object({
   name: z.string().trim().min(1).max(40),
 });

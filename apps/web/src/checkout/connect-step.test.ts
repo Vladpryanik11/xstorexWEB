@@ -10,12 +10,17 @@ import {
 } from './connect-step';
 
 const until = new Date('2026-12-18T10:00:00Z');
-const active = (device: { ready: boolean } | null = null): AccessState => ({
+const active = (device: { ready: boolean; needsHelp?: boolean } | null = null): AccessState => ({
   kind: 'active',
   until,
   subscriptionId: 's1',
   device: device
-    ? { model: 'iPhone 15', family: 'iphone', ready: device.ready, needsHelp: false }
+    ? {
+        model: 'iPhone 15',
+        family: 'iphone',
+        ready: device.ready,
+        needsHelp: device.needsHelp ?? false,
+      }
     : null,
 });
 const base = { device: 'ios' as const, access: active(), result: null, waiting: false };
@@ -60,6 +65,15 @@ describe('connectStep', () => {
     expect(connectStep({ ...base, access: active({ ready: false }), waiting: true })).toBe(
       'connected',
     );
+  });
+
+  it('a device that needs a hand → help, whatever the page was opened with', () => {
+    const access = active({ ready: false, needsHelp: true });
+    expect(connectStep({ ...base, access })).toBe('help');
+    expect(connectStep({ ...base, access, waiting: true })).toBe('help');
+    expect(connectStep({ ...base, access, result: 'connected' })).toBe('help');
+    expect(connectStep({ ...base, access, result: 'DEVICE_LIMIT' })).toBe('help');
+    expect(connectStep({ ...base, device: 'desktop', access })).toBe('help');
   });
 
   it('a device being prepared → preparing; a registered one → ready', () => {
