@@ -3,6 +3,7 @@ import { pino } from 'pino';
 import { loadWorkerConfig } from './config.js';
 import { closeWorkerDeps, createWorkerDeps } from './deps.js';
 import { createBillingWorker, scheduleBillingJobs } from './queues/billing.js';
+import { createCertificatesWorker, scheduleCertificateJobs } from './queues/certificates.js';
 import { createIpaWorker } from './queues/ipa.js';
 import { createSystemWorker } from './queues/system.js';
 
@@ -18,6 +19,7 @@ const workers = [
   createSystemWorker(deps.connection, { concurrency: config.concurrency }),
   createIpaWorker(deps),
   createBillingWorker(deps),
+  createCertificatesWorker(deps),
 ];
 for (const worker of workers) {
   worker.on('failed', (job, err) =>
@@ -50,6 +52,7 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 
 await Promise.all(workers.map((worker) => worker.waitUntilReady()));
 await scheduleBillingJobs(deps.queues[QueueName.billing]);
+await scheduleCertificateJobs(deps.queues[QueueName.certificates]);
 logger.info(
   { queues: workers.map((w) => w.name), concurrency: config.concurrency },
   'worker started',

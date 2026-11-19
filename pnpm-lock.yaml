@@ -366,6 +366,9 @@ importers:
       '@xstore/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xstore/signing':
+        specifier: workspace:*
+        version: link:../../packages/signing
       bullmq:
         specifier: 6.5.4
         version: 6.5.4(ioredis@6.0.0)(pg@8.23.1)

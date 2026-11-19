@@ -19,6 +19,7 @@
     "@xstore/mail": "workspace:*",
     "@xstore/secrets": "workspace:*",
     "@xstore/shared": "workspace:*",
+    "@xstore/signing": "workspace:*",
     "bullmq": "6.5.4",
     "ioredis": "6.0.0",
     "pino": "10.4.0",
