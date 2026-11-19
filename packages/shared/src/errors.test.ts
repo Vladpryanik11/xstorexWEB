@@ -49,3 +49,20 @@ it('sign-in texts live here too', () => {
   expect(signinMessages.CHECK_EMAIL).toMatch(/почт/);
   expect(signinMessages.FAILED).toMatch(/Не получилось войти/);
 });
+
+it('connection texts never say «профиль», «UDID», «сертификат» or «аккаунт»', () => {
+  const codes = [
+    'NO_ACCESS',
+    'DEVICE_LIMIT',
+    'DEVICE_OWNED',
+    'ENROLLMENT_EXPIRED',
+    'ENROLLMENT_FAILED',
+    'ENROLLMENT_UNAVAILABLE',
+  ] as const;
+  for (const code of codes) {
+    expect(ErrorCode[code]).toBe(code);
+    expect(errorMessages[code].toLowerCase()).not.toMatch(/профил|udid|сертификат|аккаунт/);
+  }
+  expect(errorMessages.NO_ACCESS).toMatch(/доступ/);
+  expect(errorMessages.DEVICE_LIMIT).toMatch(/другое устройство/);
+});

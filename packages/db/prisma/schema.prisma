@@ -101,6 +101,7 @@ model Device {
 }
 
 model EnrollmentSession {
+  /// sha256 hex of the one-time nonce; the nonce itself is never stored.
   nonce     String           @id
   status    EnrollmentStatus @default(pending)
   userId    String

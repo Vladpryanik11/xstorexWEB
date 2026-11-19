@@ -122,6 +122,11 @@ export function createApiClient(opts: ApiClientOptions) {
     verifyCode: (body: EmailCodeVerify): Promise<void> => send('/auth/code/verify', body),
     setPassword: (body: SetPassword): Promise<void> => send('/auth/password', body),
     logout: (): Promise<void> => send('/auth/logout', {}),
+    /** Link the browser opens to download the connection file; not a fetch. */
+    enrollmentProfileUrl: (): string => `${base}/enrollment/profile`,
+    /** Development only (`XSTORE_DEV_PAGES=1`): marks the buyer's device ready or pending. */
+    devSetDeviceStatus: (status: 'ready' | 'pending'): Promise<void> =>
+      send(`/devices/dev/mine/${status}`, {}),
   };
 }
 

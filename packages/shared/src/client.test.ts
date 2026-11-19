@@ -234,3 +234,26 @@ describe('buyer sign-in', () => {
     ).rejects.toMatchObject({ status: 400, code: 'WEAK_PASSWORD' });
   });
 });
+
+describe('enrollment', () => {
+  it('enrollmentProfileUrl is the profile download path, without a request', () => {
+    const fetch = vi.fn();
+    expect(createApiClient({ baseUrl: '', fetch }).enrollmentProfileUrl()).toBe(
+      '/api/v1/enrollment/profile',
+    );
+    expect(createApiClient({ baseUrl: 'http://api/', fetch }).enrollmentProfileUrl()).toBe(
+      'http://api/api/v1/enrollment/profile',
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('devSetDeviceStatus posts to the dev route', async () => {
+    const fetch = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => {
+      return new Response(null, { status: 204 });
+    });
+    await createApiClient({ baseUrl: 'http://api', fetch }).devSetDeviceStatus('ready');
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(String(url)).toBe('http://api/api/v1/devices/dev/mine/ready');
+    expect(init?.method).toBe('POST');
+  });
+});
