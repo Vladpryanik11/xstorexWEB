@@ -267,6 +267,7 @@ describe('POST /enrollment/callback', () => {
       family: 'iphone',
       ready: false,
       needsHelp: false,
+      updating: false,
     });
   });
 

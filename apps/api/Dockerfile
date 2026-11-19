@@ -28,6 +28,10 @@ RUN pnpm exec turbo run build --filter=@xstore/api
 # Keeps the whole pruned workspace with dev dependencies: the `migrate` service runs
 # `pnpm --filter @xstore/db migrate:deploy`, which needs the Prisma CLI (a devDependency).
 FROM base AS runner
+# `openssl` opens supplier .p12 files that node-forge cannot (OpenSSL 3 defaults, old RC2).
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /app .

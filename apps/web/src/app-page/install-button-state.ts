@@ -42,7 +42,8 @@ function subscriberState(
   }
   if (bound.ready) return SOON;
   if (bound.needsHelp) return { kind: 'help', label: 'Написать в поддержку', href: '/support' };
-  return { kind: 'preparing', label: deviceStatusText('pending', bound.family) };
+  const status = bound.updating ? 'processing' : 'pending';
+  return { kind: 'preparing', label: deviceStatusText(status, bound.family) };
 }
 
 export function installButtonState({

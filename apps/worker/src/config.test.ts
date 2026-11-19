@@ -15,6 +15,8 @@ const env = {
 const prodMail = {
   SMTP_URL: 'smtps://user:pw@smtp.example.ru:465',
   MAIL_FROM: 'Xstore <noreply@xstorex.ru>',
+  MASTER_KEY_CURRENT: '1',
+  MASTER_KEY_V1: Buffer.alloc(32, 1).toString('base64'),
 };
 
 describe('loadWorkerConfig', () => {
@@ -30,6 +32,7 @@ describe('loadWorkerConfig', () => {
 
   it('applies defaults', () => {
     expect(loadWorkerConfig(env)).toEqual({
+      keyring: null,
       redisUrl: 'redis://x',
       databaseUrl: 'postgresql://u:p@h/db',
       logLevel: 'info',
@@ -89,5 +92,22 @@ describe('loadWorkerConfig', () => {
     expect(() => loadWorkerConfig({ ...env, SMTP_URL: 'http://u:hunter2@x' })).toThrow(
       /^Invalid environment variables: SMTP_URL$/,
     );
+  });
+
+  it('loads the master keyring and requires it in production', () => {
+    const key = Buffer.alloc(32, 9).toString('base64');
+    expect(loadWorkerConfig(env).keyring).toBeNull();
+    expect(
+      loadWorkerConfig({ ...env, MASTER_KEY_CURRENT: '1', MASTER_KEY_V1: key }).keyring?.current,
+    ).toBe(1);
+    expect(() =>
+      loadWorkerConfig({
+        ...env,
+        ...prodMail,
+        NODE_ENV: 'production',
+        PAYMENT_PROVIDER: 'platega',
+        MASTER_KEY_CURRENT: undefined,
+      }),
+    ).toThrow(/MASTER_KEY_CURRENT/);
   });
 });

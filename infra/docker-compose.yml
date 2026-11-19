@@ -74,6 +74,8 @@ services:
       # Letters; SMTP_URL may hold a password and stays in .env.
       SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env}
       MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+      # Master key for supplier certificates; MASTER_KEY_V<n> comes from .env (env_file).
+      MASTER_KEY_CURRENT: ${MASTER_KEY_CURRENT:?set MASTER_KEY_CURRENT and MASTER_KEY_V1 in .env}
       # The iPhone connection file is signed with Caddy's certificate for SITE_DOMAIN, copied by
       # `enroll-cert`. Fixed here: the development paths in .env do not exist in the container.
       ENROLL_CERT_PATH: /run/enroll/cert.pem
@@ -111,6 +113,8 @@ services:
       PAYMENT_PROVIDER: platega
       SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env}
       MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+      # Master key for supplier certificates; MASTER_KEY_V<n> comes from .env (env_file).
+      MASTER_KEY_CURRENT: ${MASTER_KEY_CURRENT:?set MASTER_KEY_CURRENT and MASTER_KEY_V1 in .env}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-xstore}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:

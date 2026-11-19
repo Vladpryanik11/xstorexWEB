@@ -1,8 +1,20 @@
-import { formatRuDate } from '@xstore/shared';
+import { type DeviceFamily, formatRuDate } from '@xstore/shared';
 
-export type MailTemplate = 'payment_paid' | 'login_code';
+export type MailTemplate =
+  | 'payment_paid'
+  | 'login_code'
+  | 'device_ready'
+  | 'reinstall_apps'
+  | 'admin_device_waiting';
 
-export type MailData = { until?: Date; code?: string };
+export type MailData = {
+  until?: Date;
+  code?: string;
+  /** «iPad» instead of «iPhone» in device letters. */
+  family?: DeviceFamily;
+  /** The buyer, in the owner's letter about a device waiting for its certificate. */
+  buyerEmail?: string;
+};
 
 export type RenderedMail = { subject: string; text: string };
 
@@ -44,6 +56,43 @@ export function renderMail(template: MailTemplate, data: MailData, siteUrl: stri
           'Если вы не запрашивали код, просто проигнорируйте это письмо.',
           '',
           'Xstore',
+        ].join('\n'),
+      };
+    }
+    case 'device_ready': {
+      const device = data.family === 'ipad' ? 'iPad' : 'iPhone';
+      return {
+        subject: `${device} готов, можно ставить`,
+        text: [
+          'Здравствуйте!',
+          '',
+          `Ваш ${device} готов. Откройте ${site} в Safari на ${device} и устанавливайте приложения из каталога.`,
+          '',
+          'Xstore',
+        ].join('\n'),
+      };
+    }
+    case 'reinstall_apps': {
+      const device = data.family === 'ipad' ? 'iPad' : 'iPhone';
+      return {
+        subject: 'Переустановите приложения',
+        text: [
+          'Здравствуйте!',
+          '',
+          `Мы обновили доступ. Откройте сайт в Safari на ${device} и установите приложения заново.`,
+          `Адрес сайта: ${site}`,
+          '',
+          'Xstore',
+        ].join('\n'),
+      };
+    }
+    case 'admin_device_waiting': {
+      if (!data.buyerEmail) throw new Error('admin_device_waiting needs the buyer email');
+      return {
+        subject: 'Новый iPhone ждёт сертификата',
+        text: [
+          `Покупатель ${data.buyerEmail} подключил устройство.`,
+          `Скопируйте UDID и загрузите файлы поставщика: ${site}/admin/devices`,
         ].join('\n'),
       };
     }

@@ -28,9 +28,9 @@ describe('deviceFamily', () => {
 });
 
 describe('deviceStatusLabel', () => {
-  it('ожидание и регистрация — «обычно до 24 часов», готово — «iPhone готов»', () => {
+  it('ожидание — «Готовим», замена — «Обновляем доступ», готово — «iPhone готов»', () => {
     expect(deviceStatusLabel.pending).toBe('Готовим ваш iPhone, обычно до 24 часов');
-    expect(deviceStatusLabel.processing).toBe('Готовим ваш iPhone, обычно до 24 часов');
+    expect(deviceStatusLabel.processing).toBe('Обновляем доступ, обычно до 24 часов');
     expect(deviceStatusLabel.active).toBe('iPhone готов');
     expect(Object.values(deviceStatusLabel).join(' ')).not.toMatch(/72|UDID|профиль|сертификат/i);
   });
@@ -42,6 +42,7 @@ describe('deviceStatusText', () => {
     expect(deviceStatusText('active', 'ipad')).toBe('iPad готов');
     expect(deviceStatusText('active', 'iphone')).toBe('iPhone готов');
     expect(deviceStatusText('blocked', 'ipad')).toBe('Заблокировано');
+    expect(deviceStatusText('processing', 'ipad')).toBe('Обновляем доступ, обычно до 24 часов');
   });
 });
 

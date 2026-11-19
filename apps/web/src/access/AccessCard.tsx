@@ -55,7 +55,7 @@ function DeviceFact({ device, family }: { device: AccessDevice | null; family: D
           </a>
         </dd>
       ) : (
-        <dd>{`${device.model} · ${device.ready ? 'Готов' : 'Готовим, обычно до 24 часов'}`}</dd>
+        <dd>{`${device.model} · ${device.ready ? 'Готов' : device.updating ? 'Обновляем доступ, обычно до 24 часов' : 'Готовим, обычно до 24 часов'}`}</dd>
       )}
     </div>
   );

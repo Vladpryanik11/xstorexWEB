@@ -88,9 +88,15 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 ### Подключение iPhone в разработке
 
-Профиль подключения подписывается парой `ENROLL_CERT_PATH` / `ENROLL_KEY_PATH` (PEM). Локально: `pnpm --filter @xstore/api enroll:dev-cert` пишет самоподписанную пару в `.secrets/enroll/` (в git не попадает), пути вставьте в `.env`. Ответ iPhone проверяется по Apple Root CA; для тестовых устройств `pnpm --filter @xstore/api enroll:test-ca` создаёт там же тестовый корень `test-anchor.pem` (`ENROLL_TEST_ANCHOR_PATH`, при `NODE_ENV=production` API его не принимает) и ключ тестового устройства. E2E (`connect-iphone.spec.ts`) берёт эти файлы сам и играет iOS: скачивает профиль и отправляет подписанный ответ. Без них падают только тесты подключения. Пока регистрации устройств нет, с `XSTORE_DEV_PAGES=1` состояние «iPhone готов» включает `POST /api/v1/devices/dev/mine/ready`.
+Профиль подключения подписывается парой `ENROLL_CERT_PATH` / `ENROLL_KEY_PATH` (PEM). Локально: `pnpm --filter @xstore/api enroll:dev-cert` пишет самоподписанную пару в `.secrets/enroll/` (в git не попадает), пути вставьте в `.env`. Ответ iPhone проверяется по Apple Root CA; для тестовых устройств `pnpm --filter @xstore/api enroll:test-ca` создаёт там же тестовый корень `test-anchor.pem` (`ENROLL_TEST_ANCHOR_PATH`, при `NODE_ENV=production` API его не принимает) и ключ тестового устройства. E2E (`connect-iphone.spec.ts`) берёт эти файлы сам и играет iOS: скачивает профиль и отправляет подписанный ответ. Без них падают только тесты подключения. «iPhone готов» наступает, когда админ загружает файлы поставщика (раздел ниже); для ручной проверки без файлов с `XSTORE_DEV_PAGES=1` остаётся `POST /api/v1/devices/dev/mine/ready`.
 
 Настоящий ответ iOS (содержит UDID, хранится вне git) проверяется так: `IOS_REAL_FIXTURE=<путь> pnpm --filter @xstore/api exec vitest run device-response.real`. Без переменной этот тест пропускается.
+
+### Сертификаты поставщика (Н3)
+
+Своего аккаунта Apple нет: владелец копирует UDID в админке «Ждут сертификата» (`/admin/devices`), отправляет поставщику и загружает присланные `.p12`, пароль и `.mobileprovision` на странице устройства. API проверяет подпись профиля Apple, пароль, UDID в профиле, сертификат из профиля, сроки (не меньше суток), wildcard App ID и спрашивает OCSP Apple об отзыве; файлы и пароль хранятся только зашифрованными мастер-ключом (`MASTER_KEY_CURRENT`, `MASTER_KEY_V<n>`, обязательны в production; без них загрузка отвечает 503). Расшифровывают их только `apps/api/src/apple` и воркер (правило Biome). Воркер каждые 10 минут (`certificates:check`) помечает истёкшие и отозванные файлы, устройство уходит в «Обновляем доступ, обычно до 24 часов» и снова попадает в список. `ADMIN_NOTIFY_EMAIL` — адрес владельца для письма «Новый iPhone ждёт сертификата» (без него письма нет).
+
+Тестовые файлы делает `@xstore/signing/testing` (`makeKit`): свой тестовый корень, которому API доверяет только через `SIGNING_TEST_ANCHOR_PATH` (в production запрещён). Playwright создаёт такой комплект при каждом запуске во временной папке и передаёт корень e2e-API сам. Ручная проверка с настоящим iPhone и файлами поставщика — `docs/superpowers/plans/2026-11-19-n3-real-iphone-check.md`.
 
 ### Письма
 

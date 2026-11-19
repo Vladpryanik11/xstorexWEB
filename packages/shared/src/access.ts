@@ -57,6 +57,8 @@ export type AccessDevice = {
   family: DeviceFamily;
   ready: boolean;
   needsHelp: boolean;
+  /** Н3: the device had working files and none is valid now (`processing`): «Обновляем доступ». */
+  updating?: boolean;
 };
 
 export type AccessState =
@@ -96,6 +98,7 @@ export function accessState(input: {
           family: deviceFamily(bound.product),
           ready: bound.status === 'active',
           needsHelp: bound.status === 'blocked' || bound.status === 'expired',
+          updating: bound.status === 'processing',
         }
       : null;
     return { kind: 'active', until, subscriptionId: picked.id, device };

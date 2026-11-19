@@ -69,6 +69,15 @@ describe('AccessCard', () => {
     expect(screen.queryByRole('link', { name: /Подключить/ })).toBeNull();
   });
 
+  it('files ended: the model and «Обновляем доступ, обычно до 24 часов»', () => {
+    const access = withDevice({ ready: false, needsHelp: false });
+    if (access.state.kind === 'active' && access.state.device) access.state.device.updating = true;
+    render(<AccessCard access={access} />);
+    expect(
+      screen.getByText('iPhone 15 Pro · Обновляем доступ, обычно до 24 часов'),
+    ).toBeInTheDocument();
+  });
+
   it('a ready device: the model and «Готов»', () => {
     render(<AccessCard access={withDevice({ ready: true, needsHelp: false })} />);
     expect(screen.getByText('iPhone 15 Pro · Готов')).toBeInTheDocument();

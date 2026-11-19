@@ -1,3 +1,4 @@
+import { type Keyring, loadKeyring } from '@xstore/secrets';
 import { z } from 'zod';
 
 /** An http(s) origin without a trailing slash, path, query or fragment. */
@@ -22,6 +23,8 @@ const envSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]{0,40}$/)
     .default('xstore-'),
   NODE_ENV: z.string().optional(),
+  /** Master key version and keys (`MASTER_KEY_V<n>`, base64 of 32 bytes); never logged. */
+  MASTER_KEY_CURRENT: z.string().optional(),
   PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
   FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
   XSTORE_DEV_PAGES: z.string().optional(),
@@ -36,6 +39,10 @@ const envSchema = z.object({
   ENROLL_KEY_PATH: z.string().min(1).optional(),
   /** Extra trusted root for answers of test devices; refused in production. */
   ENROLL_TEST_ANCHOR_PATH: z.string().min(1).optional(),
+  /** Extra PEM root for supplier profiles of tests; refused in production. */
+  SIGNING_TEST_ANCHOR_PATH: z.string().min(1).optional(),
+  /** Where «Новый iPhone ждёт сертификата» goes; no letter when unset. */
+  ADMIN_NOTIFY_EMAIL: z.email().optional(),
 });
 
 /** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
@@ -85,10 +92,24 @@ export type AppConfig = {
   enrollment: EnrollmentConfig;
   /** `XSTORE_DEV_PAGES=1`: development-only routes such as the fake payment buttons. */
   devPages: boolean;
+  /** Encrypts supplier certificates; `null` outside production when no master key is set. */
+  keyring: Keyring | null;
+  signing: { testAnchorPath: string | null; adminNotifyEmail: string | null };
 };
 
 const invalid = (names: string[]): Error =>
   new Error(`Invalid environment variables: ${names.join(', ')}`);
+
+/** The keyring when `MASTER_KEY_CURRENT` is set; a bad key names only the variable. */
+export function keyringFrom(env: NodeJS.ProcessEnv): Keyring | null {
+  if (!env.MASTER_KEY_CURRENT) return null;
+  try {
+    return loadKeyring(env);
+  } catch (err) {
+    const variable = /MASTER_KEY_\w+/.exec(err instanceof Error ? err.message : '')?.[0];
+    throw invalid([variable ?? 'MASTER_KEY_CURRENT']);
+  }
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
   const parsed = envSchema.safeParse(env);
@@ -106,6 +127,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
     if (missing.length > 0) throw invalid([...missing]);
     if (e.ENROLL_TEST_ANCHOR_PATH) throw invalid(['ENROLL_TEST_ANCHOR_PATH']);
+    if (e.SIGNING_TEST_ANCHOR_PATH) throw invalid(['SIGNING_TEST_ANCHOR_PATH']);
+    if (!e.MASTER_KEY_CURRENT) throw invalid(['MASTER_KEY_CURRENT']);
   }
   if (Boolean(e.ENROLL_CERT_PATH) !== Boolean(e.ENROLL_KEY_PATH)) {
     throw invalid([e.ENROLL_CERT_PATH ? 'ENROLL_KEY_PATH' : 'ENROLL_CERT_PATH']);
@@ -138,5 +161,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
       testAnchorPath: e.ENROLL_TEST_ANCHOR_PATH ?? null,
     },
     devPages: e.XSTORE_DEV_PAGES === '1',
+    keyring: keyringFrom(env),
+    signing: {
+      testAnchorPath: e.SIGNING_TEST_ANCHOR_PATH ?? null,
+      adminNotifyEmail: e.ADMIN_NOTIFY_EMAIL ?? null,
+    },
   };
 }

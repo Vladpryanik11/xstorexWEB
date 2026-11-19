@@ -371,6 +371,40 @@
 .table s {
   color: var(--x-text-2);
 }
+/* «Ждут сертификата»: a full UDID stays copyable and wraps on phones. */
+.udid {
+  font: var(--x-type-cap);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: var(--x-track-small);
+  word-break: break-all;
+}
+.muted[data-tone="err"] {
+  color: var(--x-err);
+  font-weight: 600;
+}
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+.facts dt {
+  color: var(--x-text-2);
+}
+.facts dd {
+  margin: 0;
+  min-width: 0;
+}
+.count {
+  margin-inline-start: 0.375rem;
+  padding: 0 0.5rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-err);
+  color: var(--x-white);
+  font: var(--x-type-cap);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+}
 /* Versions: rows become cards on phones (spec 2026-11-17 §8). */
 @media (max-width: 47.9375em) {
   .stack {
