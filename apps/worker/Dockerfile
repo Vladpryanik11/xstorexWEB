@@ -38,7 +38,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 
 FROM node:24-bookworm-slim AS runner
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libssl3 \
+  && apt-get install -y --no-install-recommends libssl3 openssl \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=zsign-build /src/zsign/bin/zsign /usr/local/bin/zsign
 ENV NODE_ENV=production
