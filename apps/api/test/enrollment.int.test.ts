@@ -9,11 +9,13 @@ import { maskUdid } from '@xstore/shared';
 import { Redis } from 'ioredis';
 import plist from 'plist';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app.js';
+import { AuditService } from '../src/audit/audit.service.js';
 import { hashToken, SessionService } from '../src/auth/session.service.js';
 import { loadConfig } from '../src/config/config.js';
 import { verifyCms } from '../src/enrollment/cms.js';
+import { PrismaService } from '../src/infra/prisma.service.js';
 import { SITE } from './helpers/billing.js';
 import {
   createTestCa,
@@ -361,8 +363,48 @@ describe('POST /enrollment/callback', () => {
     const nonce = await profileNonce(b.cookie);
     const der = await answer(nonce);
     expectResult(await postCallback(nonce, der), 'connected');
-    expectResult(await postCallback(nonce, der), 'ENROLLMENT_EXPIRED');
+    // iOS retrying the same answer is told it worked; any other answer for a spent nonce is not.
+    expectResult(await postCallback(nonce, der), 'connected');
+    expectResult(
+      await postCallback(nonce, await answer(nonce, { UDID: OTHER_UDID })),
+      'ENROLLMENT_EXPIRED',
+    );
+    expectResult(await postCallback(nonce, Buffer.from('hello')), 'ENROLLMENT_EXPIRED');
     expect(await db.device.count()).toBe(1);
+    expect(await db.auditLog.count({ where: { action: 'device.bind' } })).toBe(1);
+    expect((await db.enrollmentSession.findFirstOrThrow()).status).toBe('completed');
+  });
+
+  it('an unexpected error while binding marks the nonce failed and logs no UDID', async () => {
+    const b = await buyer();
+    const nonce = await profileNonce(b.cookie);
+    const spy = vi
+      .spyOn(app.get(PrismaService).client, '$transaction')
+      .mockRejectedValueOnce(new Error(`boom ${UDID}`));
+    try {
+      expectResult(await postCallback(nonce, await answer(nonce)), 'ENROLLMENT_FAILED');
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await db.enrollmentSession.findFirstOrThrow()).status).toBe('failed');
+    expect(await db.device.count()).toBe(0);
+    const text = logs.join('');
+    expect(text).toContain('enrollment callback failed');
+    expect(text).not.toContain(UDID);
+  });
+
+  it('a failing audit write does not change a successful result', async () => {
+    const b = await buyer();
+    const nonce = await profileNonce(b.cookie);
+    const spy = vi
+      .spyOn(app.get(AuditService), 'record')
+      .mockRejectedValue(new Error('audit down'));
+    try {
+      expectResult(await postCallback(nonce, await answer(nonce)), 'connected');
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await db.auditLog.count({ where: { action: 'device.bind' } })).toBe(1);
   });
 
   it('revoked source session rejects callback', async () => {

@@ -10,6 +10,16 @@ type FileRes = {
 };
 type RedirectRes = { redirect(status: number, url: string): unknown };
 
+/** Error class and code only, safe to log. */
+function errorShape(err: unknown): { errClass: string; code?: string } {
+  const errClass = err instanceof Error ? err.constructor.name : typeof err;
+  const code =
+    typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string'
+      ? err.code
+      : undefined;
+  return code ? { errClass, code } : { errClass };
+}
+
 export const ENROLLMENT_CALLBACK_PATH = '/api/v1/enrollment/callback';
 
 /** The wizard page iOS returns to after the callback, with the result in `?r=`. */
@@ -56,7 +66,8 @@ export class EnrollmentController {
         req.body,
       );
     } catch (err) {
-      this.logger.error({ err: (err as Error).message }, 'enrollment callback failed');
+      // Never the message: a database error may quote the UDID.
+      this.logger.error(errorShape(err), 'enrollment callback failed');
       result = 'ENROLLMENT_FAILED';
     }
     res.redirect(301, enrollmentResultUrl(this.enrollment.site, result));

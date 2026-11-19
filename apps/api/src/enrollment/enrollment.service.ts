@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Prisma } from '@xstore/db';
 import { bindDecision, deviceModelName, ErrorCode, maskUdid } from '@xstore/shared';
-import { AuditService } from '../audit/audit.service.js';
 import { buyerAccessUntil, buyerSubscription } from '../billing/buyer-subscription.js';
 import { DomainError } from '../common/domain-error.js';
 import { isUniqueViolation } from '../common/prisma-errors.js';
@@ -73,7 +72,6 @@ export class EnrollmentService {
   constructor(
     @Inject(APP_CONFIG) config: AppConfig,
     private readonly prisma: PrismaService,
-    private readonly audit: AuditService,
   ) {
     this.identity = config.enrollment.signer ? new IdentityStore(config.enrollment.signer) : null;
     this.testAnchors = loadTestAnchors(config.enrollment.testAnchorPath);
@@ -129,8 +127,19 @@ export class EnrollmentService {
     const db = this.prisma.client;
     const row = await db.enrollmentSession.findUnique({
       where: { nonce: id },
-      select: { status: true, expiresAt: true, userId: true },
+      select: {
+        status: true,
+        expiresAt: true,
+        userId: true,
+        device: { select: { udid: true, userId: true } },
+      },
     });
+    if (row?.status === 'completed' && row.device) {
+      // iOS may post the same answer again: the same device under a spent nonce succeeded.
+      const again = await this.readAnswer(body, nonce).catch(() => null);
+      const same = again && again.udid === row.device.udid && row.device.userId === row.userId;
+      return same ? this.done('connected', again) : this.done('ENROLLMENT_EXPIRED');
+    }
     if (row?.status !== 'pending') return this.done('ENROLLMENT_EXPIRED');
     if (row.expiresAt.getTime() <= Date.now() || !(await sourceAlive(db, id, new Date()))) {
       await this.finish(id, 'expired');
@@ -139,14 +148,7 @@ export class EnrollmentService {
 
     let answer: DeviceResponse;
     try {
-      if (!Buffer.isBuffer(body) || body.length === 0) {
-        throw new DeviceResponseError('Empty device answer');
-      }
-      const { content } = await verifyDeviceCms(body, { testAnchors: this.testAnchors });
-      answer = parseDeviceResponse(content);
-      if (!sameText(answer.challenge, nonce)) {
-        throw new DeviceResponseError('Challenge does not match');
-      }
+      answer = await this.readAnswer(body, nonce);
     } catch (err) {
       if (!(err instanceof CmsError || err instanceof DeviceResponseError)) throw err;
       await this.finish(id, 'failed');
@@ -158,26 +160,26 @@ export class EnrollmentService {
     try {
       outcome = await db.$transaction((tx) => this.bind(tx, id, row.userId, answer), TX_OPTIONS);
     } catch (err) {
+      // Nothing of the failed transaction was kept: the nonce must not stay usable.
+      await this.finish(id, 'failed').catch(() => undefined);
       // Another buyer's device with this UDID was created meanwhile.
       if (!isUniqueViolation(err)) throw err;
-      await this.finish(id, 'failed');
       outcome = { result: 'DEVICE_OWNED' };
     }
-    if (outcome.result === 'connected') {
-      await this.audit.record({
-        actorId: row.userId,
-        action: 'device.bind',
-        entity: 'device',
-        entityId: outcome.deviceId,
-        diff: {
-          subscriptionId: outcome.subscriptionId,
-          udid: maskUdid(answer.udid),
-          product: answer.product,
-          reused: outcome.reused,
-        },
-      });
-    }
     return this.done(outcome.result, answer);
+  }
+
+  /** Verified device answer whose CHALLENGE is this nonce; throws `CmsError` or `DeviceResponseError`. */
+  private async readAnswer(body: unknown, nonce: string): Promise<DeviceResponse> {
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      throw new DeviceResponseError('Empty device answer');
+    }
+    const { content } = await verifyDeviceCms(body, { testAnchors: this.testAnchors });
+    const answer = parseDeviceResponse(content);
+    if (!sameText(answer.challenge, nonce)) {
+      throw new DeviceResponseError('Challenge does not match');
+    }
+    return answer;
   }
 
   /**
@@ -261,6 +263,21 @@ export class EnrollmentService {
       subscriptionId = subscription.id;
     }
     await tx.enrollmentSession.update({ where: { nonce: id }, data: { deviceId } });
+    // In the same transaction: a bind is never kept without its audit entry, nor reported failed.
+    await tx.auditLog.create({
+      data: {
+        actorId: userId,
+        action: 'device.bind',
+        entity: 'device',
+        entityId: deviceId,
+        diff: {
+          subscriptionId,
+          udid: maskUdid(udid),
+          product: answer.product,
+          reused: own !== null,
+        },
+      },
+    });
     return { result: 'connected', deviceId, subscriptionId, reused: own !== null } as const;
   }
 
