@@ -27,8 +27,9 @@ test('first visit: app window → /get → email → pay on fake page → access
   await expect(
     page.getByRole('heading', { level: 1, name: 'Доступ ко всему каталогу' }),
   ).toBeVisible();
-  await expect(page.getByText('Вы выбрали')).toBeVisible();
-  await expect(page.getByText('Тестовое приложение 1', { exact: true })).toBeVisible();
+  // The subscription is for the whole catalog: step 1 does not name the app the visitor came from.
+  await expect(page.getByText('Вы выбрали')).toHaveCount(0);
+  await expect(page.getByText('Тестовое приложение 1', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Подписка начнётся сразу после оплаты')).toBeVisible();
   // Nothing to press until the email and the consent are there.
   await expect(page.getByRole('button', { name: /^Оплатить / })).toBeDisabled();

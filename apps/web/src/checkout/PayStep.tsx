@@ -8,7 +8,7 @@ import {
   formatRuDate,
   type PlanView,
 } from '@xstore/shared';
-import { AppIcon, Button } from '@xstore/ui';
+import { Button } from '@xstore/ui';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
@@ -17,9 +17,10 @@ import { formatRub } from './wizard-step';
 
 export type PayStepProps = {
   plan: PlanView;
-  /** The app the visitor came from, shown above the price. */
-  app?: { name: string; iconUrl?: string } | null;
-  /** Where the wizard leads after payment, e.g. `/app/<slug>`. */
+  /**
+   * Where the wizard leads after payment, e.g. `/app/<slug>` for the app the visitor came from.
+   * The app itself is not shown here: the subscription is for the whole catalog (vlad, 19.11).
+   */
   returnTo?: string;
   defaultEmail?: string;
   /** «Продлить»: the current end of access; the plan's days are added after it. */
@@ -57,7 +58,6 @@ const defaultNavigate = (url: string) => window.location.assign(url);
 /** Step 1 of the wizard: plan, email, consent and «Оплатить N ₽». */
 export function PayStep({
   plan,
-  app,
   returnTo,
   defaultEmail = '',
   renewUntil,
@@ -142,16 +142,6 @@ export function PayStep({
       <h1 id={`${emailId}-title`} className={styles.title}>
         {renewUntil ? 'Продление доступа' : 'Доступ ко всему каталогу'}
       </h1>
-
-      {app ? (
-        <div className={styles.app}>
-          <AppIcon src={app.iconUrl} alt="" size={56} />
-          <div className={styles.appText}>
-            <span className={styles.caption}>Вы выбрали</span>
-            <span className={styles.appName}>{app.name}</span>
-          </div>
-        </div>
-      ) : null}
 
       <div className={styles.offer}>
         <p className={styles.price}>{price}</p>
