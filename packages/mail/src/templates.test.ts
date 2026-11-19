@@ -42,3 +42,47 @@ describe('login_code', () => {
     expect(() => renderMail('login_code', {}, SITE)).toThrow();
   });
 });
+
+describe('device_ready', () => {
+  const mail = renderMail('device_ready', { family: 'iphone' }, SITE);
+
+  it('subject and site address, no technical words', () => {
+    expect(mail.subject).toBe('iPhone готов, можно ставить');
+    expect(mail.text).toContain(SITE);
+    expect(`${mail.subject} ${mail.text}`).not.toMatch(/UDID|сертификат|профиль|поставщик/i);
+  });
+
+  it('says iPad on an iPad', () => {
+    const ipad = renderMail('device_ready', { family: 'ipad' }, SITE);
+    expect(ipad.subject).toBe('iPad готов, можно ставить');
+    expect(ipad.text).not.toContain('iPhone');
+  });
+});
+
+describe('reinstall_apps', () => {
+  const mail = renderMail('reinstall_apps', { family: 'iphone' }, SITE);
+
+  it('asks to install the apps again', () => {
+    expect(mail.subject).toBe('Переустановите приложения');
+    expect(mail.text).toContain(
+      'Мы обновили доступ. Откройте сайт в Safari на iPhone и установите приложения заново.',
+    );
+    expect(mail.text).toContain(SITE);
+    expect(mail.text).not.toMatch(/UDID|сертификат|профиль|поставщик/i);
+  });
+});
+
+describe('admin_device_waiting', () => {
+  const mail = renderMail('admin_device_waiting', { buyerEmail: 'buyer@example.ru' }, SITE);
+
+  it('names the buyer and links the admin list, without the UDID value', () => {
+    expect(mail.subject).toBe('Новый iPhone ждёт сертификата');
+    expect(mail.text).toContain('buyer@example.ru');
+    expect(mail.text).toContain(`${SITE}/admin/devices`);
+    expect(mail.text).not.toMatch(/[0-9A-F]{8}-[0-9A-F]{16}/);
+  });
+
+  it('requires the buyer email', () => {
+    expect(() => renderMail('admin_device_waiting', {}, SITE)).toThrow();
+  });
+});

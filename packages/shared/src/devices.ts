@@ -115,7 +115,7 @@ export function bindDecision(input: {
 export const deviceStatusLabel: Record<DeviceStatus, string> = {
   new: 'Новое',
   pending: 'Готовим ваш iPhone, обычно до 24 часов',
-  processing: 'Готовим ваш iPhone, обычно до 24 часов',
+  processing: 'Обновляем доступ, обычно до 24 часов',
   active: 'iPhone готов',
   blocked: 'Заблокировано',
   expired: 'Срок истёк',

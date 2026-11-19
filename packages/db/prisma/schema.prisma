@@ -41,21 +41,22 @@ enum EnrollmentStatus {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  email              String?             @unique
-  isProvisional      Boolean             @default(false)
-  checkoutEmail      String?
-  role               Role                @default(user)
-  passwordHash       String?
-  totpSecret         String?
-  blockedAt          DateTime?
-  createdAt          DateTime            @default(now())
-  sessions           Session[]
-  uploads            IpaUpload[]
-  devices            Device[]
-  enrollmentSessions EnrollmentSession[]
-  subscriptions      Subscription[]
-  orders             Order[]
+  id                         String              @id @default(cuid())
+  email                      String?             @unique
+  isProvisional              Boolean             @default(false)
+  checkoutEmail              String?
+  role                       Role                @default(user)
+  passwordHash               String?
+  totpSecret                 String?
+  blockedAt                  DateTime?
+  createdAt                  DateTime            @default(now())
+  sessions                   Session[]
+  uploads                    IpaUpload[]
+  devices                    Device[]
+  enrollmentSessions         EnrollmentSession[]
+  subscriptions              Subscription[]
+  orders                     Order[]
+  uploadedDeviceCertificates DeviceCertificate[]
 
   @@index([isProvisional, checkoutEmail])
 }
@@ -95,8 +96,47 @@ model Device {
   enrollmentSessions EnrollmentSession[]
   installEvents      InstallEvent[]
   subscription       Subscription?
+  certificates       DeviceCertificate[]
 
   @@index([userId, createdAt])
+  @@index([status])
+}
+
+enum DeviceCertificateStatus {
+  active
+  replaced
+  revoked
+  expired
+  deleted
+}
+
+/// Supplier files for one device: `.p12` and its password encrypted with the master key
+/// (`@xstore/secrets`), the `.mobileprovision` as is. At most one `active` row per device
+/// (partial unique index `device_certificate_one_active` in the migration).
+model DeviceCertificate {
+  id               String                  @id @default(cuid())
+  deviceId         String
+  device           Device                  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  status           DeviceCertificateStatus @default(active)
+  /// Never select outside `apps/api/src/apple` and the worker.
+  p12Enc           String
+  /// Never select outside `apps/api/src/apple` and the worker.
+  p12PasswordEnc   String
+  profile          Bytes
+  profileUuid      String
+  teamId           String
+  appIdPattern     String
+  certSerial       String
+  certSha1         String
+  certNotAfter     DateTime
+  profileExpiresAt DateTime
+  uploadedById     String
+  uploadedBy       User                    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt        DateTime                @default(now())
+  endedAt          DateTime?
+
+  @@index([certSha1, status])
+  @@index([deviceId, createdAt])
   @@index([status])
 }
 
@@ -354,27 +394,27 @@ enum OrderStatus {
 }
 
 model Order {
-  id                String        @id @default(cuid())
+  id                String       @id @default(cuid())
   userId            String
   /// Restrict: financial records never disappear with a user or subscription.
-  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   subscriptionId    String
-  subscription      Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   planId            String
-  plan              Plan          @relation(fields: [planId], references: [id])
+  plan              Plan         @relation(fields: [planId], references: [id])
   planSnapshot      Json
   checkoutEmail     String
-  checkoutKey       String        @unique
+  checkoutKey       String       @unique
   returnTo          String?
   amountRub         Int
   status            OrderStatus
   provider          String
-  providerPaymentId String?       @unique
+  providerPaymentId String?      @unique
   redirectUrl       String?
   paidAt            DateTime?
   expiresAt         DateTime
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
   entitlement       Entitlement?
 
   @@index([status, createdAt])
