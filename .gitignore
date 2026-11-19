@@ -17,6 +17,9 @@ test-results/
 *.mobileprovision
 *.pem
 *.key
+# Public Apple Root CA that verifies iPhone answers; not a secret.
+!apps/api/src/enrollment/apple-root-ca.pem
+.secrets/
 
 .claude/settings.local.json
 .DS_Store

@@ -31,6 +31,11 @@ const envSchema = z.object({
     .regex(/^smtps?:\/\/[^\s]+$/)
     .optional(),
   MAIL_FROM: z.string().min(3).optional(),
+  /** PEM certificate (full chain allowed) and private key that sign the connection profile. */
+  ENROLL_CERT_PATH: z.string().min(1).optional(),
+  ENROLL_KEY_PATH: z.string().min(1).optional(),
+  /** Extra trusted root for answers of test devices; refused in production. */
+  ENROLL_TEST_ANCHOR_PATH: z.string().min(1).optional(),
 });
 
 /** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
@@ -61,6 +66,13 @@ export type MailConfig = {
   from: string;
 };
 
+export type EnrollmentConfig = {
+  /** Profile signer files; null until configured (the profile cannot be served then). */
+  signer: { certPath: string; keyPath: string } | null;
+  /** PEM root trusted besides Apple Root CA; never set in production. */
+  testAnchorPath: string | null;
+};
+
 export type AppConfig = {
   databaseUrl: string;
   redisUrl: string;
@@ -70,6 +82,7 @@ export type AppConfig = {
   s3: S3Config;
   payment: PaymentConfig;
   mail: MailConfig;
+  enrollment: EnrollmentConfig;
   /** `XSTORE_DEV_PAGES=1`: development-only routes such as the fake payment buttons. */
   devPages: boolean;
 };
@@ -92,6 +105,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
   if (e.NODE_ENV === 'production') {
     const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
     if (missing.length > 0) throw invalid([...missing]);
+    if (e.ENROLL_TEST_ANCHOR_PATH) throw invalid(['ENROLL_TEST_ANCHOR_PATH']);
+  }
+  if (Boolean(e.ENROLL_CERT_PATH) !== Boolean(e.ENROLL_KEY_PATH)) {
+    throw invalid([e.ENROLL_CERT_PATH ? 'ENROLL_KEY_PATH' : 'ENROLL_CERT_PATH']);
   }
   return {
     databaseUrl: e.DATABASE_URL,
@@ -113,6 +130,13 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
         e.PAYMENT_PROVIDER === 'fake' ? (e.FAKE_PAYMENT_WEBHOOK_SECRET ?? null) : null,
     },
     mail: { smtpUrl: e.SMTP_URL ?? DEV_SMTP_URL, from: e.MAIL_FROM ?? DEV_MAIL_FROM },
+    enrollment: {
+      signer:
+        e.ENROLL_CERT_PATH && e.ENROLL_KEY_PATH
+          ? { certPath: e.ENROLL_CERT_PATH, keyPath: e.ENROLL_KEY_PATH }
+          : null,
+      testAnchorPath: e.ENROLL_TEST_ANCHOR_PATH ?? null,
+    },
     devPages: e.XSTORE_DEV_PAGES === '1',
   };
 }

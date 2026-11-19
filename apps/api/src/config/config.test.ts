@@ -96,3 +96,34 @@ it('refuses a non-SMTP mail URL without echoing it', () => {
     /^Invalid environment variables: SMTP_URL$/,
   );
 });
+
+it('enrollment signer and test anchor are optional paths', () => {
+  expect(loadConfig(valid).enrollment).toEqual({ signer: null, testAnchorPath: null });
+  expect(
+    loadConfig({
+      ...valid,
+      ENROLL_CERT_PATH: '/run/enroll/cert.pem',
+      ENROLL_KEY_PATH: '/run/enroll/key.pem',
+      ENROLL_TEST_ANCHOR_PATH: '/run/enroll/test-root.pem',
+    }).enrollment,
+  ).toEqual({
+    signer: { certPath: '/run/enroll/cert.pem', keyPath: '/run/enroll/key.pem' },
+    testAnchorPath: '/run/enroll/test-root.pem',
+  });
+});
+
+it('enrollment certificate and key come together', () => {
+  expect(() => loadConfig({ ...valid, ENROLL_CERT_PATH: '/c.pem' })).toThrow(
+    /^Invalid environment variables: ENROLL_KEY_PATH$/,
+  );
+  expect(() => loadConfig({ ...valid, ENROLL_KEY_PATH: '/k.pem' })).toThrow(
+    /^Invalid environment variables: ENROLL_CERT_PATH$/,
+  );
+});
+
+it('test enrollment anchor refused in production', () => {
+  const prod = { ...valid, ...prodMail, NODE_ENV: 'production', PAYMENT_PROVIDER: 'platega' };
+  expect(() => loadConfig({ ...prod, ENROLL_TEST_ANCHOR_PATH: '/t.pem' })).toThrow(
+    /^Invalid environment variables: ENROLL_TEST_ANCHOR_PATH$/,
+  );
+});
