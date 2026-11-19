@@ -59,7 +59,8 @@ export type AccessState =
  * A buyer's access is the continuous chain of the live rights of all their subscriptions (after
  * `claimProvisional` a paid guest period and an admin grant can sit in different ones). The
  * subscription shown is the one renewals and grants go to (`pickSubscription`). The device is the
- * one bound to any of the buyer's subscriptions, the shown one's first: it is bound for good to
+ * one bound to any of the buyer's subscriptions, the shown one's first, then the first in the given
+ * order (the API sends the most recently bound first): it is bound for good to
  * the subscription it was connected under, which need not be the one renewals now go to.
  */
 export function accessState(input: {

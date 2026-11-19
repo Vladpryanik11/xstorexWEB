@@ -20,8 +20,10 @@ export type ClaimTx = Pick<
  *   1. `hashtext(email)`                 — claims of one email serialize;
  *   2. `hashtext('checkout:' + userId)`  — per source buyer, by id: an in-flight checkout of a
  *                                          provisional buyer (`CheckoutService.openOrder`) ends first;
- *   3. `hashtext(subscriptionId)`        — per subscription, by id: the lock `applyPayment` takes,
- *                                          so a payment being applied finishes before its row moves.
+ *   3. `hashtext(subscriptionId)`        — per subscription, by id, over the moved subscriptions and
+ *                                          the verified buyer's own in one sorted list: the lock
+ *                                          `applyPayment` takes, so a payment being applied finishes
+ *                                          before its row moves or the buyer's chain is read.
  * `openOrder` takes only (checkoutKey →) 2 and `applyPayment` only 3, never 1, so neither can
  * wait on a lock this function holds while holding one it needs.
  */
@@ -58,9 +60,11 @@ export async function claimProvisional(
   for (const id of ids) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checkout:${id}`}))`;
   }
+  // The buyer's own subscriptions are locked too: their rights set the chain end below, and a
+  // payment applied to one of them meanwhile would overlap a right moved after that end.
   const subscriptions = await tx.subscription.findMany({
-    where: { userId: { in: ids } },
-    select: { id: true },
+    where: { userId: { in: [...ids, verifiedUserId] } },
+    select: { id: true, userId: true },
     orderBy: { id: 'asc' },
   });
   for (const s of subscriptions) {
@@ -69,8 +73,8 @@ export async function claimProvisional(
 
   await chainFutureRights(
     tx,
-    verifiedUserId,
     subscriptions.map((s) => s.id),
+    subscriptions.filter((s) => s.userId !== verifiedUserId).map((s) => s.id),
   );
 
   const owned = { userId: { in: ids } };
@@ -90,19 +94,17 @@ export async function claimProvisional(
  * Puts the not-yet-started live rights of `movedIds` after the verified buyer's chain: in start
  * order, each starts at `max(startsAt, chain end)` and keeps its length; the chain end is the
  * latest end of the buyer's own live rights and the moved rights that have already started.
+ * `lockedIds` are all subscriptions involved (the buyer's own and the moved), already locked.
  */
 async function chainFutureRights(
   tx: ClaimTx,
-  verifiedUserId: string,
+  lockedIds: string[],
   movedIds: string[],
   now = new Date(),
 ): Promise<void> {
   if (movedIds.length === 0) return;
   const rights = await tx.entitlement.findMany({
-    where: {
-      revokedAt: null,
-      OR: [{ subscription: { userId: verifiedUserId } }, { subscriptionId: { in: movedIds } }],
-    },
+    where: { revokedAt: null, subscriptionId: { in: lockedIds } },
     select: { id: true, subscriptionId: true, startsAt: true, expiresAt: true },
     orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
   });
@@ -110,9 +112,10 @@ async function chainFutureRights(
   const future = rights.filter(
     (r) => moved.has(r.subscriptionId) && r.startsAt.getTime() > now.getTime(),
   );
+  const futureIds = new Set(future.map((r) => r.id));
   let end = 0;
   for (const r of rights) {
-    if (!future.includes(r)) end = Math.max(end, r.expiresAt.getTime());
+    if (!futureIds.has(r.id)) end = Math.max(end, r.expiresAt.getTime());
   }
   for (const r of future) {
     const length = r.expiresAt.getTime() - r.startsAt.getTime();

@@ -252,6 +252,13 @@ export class CheckoutService {
         checkoutEmail: true,
         passwordHash: true,
         subscriptions: {
+          // A deterministic device when the buyer has several (after a claim): the one bound
+          // most recently comes first in `accessState`'s fallback.
+          orderBy: [
+            { assignedAt: { sort: 'desc', nulls: 'last' } },
+            { createdAt: 'asc' },
+            { id: 'asc' },
+          ],
           select: {
             id: true,
             device: { select: { product: true, status: true } },

@@ -555,3 +555,48 @@ it('claim moves future rights after the buyer chain', async () => {
     until: moved.expiresAt.toISOString(),
   });
 });
+
+it('access shows the device bound most recently when the buyer has two', async () => {
+  // After a claim a buyer can own their own device and a guest's one on different subscriptions.
+  const buyer = await db.user.create({ data: { email: rcpt(), role: 'user' } });
+  const device = (udid: string, product: string) =>
+    db.device.create({
+      data: {
+        userId: buyer.id,
+        udid,
+        product,
+        iosVersion: '18.0',
+        name: product,
+        status: 'pending',
+      },
+    });
+  const older = await device('a'.repeat(40), 'iPhone15,2');
+  const newer = await device('b'.repeat(40), 'iPad13,1');
+  // Created first, bound earlier; then the one bound later.
+  await db.subscription.create({
+    data: { userId: buyer.id, deviceId: older.id, assignedAt: new Date(Date.now() - 2 * DAY_MS) },
+  });
+  await db.subscription.create({
+    data: { userId: buyer.id, deviceId: newer.id, assignedAt: new Date(Date.now() - DAY_MS) },
+  });
+  // The live access sits on a third subscription without a device.
+  const live = await db.subscription.create({ data: { userId: buyer.id } });
+  await db.entitlement.create({
+    data: {
+      subscriptionId: live.id,
+      planCode: 'month',
+      durationDays: 30,
+      startsAt: new Date(Date.now() - DAY_MS),
+      expiresAt: new Date(Date.now() + 29 * DAY_MS),
+    },
+  });
+  const { token } = await app.get(SessionService).create(buyer.id, 'user', {});
+  const access = await request(app.getHttpServer())
+    .get('/api/v1/access')
+    .set('Cookie', `xs_session=${token}`);
+  expect(access.body.state).toMatchObject({
+    kind: 'active',
+    subscriptionId: live.id,
+    device: { family: 'ipad', ready: false },
+  });
+});
