@@ -4,7 +4,8 @@ import { Header } from './Header';
 
 /**
  * Public site chrome: the `(site)` and `(home)` layouts and the root 404 and error pages, which
- * sit outside those groups. Auth arrives in M2; until then every visitor is a guest.
+ * sit outside those groups. The header reads the session in the browser (`useNavState`), so the
+ * pages themselves stay the same for every visitor.
  */
 export function SiteShell({
   children,
@@ -16,7 +17,7 @@ export function SiteShell({
 }) {
   return (
     <>
-      <Header signedIn={false} overHero={overHero} />
+      <Header overHero={overHero} />
       <main>{children}</main>
       <Footer />
     </>

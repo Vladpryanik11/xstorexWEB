@@ -22,9 +22,23 @@ export const ErrorCode = {
   ENROLLMENT_EXPIRED: 'ENROLLMENT_EXPIRED',
   ENROLLMENT_INVALID: 'ENROLLMENT_INVALID',
   DEVICE_OWNED: 'DEVICE_OWNED',
+  DEVICE_LIMIT: 'DEVICE_LIMIT',
+  NO_ACCESS: 'NO_ACCESS',
+  ENROLLMENT_FAILED: 'ENROLLMENT_FAILED',
+  ENROLLMENT_UNAVAILABLE: 'ENROLLMENT_UNAVAILABLE',
   ACCOUNT_BLOCKED: 'ACCOUNT_BLOCKED',
   CODE_INVALID: 'CODE_INVALID',
   EMAIL_TAKEN: 'EMAIL_TAKEN',
+  CHECKOUT_IN_PROGRESS: 'CHECKOUT_IN_PROGRESS',
+  CHECKOUT_SETTLED: 'CHECKOUT_SETTLED',
+  PLAN_UNAVAILABLE: 'PLAN_UNAVAILABLE',
+  PLAN_PRICE_REQUIRED: 'PLAN_PRICE_REQUIRED',
+  PAYMENT_PENDING: 'PAYMENT_PENDING',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  PAYMENT_PROVIDER_DOWN: 'PAYMENT_PROVIDER_DOWN',
+  WEAK_PASSWORD: 'WEAK_PASSWORD',
+  GRANT_STAFF_EMAIL: 'GRANT_STAFF_EMAIL',
+  REFUND_NOT_PAID: 'REFUND_NOT_PAID',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -38,7 +52,7 @@ export const errorMessages: Record<ErrorCode, string> = {
   VALIDATION: 'Некорректные данные',
   INTERNAL: 'Внутренняя ошибка сервера',
   CONFLICT: 'Конфликт данных',
-  INVALID_CREDENTIALS: 'Неверная почта, пароль или код',
+  INVALID_CREDENTIALS: 'Неверная почта или пароль',
   UPLOAD_TOO_LARGE: 'Файл больше допустимого размера',
   IPA_NOT_ZIP: 'Файл не является IPA-архивом или повреждён',
   IPA_UNSAFE_PATH: 'В архиве есть недопустимые пути к файлам',
@@ -52,11 +66,38 @@ export const errorMessages: Record<ErrorCode, string> = {
   ENROLLMENT_EXPIRED: 'Время подключения истекло. Попробуйте ещё раз.',
   ENROLLMENT_INVALID: 'Не удалось проверить ответ устройства. Попробуйте ещё раз.',
   DEVICE_OWNED:
-    'Это устройство уже привязано к другому аккаунту. Войдите в него или напишите в поддержку.',
+    'Это устройство уже подключено к другому доступу. Войдите с почтой, с которой его подключали, или напишите в поддержку.',
+  DEVICE_LIMIT: 'К вашему доступу уже подключено другое устройство.',
+  NO_ACCESS: 'Подключить устройство можно при активном доступе. Сначала оформите доступ.',
+  ENROLLMENT_FAILED: 'Не получилось подключить устройство. Попробуйте ещё раз.',
+  ENROLLMENT_UNAVAILABLE: 'Подключение сейчас недоступно. Попробуйте позже.',
   ACCOUNT_BLOCKED: 'Аккаунт заблокирован',
   CODE_INVALID: 'Неверный или устаревший код',
   EMAIL_TAKEN: 'Эта почта уже привязана к другому аккаунту',
+  CHECKOUT_IN_PROGRESS: 'Оплата уже начата, подождите несколько секунд',
+  CHECKOUT_SETTLED: 'Эта оплата уже завершена. Начните новую',
+  PLAN_UNAVAILABLE: 'Подписка сейчас недоступна',
+  PLAN_PRICE_REQUIRED: 'Укажите цену, чтобы создать тариф',
+  PAYMENT_PENDING: 'Проверяем оплату',
+  PAYMENT_FAILED: 'Оплата не прошла. Попробуйте ещё раз',
+  PAYMENT_PROVIDER_DOWN: 'Платёжный сервис не отвечает. Попробуйте через минуту',
+  WEAK_PASSWORD: 'Пароль должен быть от 8 до 128 символов',
+  GRANT_STAFF_EMAIL: 'Эта почта принадлежит сотруднику, выдать на неё доступ нельзя',
+  REFUND_NOT_PAID: 'Отметить возврат можно только у оплаченного заказа',
 };
+
+/** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */
+export const signinMessages = {
+  /** A 429 on a code step (code request, code check). */
+  TOO_MANY_ATTEMPTS: 'Слишком много попыток, попробуйте позже',
+  /** A 429 on password sign-in: the code from the email still works. */
+  PASSWORD_LOCKED:
+    'Слишком много попыток входа по паролю. Нажмите «Войти по коду из письма» — код придёт на почту.',
+  /** Staff sign in with a TOTP code as well; INVALID_CREDENTIALS covers all three fields. */
+  STAFF_INVALID_CREDENTIALS: 'Неверная почта, пароль или код из приложения',
+  CHECK_EMAIL: 'Проверьте почту и попробуйте ещё раз',
+  FAILED: 'Не получилось войти. Попробуйте ещё раз.',
+} as const;
 
 export const apiErrorSchema = z.object({
   code: z.enum(ErrorCode),

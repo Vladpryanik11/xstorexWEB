@@ -278,6 +278,99 @@
 .shell .switch:focus-visible {
   outline-offset: 2px;
 }
+/* Billing: plan, orders, subscriptions (N1). */
+.shell button.quiet {
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+  box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .shell button.quiet:not(:disabled):hover {
+    background: var(--x-sky-200);
+  }
+}
+.cardTitle {
+  margin: 0;
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
+  color: var(--x-text);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.refund {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 14rem;
+}
+.refund p {
+  margin: 0;
+}
+.ok,
+.err {
+  margin: 0;
+  padding: 0.625rem 1rem;
+  border-radius: var(--x-radius-pill);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+/* The empty status region stays mounted for screen readers (BillingForms `Result`); out of the
+   flow, it adds no grid gap under the form's buttons. Not `display: none`: that drops the live region. */
+.ok:empty {
+  position: absolute;
+  padding: 0;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ok {
+  background: var(--x-ok-bg);
+  color: var(--x-ok);
+}
+.err {
+  background: var(--x-err-bg);
+  color: var(--x-err);
+}
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+  font: var(--x-type-cap);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+  white-space: nowrap;
+}
+.badge[data-tone="ok"] {
+  background: var(--x-ok-bg);
+  color: var(--x-ok);
+}
+.badge[data-tone="warn"] {
+  background: var(--x-warn-bg);
+  color: var(--x-warn);
+}
+.badge[data-tone="err"] {
+  background: var(--x-err-bg);
+  color: var(--x-err);
+}
+.rights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.table s {
+  color: var(--x-text-2);
+}
 /* Versions: rows become cards on phones (spec 2026-11-17 §8). */
 @media (max-width: 47.9375em) {
   .stack {

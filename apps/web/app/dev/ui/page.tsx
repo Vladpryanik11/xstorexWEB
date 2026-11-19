@@ -35,7 +35,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 /**
- * Dev showcase: `?auth=1` signed-in header, `&path=/devices` forces the active item,
+ * Dev showcase: `?auth=1` subscriber header, `&path=/faq` forces the active item,
  * `&w=hero` the transparent home variant. Served only when XSTORE_DEV_PAGES=1.
  */
 export default async function DevUiPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -43,6 +43,7 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
   if (process.env.XSTORE_DEV_PAGES !== '1') notFound();
 
   const signedIn = one(params.auth) === '1';
+  const nav = { signedIn, hasAccess: signedIn };
   const overHero = one(params.w) === 'hero';
   const forcedPath = one(params.path);
   const tiles = Array.from({ length: 10 }, (_, i) => `Приложение ${i + 1}`);
@@ -58,7 +59,7 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <Header signedIn={signedIn} overHero={overHero} forcedPath={forcedPath} />
+      <Header nav={nav} overHero={overHero} forcedPath={forcedPath} />
       <main>
         {overHero ? (
           <section className={styles.hero}>

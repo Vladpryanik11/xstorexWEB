@@ -68,6 +68,18 @@ services:
       S3_PUBLIC_URL: https://${DL_DOMAIN:-dl.localhost}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-xstore}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # Production always pays through Platega; the fake provider refuses NODE_ENV=production.
+      PAYMENT_PROVIDER: platega
+      XSTORE_DEV_PAGES: '0'
+      # Letters; SMTP_URL may hold a password and stays in .env.
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+      # The iPhone connection file is signed with Caddy's certificate for SITE_DOMAIN, copied by
+      # `enroll-cert`. Fixed here: the development paths in .env do not exist in the container.
+      ENROLL_CERT_PATH: /run/enroll/cert.pem
+      ENROLL_KEY_PATH: /run/enroll/key.pem
+    volumes:
+      - enrollcert:/run/enroll:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -94,6 +106,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       S3_ENDPOINT: http://minio:9000
       S3_PUBLIC_URL: https://${DL_DOMAIN:-dl.localhost}
+      SITE_URL: https://${SITE_DOMAIN:-localhost}
+      # Same provider as the API; billing jobs do nothing until the Platega adapter lands.
+      PAYMENT_PROVIDER: platega
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-xstore}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
@@ -103,6 +120,22 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+
+  # Copies Caddy's certificate and key for SITE_DOMAIN from caddydata (read-only) for the api user;
+  # see enroll-cert-sync.sh. CADDY_CERT_ISSUER is the folder Caddy keeps the certificate in:
+  # Let's Encrypt by default, `local` for localhost, `acme.zerossl.com-v2-dv90` for ZeroSSL.
+  enroll-cert:
+    # Pinned by digest: this container reads all of caddydata (ACME account and local CA keys too).
+    image: alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
+    restart: unless-stopped
+    command: ['sh', '/enroll-cert-sync.sh']
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+      CADDY_CERT_ISSUER: ${CADDY_CERT_ISSUER:-acme-v02.api.letsencrypt.org-directory}
+    volumes:
+      - ./enroll-cert-sync.sh:/enroll-cert-sync.sh:ro
+      - caddydata:/caddy-data:ro
+      - enrollcert:/enroll
 
   migrate:
     build: *api-build
@@ -165,3 +198,4 @@ volumes:
   redisdata:
   miniodata:
   caddydata:
+  enrollcert:

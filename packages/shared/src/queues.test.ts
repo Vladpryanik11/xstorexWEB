@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest';
 import { defaultJobOptions, ipaInspectJob, QueueName } from './queues.js';
 
-it('names the M1 queues', () => {
-  expect(QueueName).toEqual({ system: 'system', ipa: 'ipa' });
+it('names the queues', () => {
+  expect(QueueName).toEqual({ system: 'system', ipa: 'ipa', billing: 'billing' });
 });
 
 it('validates job payloads', () => {

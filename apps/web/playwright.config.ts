@@ -6,6 +6,19 @@ import { defineConfig, devices } from '@playwright/test';
 const rootEnv = fileURLToPath(new URL('../../.env', import.meta.url));
 if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
+/**
+ * Profile signer and test device root for the e2e API, from `pnpm --filter @xstore/api
+ * enroll:dev-cert` and `enroll:test-ca` (.secrets/enroll/, gitignored). Without them the
+ * connection tests fail with a hint; everything else runs.
+ */
+const enrollDir = fileURLToPath(new URL('../../.secrets/enroll/', import.meta.url));
+const enrollFiles = {
+  ENROLL_CERT_PATH: `${enrollDir}cert.pem`,
+  ENROLL_KEY_PATH: `${enrollDir}key.pem`,
+  ENROLL_TEST_ANCHOR_PATH: `${enrollDir}test-anchor.pem`,
+};
+const enrollEnv = Object.values(enrollFiles).every((path) => existsSync(path)) ? enrollFiles : {};
+
 const port = 3100;
 const apiPort = 3101;
 
@@ -24,6 +37,12 @@ export const e2eApiEnv = (env: NodeJS.ProcessEnv = process.env): Record<string, 
     S3_ACCESS_KEY: pick('S3_ACCESS_KEY', env.S3_ACCESS_KEY),
     S3_SECRET_KEY: pick('S3_SECRET_KEY', env.S3_SECRET_KEY),
     S3_BUCKET_PREFIX: pick('S3_BUCKET_PREFIX_TEST', env.S3_BUCKET_PREFIX_TEST),
+    // E2E pays through the development-only fake provider; the key signs only fake webhooks.
+    PAYMENT_PROVIDER: 'fake',
+    FAKE_PAYMENT_WEBHOOK_SECRET: 'e2e-fake-webhook-secret',
+    // Letters go to the test Mailpit; a missing one only logs failed sends.
+    SMTP_URL: env.SMTP_URL_TEST ?? 'smtp://127.0.0.1:1025',
+    MAIL_FROM: 'Xstore <noreply@xstorex.test>',
   };
 };
 
@@ -62,9 +81,11 @@ export default defineConfig({
       url: `http://localhost:${apiPort}/api/v1/health`,
       env: {
         ...e2eApiEnv(),
+        ...enrollEnv,
         API_PORT: String(apiPort),
         SITE_URL: `http://localhost:${port}`,
         LOG_LEVEL: 'warn',
+        XSTORE_DEV_PAGES: '1',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
@@ -74,7 +95,13 @@ export default defineConfig({
       // Not `/`: Playwright starts the servers before global setup migrates and seeds the test
       // database, and every catalog page needs those tables. The dev showcase needs no API.
       url: `http://localhost:${port}/dev/ui`,
-      env: { XSTORE_DEV_PAGES: '1', API_INTERNAL_URL: `http://localhost:${apiPort}` },
+      // SITE_URL: the dev payment page settles fake payments through the API, whose Origin
+      // check expects this site, not the development one from the root .env.
+      env: {
+        XSTORE_DEV_PAGES: '1',
+        API_INTERNAL_URL: `http://localhost:${apiPort}`,
+        SITE_URL: `http://localhost:${port}`,
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
     },

@@ -44,6 +44,25 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@xstore/billing": "Пакет оплаты только для API и воркера: сайт его не импортирует.",
+                  "@xstore/mail": "Пакет писем только для API и воркера: сайт его не импортирует.",
+                  "@xstore/mail/testing": "Пакет писем только для API и воркера: сайт его не импортирует."
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

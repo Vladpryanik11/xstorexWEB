@@ -45,6 +45,8 @@ beforeAll(async () => {
     S3_BUCKET_PREFIX: env.S3_BUCKET_PREFIX_TEST,
     TMP_DIR: tmp,
     LOG_LEVEL: 'error',
+    PAYMENT_PROVIDER: 'fake',
+    FAKE_PAYMENT_WEBHOOK_SECRET: 'test-fake-webhook-secret',
   });
   deps = createWorkerDeps(config, pino({ level: 'silent' }));
   for (const name of ['originals', 'media'] as const) {

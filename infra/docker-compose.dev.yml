@@ -52,6 +52,18 @@ services:
       timeout: 5s
       retries: 10
 
+  mailpit:
+    # Catches every letter in development and tests: SMTP 1025, web and API 8025.
+    image: axllent/mailpit:v1.27.10
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres-data:
   redis-data:

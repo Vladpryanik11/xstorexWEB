@@ -1,37 +1,70 @@
+import { type AccessState, type DeviceFamily, deviceStatusText } from '@xstore/shared';
+import { familyName } from '../checkout/connect-step';
+import type { DeviceKind } from './device';
+
 /**
- * What the install button on `/app/[slug]` shows. M1 knows only guests (`buy`: payment without
- * registration, sign-in second) and «Скоро»; M2–M5 add `add_device`, `signing`, `install` and
- * `instructions` (spec §6.3).
+ * What the button in the app window shows (spec v2 §3.2). Without access the window leads to the
+ * wizard and an unpaid order continues. A subscriber first connects the iPhone (Н2), waits while it
+ * is prepared, and then waits for installs (`soon`) until Н4 ships them.
  */
 export type InstallCtx = {
-  signedIn: boolean;
+  device: DeviceKind;
+  /** iPhone or iPad by the browser; names the device before one is connected. */
+  family?: DeviceFamily;
+  access: AccessState;
   app: {
     slug: string;
-    accessLevel: string;
     latestVersion: { encrypted: boolean } | null;
   };
 };
 
 export type InstallState = {
-  kind: 'buy' | 'unavailable';
+  kind: 'buy' | 'resume' | 'connect' | 'preparing' | 'help' | 'soon' | 'desktop' | 'unavailable';
   label: string;
   href?: string;
-  /** Second action for visitors who have already paid. */
+  /** Second action for visitors who have already paid; returns to the same window. */
   signinHref?: string;
 };
 
-const UNAVAILABLE: InstallState = { kind: 'unavailable', label: 'Скоро' };
+const SOON: InstallState = { kind: 'soon', label: 'Скоро можно будет установить' };
 
-export function installButtonState(ctx: InstallCtx): InstallState {
-  if (!ctx.app.latestVersion) return UNAVAILABLE;
-  if (!ctx.signedIn) {
-    const next = `/app/${encodeURIComponent(ctx.app.slug)}`;
+function subscriberState(
+  device: DeviceKind,
+  family: DeviceFamily,
+  access: Extract<AccessState, { kind: 'active' }>,
+): InstallState {
+  const bound = access.device;
+  // A computer cannot connect: the window's note sends the buyer to the phone.
+  if (!bound) {
+    return device === 'ios'
+      ? { kind: 'connect', label: `Подключить ${familyName(family)}`, href: '/get/iphone' }
+      : SOON;
+  }
+  if (bound.ready) return SOON;
+  if (bound.needsHelp) return { kind: 'help', label: 'Написать в поддержку', href: '/support' };
+  return { kind: 'preparing', label: deviceStatusText('pending', bound.family) };
+}
+
+export function installButtonState({
+  device,
+  family = 'iphone',
+  access,
+  app,
+}: InstallCtx): InstallState {
+  if (!app.latestVersion) return { kind: 'unavailable', label: 'Скоро' };
+  if (access.kind === 'payment_pending') {
     return {
-      kind: 'buy',
-      label: 'Установить',
-      href: `/pricing?app=${encodeURIComponent(ctx.app.slug)}`,
-      signinHref: `/signin?next=${encodeURIComponent(next)}`,
+      kind: 'resume',
+      label: 'Продолжить оплату',
+      href: `/get/${encodeURIComponent(access.orderId)}`,
     };
   }
-  return UNAVAILABLE;
+  if (access.kind === 'active') return subscriberState(device, family, access);
+  const slug = encodeURIComponent(app.slug);
+  return {
+    kind: device === 'ios' ? 'buy' : 'desktop',
+    label: device === 'ios' ? 'Установить' : 'Оформить доступ',
+    href: `/get?app=${slug}`,
+    signinHref: `/signin?next=${encodeURIComponent(`/?app=${slug}`)}`,
+  };
 }

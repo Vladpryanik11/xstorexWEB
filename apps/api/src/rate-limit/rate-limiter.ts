@@ -4,6 +4,11 @@ import { REDIS, redisReady } from '../infra/redis.provider.js';
 
 export type RateLimitResult = { allowed: boolean; retryAfterSec: number };
 
+const RELEASE = `if redis.call('GET', KEYS[1]) and tonumber(redis.call('GET', KEYS[1])) > 0 then
+  return redis.call('DECR', KEYS[1])
+end
+return 0`;
+
 /** Fixed window counter: INCR, then EXPIRE … NX so the first hit starts the window. */
 @Injectable()
 export class RateLimiter {
@@ -19,5 +24,14 @@ export class RateLimiter {
     const ttl = Number(replies[2]?.[1]);
     if (count <= limit) return { allowed: true, retryAfterSec: 0 };
     return { allowed: false, retryAfterSec: ttl > 0 ? ttl : windowSec };
+  }
+
+  /**
+   * Gives back one hit taken by `consume` (e.g. the attempt succeeded and must not count). Only
+   * while the window lasts: a key that has expired meanwhile is left alone, never set to -1.
+   */
+  async release(key: string): Promise<void> {
+    const redis = await redisReady(this.redis);
+    await redis.eval(RELEASE, 1, `rl:${key}`);
   }
 }

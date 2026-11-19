@@ -1,10 +1,14 @@
 'use client';
 
+import { type AccessState, type DeviceFamily, formatRuDate } from '@xstore/shared';
 import { AppIcon } from '@xstore/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { type DeviceKind, deviceKind } from '../app-page/device';
 import { installButtonState } from '../app-page/install-button-state';
+import { browserApi } from '../checkout/browser-api';
+import { browserFamily } from '../checkout/connect-step';
 import styles from './AppPreview.module.css';
 
 export type AppPreviewProps = {
@@ -28,15 +32,9 @@ export const INSTALL_STEPS = [
   'Значок появится на экране «Домой».',
 ] as const;
 
-export const DESKTOP_NOTE =
-  'Установить можно только на iPhone или iPad: откройте этот сайт на телефоне. Оплатить можно и здесь.';
+export const DESKTOP_NOTE = 'Установить можно с iPhone или iPad. Откройте этот сайт на телефоне.';
 
-/** iPhone, iPad or iPod; iPadOS reports itself as a Mac with touch. */
-function isAppleMobile(): boolean {
-  const { userAgent, maxTouchPoints } = window.navigator;
-  if (/iPhone|iPad|iPod/.test(userAgent)) return true;
-  return /Macintosh/.test(userAgent) && maxTouchPoints > 1;
-}
+const GUEST: AccessState = { kind: 'none' };
 
 const SPRING = { type: 'spring', stiffness: 380, damping: 34 } as const;
 const FOCUSABLE = 'a[href], button:not([disabled])';
@@ -62,16 +60,36 @@ export function AppPreview({
   // never finishes the shared-layout exit (seen in WebKit CI and jsdom).
   const [mounted, setMounted] = useState(false);
   // Rendered as a phone on the server; a computer gets its note after hydration.
-  const [phone, setPhone] = useState(true);
+  const [device, setDevice] = useState<DeviceKind>('ios');
+  const [family, setFamily] = useState<DeviceFamily>('iphone');
+  // Asked from the browser once the window opens, so the catalog pages stay cacheable;
+  // `null` while the answer is on its way. Any failure falls back to the guest button.
+  const [access, setAccess] = useState<AccessState | null>(null);
   const reduce = useReducedMotion() ?? false;
   const morph = !reduce;
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const primary = useRef<HTMLAnchorElement>(null);
+  // Set once the visitor tabs or taps inside the window: focus is theirs from then on.
+  const focusMoved = useRef(false);
+  // The public catalog lists only apps with a published version.
+  const latestVersion = { encrypted: false };
   const install = installButtonState({
-    signedIn: false,
-    app: { slug, accessLevel: 'public', latestVersion: { encrypted: false } },
+    device,
+    family,
+    access: access ?? GUEST,
+    app: { slug, latestVersion },
   });
+  const phone = device === 'ios';
+
+  // Forget the previous answer in the same update that opens the window: a reopened window never
+  // shows it for a frame, and a closing one keeps its content while it animates away.
+  const show = useCallback(() => {
+    setAccess(null);
+    setOpen(true);
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -79,11 +97,29 @@ export function AppPreview({
     if (variant === 'none') window.history.replaceState(null, '', window.location.pathname);
   }, [variant]);
 
-  useEffect(() => setPhone(isAppleMobile()), []);
+  useEffect(() => {
+    const { userAgent, maxTouchPoints } = window.navigator;
+    setDevice(deviceKind(userAgent, maxTouchPoints));
+    setFamily(browserFamily(userAgent, maxTouchPoints));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    let current = true;
+    browserApi()
+      .getAccess()
+      .then(
+        (res) => current && setAccess(res.state),
+        () => current && setAccess(GUEST),
+      );
+    return () => {
+      current = false;
+    };
+  }, [open]);
   // After hydration, so the server and the first client render match.
   useEffect(() => {
-    if (initialOpen) setOpen(true);
-  }, [initialOpen]);
+    if (initialOpen) show();
+  }, [initialOpen, show]);
 
   useEffect(() => {
     if (open) {
@@ -95,10 +131,22 @@ export function AppPreview({
     return () => window.clearTimeout(timer);
   }, [open, mounted]);
 
+  // While loading only «Закрыть» can hold focus; the main action takes it when it appears,
+  // unless the visitor has already moved it.
+  useEffect(() => {
+    if (!open || access === null || focusMoved.current) return;
+    if (document.activeElement === closeButton.current) primary.current?.focus();
+  }, [open, access]);
+
   useEffect(() => {
     if (!open) return;
     const root = dialog.current;
+    focusMoved.current = false;
     root?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    const onPointer = () => {
+      focusMoved.current = true;
+    };
+    root?.addEventListener('pointerdown', onPointer);
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
 
@@ -109,6 +157,7 @@ export function AppPreview({
         return;
       }
       if (event.key !== 'Tab' || !root) return;
+      focusMoved.current = true;
       const items = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)];
       const first = items[0];
       const last = items[items.length - 1];
@@ -124,6 +173,7 @@ export function AppPreview({
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
+      root?.removeEventListener('pointerdown', onPointer);
       document.body.style.overflow = overflow;
       trigger.current?.focus();
     };
@@ -148,7 +198,7 @@ export function AppPreview({
           className={styles[variant]}
           aria-haspopup="dialog"
           aria-expanded={open}
-          onClick={() => setOpen(true)}
+          onClick={show}
         >
           {icon}
           {variant === 'tile' ? <span className={styles.tileName}>{name}</span> : null}
@@ -196,7 +246,34 @@ export function AppPreview({
                       {name}
                     </h2>
                     {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-                    {phone ? (
+                    {access === null ? (
+                      phone ? (
+                        <ol
+                          className={`${styles.steps} ${styles.blank}`}
+                          data-placeholder
+                          aria-hidden="true"
+                        >
+                          {INSTALL_STEPS.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p
+                          className={`${styles.note} ${styles.blank}`}
+                          data-placeholder
+                          aria-hidden="true"
+                        >
+                          {DESKTOP_NOTE}
+                        </p>
+                      )
+                    ) : access.kind === 'payment_pending' ? (
+                      <p className={styles.note}>Оплата ещё не завершена.</p>
+                    ) : access.kind === 'active' ? (
+                      <p className={styles.note}>
+                        Доступ активен до {formatRuDate(access.until)}.
+                        {phone ? null : ` ${DESKTOP_NOTE}`}
+                      </p>
+                    ) : phone ? (
                       <ol className={styles.steps} aria-label="Как установить">
                         {INSTALL_STEPS.map((step) => (
                           <li key={step}>{step}</li>
@@ -205,21 +282,33 @@ export function AppPreview({
                     ) : (
                       <p className={styles.note}>{DESKTOP_NOTE}</p>
                     )}
-                    <div className={styles.actions}>
-                      {install.href ? (
-                        <a className={styles.install} href={install.href}>
-                          Установить
+                    <div className={styles.actions} aria-live="polite" aria-busy={access === null}>
+                      {access === null ? (
+                        <span className={styles.soon} aria-hidden="true">
+                          {install.label}
+                        </span>
+                      ) : install.href ? (
+                        <a ref={primary} className={styles.install} href={install.href}>
+                          {install.label}
                         </a>
                       ) : (
-                        <span className={styles.soon}>{install.label}</span>
+                        <button type="button" className={styles.soon} disabled>
+                          {install.label}
+                        </button>
                       )}
-                      {install.signinHref ? (
+                      {access === null ? (
+                        <p className={`${styles.paid} ${styles.reserve}`} aria-hidden="true">
+                          Уже оплачивали? Войти
+                        </p>
+                      ) : null}
+                      {access !== null && install.signinHref ? (
                         <p className={styles.paid}>
                           Уже оплачивали? <a href={install.signinHref}>Войти</a>
                         </p>
                       ) : null}
                     </div>
                     <button
+                      ref={closeButton}
                       type="button"
                       className={styles.close}
                       aria-label="Закрыть"

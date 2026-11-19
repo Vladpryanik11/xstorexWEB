@@ -1,5 +1,7 @@
 # M2 Sign-in and Cabinet Implementation Plan
 
+> **Заменено 2026-11-18:** продукт, сценарии и порядок вех теперь задают [спецификация v2](../specs/2026-11-18-xstore-v2-design.md) и [план v2](2026-11-18-v2-roadmap.md). Этот документ остаётся справочником по техническим решениям.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A returning visitor signs in by email code; «Подключить iPhone» gets a UDID inside an existing owner session. First checkout creates its own account without mandatory sign-in (M5), and the subscription starts at payment, independently of device connection.

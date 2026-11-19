@@ -17,3 +17,14 @@ export async function verifyPassword(stored: string, plain: string): Promise<boo
     return false;
   }
 }
+
+let dummy: Promise<string> | undefined;
+
+/**
+ * A hash to verify against when no account matches, so an unknown email costs the same time as
+ * a wrong password. Computed once per process.
+ */
+export function dummyPasswordHash(): Promise<string> {
+  dummy ??= hashPassword('xstore-dummy-password');
+  return dummy;
+}

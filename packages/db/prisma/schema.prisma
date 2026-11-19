@@ -54,6 +54,8 @@ model User {
   uploads            IpaUpload[]
   devices            Device[]
   enrollmentSessions EnrollmentSession[]
+  subscriptions      Subscription[]
+  orders             Order[]
 
   @@index([isProvisional, checkoutEmail])
 }
@@ -92,12 +94,14 @@ model Device {
   sessions           Session[]
   enrollmentSessions EnrollmentSession[]
   installEvents      InstallEvent[]
+  subscription       Subscription?
 
   @@index([userId, createdAt])
   @@index([status])
 }
 
 model EnrollmentSession {
+  /// sha256 hex of the one-time nonce; the nonce itself is never stored.
   nonce     String           @id
   status    EnrollmentStatus @default(pending)
   userId    String
@@ -305,4 +309,126 @@ model InstallEvent {
 
   @@index([appId, createdAt])
   @@index([deviceId])
+}
+
+// ---------------------------------------------------------------------------------------------
+// N1: subscriptions and payments. CHECK constraints live in the n1_billing migration SQL.
+
+model Plan {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  title        String
+  durationDays Int
+  /// Whole rubles, > 0 (CHECK).
+  priceRub     Int
+  active       Boolean  @default(true)
+  sort         Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+}
+
+model Subscription {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId     String?       @unique
+  device       Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  assignedAt   DateTime?
+  autoRenew    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  entitlements Entitlement[]
+
+  @@index([userId])
+}
+
+enum OrderStatus {
+  created
+  pending
+  paid
+  failed
+  expired
+  refunded
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  userId            String
+  /// Restrict: financial records never disappear with a user or subscription.
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  subscriptionId    String
+  subscription      Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  planId            String
+  plan              Plan          @relation(fields: [planId], references: [id])
+  planSnapshot      Json
+  checkoutEmail     String
+  checkoutKey       String        @unique
+  returnTo          String?
+  amountRub         Int
+  status            OrderStatus
+  provider          String
+  providerPaymentId String?       @unique
+  redirectUrl       String?
+  paidAt            DateTime?
+  expiresAt         DateTime
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  entitlement       Entitlement?
+
+  @@index([status, createdAt])
+}
+
+model Entitlement {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  planCode       String
+  durationDays   Int
+  startsAt       DateTime
+  expiresAt      DateTime
+  orderId        String?      @unique
+  order          Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  grantedById    String?
+  note           String?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId, expiresAt])
+}
+
+model PaymentEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventKey    String    @unique
+  payload     Json
+  result      String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model EmailCode {
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  template  String
+  to        String
+  subject   String
+  /// sending | sent | failed. `sending` is the claim taken before the SMTP call.
+  status    String
+  error     String?
+  /// Set for letters sent at most once (`payment_paid:<orderId>`); null for repeatable ones.
+  dedupeKey String?  @unique
+  createdAt DateTime @default(now())
 }

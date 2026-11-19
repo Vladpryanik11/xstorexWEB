@@ -1,5 +1,7 @@
 # M4 Signing and OTA Install Implementation Plan
 
+> **Заменено 2026-11-18:** продукт, сценарии и порядок вех теперь задают [спецификация v2](../specs/2026-11-18-xstore-v2-design.md) и [план v2](2026-11-18-v2-roadmap.md). Этот документ остаётся справочником по техническим решениям.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** «Установить» on an app page installs the app on the user's registered iPhone: the worker signs the IPA with the account's certificate and profile through zsign (or reuses a cached build), the browser shows «Подписываем N%», and Safari opens a one-time `itms-services://` link.

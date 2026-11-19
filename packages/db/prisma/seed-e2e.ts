@@ -115,6 +115,19 @@ async function main(): Promise<void> {
 
   const db = createPrismaClient(databaseUrl);
   try {
+    // Тариф за 1 ₽ — только для разработки и e2e; коммерческую цену задаёт админка.
+    await db.plan.upsert({
+      where: { code: 'month' },
+      create: {
+        code: 'month',
+        title: 'Подписка на месяц',
+        durationDays: 30,
+        priceRub: 1,
+        active: true,
+      },
+      update: { title: 'Подписка на месяц', durationDays: 30, priceRub: 1, active: true },
+    });
+
     const categories = await Promise.all(
       [
         { slug: 'igry', name: 'Игры', icon: 'games', sort: 0 },

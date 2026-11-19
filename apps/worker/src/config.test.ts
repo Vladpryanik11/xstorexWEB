@@ -8,6 +8,13 @@ const env = {
   S3_ENDPOINT: 'http://minio:9000',
   S3_ACCESS_KEY: 'key',
   S3_SECRET_KEY: 'secret',
+  PAYMENT_PROVIDER: 'fake',
+  FAKE_PAYMENT_WEBHOOK_SECRET: 'test-fake-webhook-secret',
+};
+
+const prodMail = {
+  SMTP_URL: 'smtps://user:pw@smtp.example.ru:465',
+  MAIL_FROM: 'Xstore <noreply@xstorex.ru>',
 };
 
 describe('loadWorkerConfig', () => {
@@ -35,6 +42,12 @@ describe('loadWorkerConfig', () => {
         secretKey: 'secret',
         bucketPrefix: 'xstore-',
       },
+      payment: {
+        provider: 'fake',
+        fakeWebhookSecret: 'test-fake-webhook-secret',
+        siteUrl: 'http://localhost:3000',
+      },
+      mail: { smtpUrl: 'smtp://127.0.0.1:1025', from: 'Xstore <noreply@xstorex.ru>' },
     });
   });
 
@@ -46,5 +59,35 @@ describe('loadWorkerConfig', () => {
     const c = loadWorkerConfig({ ...env, TMP_DIR: '/data/tmp', S3_BUCKET_PREFIX: 'test-' });
     expect(c.tmpDir).toBe('/data/tmp');
     expect(c.s3.bucketPrefix).toBe('test-');
+  });
+
+  it('requires a payment provider and refuses the fake one in production', () => {
+    const { PAYMENT_PROVIDER: _p, ...rest } = env;
+    expect(() => loadWorkerConfig(rest)).toThrow(/PAYMENT_PROVIDER/);
+    expect(() => loadWorkerConfig({ ...env, NODE_ENV: 'production' })).toThrow(/PAYMENT_PROVIDER/);
+    expect(() => loadWorkerConfig({ ...env, FAKE_PAYMENT_WEBHOOK_SECRET: undefined })).toThrow(
+      /FAKE_PAYMENT_WEBHOOK_SECRET/,
+    );
+    const c = loadWorkerConfig({
+      ...env,
+      ...prodMail,
+      PAYMENT_PROVIDER: 'platega',
+      NODE_ENV: 'production',
+    });
+    expect(c.payment).toMatchObject({ provider: 'platega', fakeWebhookSecret: null });
+  });
+
+  it('takes the mail settings and requires them in production', () => {
+    expect(loadWorkerConfig({ ...env, ...prodMail }).mail).toEqual({
+      smtpUrl: prodMail.SMTP_URL,
+      from: prodMail.MAIL_FROM,
+    });
+    const prod = { ...env, PAYMENT_PROVIDER: 'platega', NODE_ENV: 'production' };
+    expect(() => loadWorkerConfig(prod)).toThrow(
+      /^Invalid environment variables: SMTP_URL, MAIL_FROM$/,
+    );
+    expect(() => loadWorkerConfig({ ...env, SMTP_URL: 'http://u:hunter2@x' })).toThrow(
+      /^Invalid environment variables: SMTP_URL$/,
+    );
   });
 });

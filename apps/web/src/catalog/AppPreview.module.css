@@ -239,8 +239,39 @@
 }
 
 .soon {
+  padding: 0 1rem;
+  border: 0;
   background: var(--x-sky-50);
   color: var(--x-quiet-fg);
+}
+
+button.soon:disabled {
+  cursor: default;
+}
+
+/*
+ * While access is checked the guest body stays in place as a blank ice block (its text is
+ * transparent and hidden from assistive tech), so nothing jumps when the answer arrives.
+ */
+.blank {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Forced colours would repaint the hidden text; the block keeps its own palette there. */
+.blank,
+.blank li::before {
+  color: transparent;
+  forced-color-adjust: none;
+}
+
+.blank li::before {
+  background: transparent;
+}
+
+/* Keeps the line «Уже оплачивали? Войти» in place while access is checked. */
+.reserve {
+  visibility: hidden;
 }
 
 .install:active {

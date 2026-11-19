@@ -41,7 +41,9 @@
         "S3_ACCESS_KEY",
         "S3_SECRET_KEY",
         "S3_BUCKET_PREFIX",
-        "S3_BUCKET_PREFIX_TEST"
+        "S3_BUCKET_PREFIX_TEST",
+        "SMTP_URL_TEST",
+        "MAILPIT_API_URL"
       ]
     },
     "@xstore/db#test:int": {
@@ -76,7 +78,8 @@
         "S3_REGION",
         "S3_ACCESS_KEY",
         "S3_SECRET_KEY",
-        "S3_BUCKET_PREFIX_TEST"
+        "S3_BUCKET_PREFIX_TEST",
+        "SMTP_URL_TEST"
       ]
     },
     "dev": {
