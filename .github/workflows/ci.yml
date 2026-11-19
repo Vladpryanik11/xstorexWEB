@@ -158,7 +158,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Prepare isolated production smoke environment
-        run: cp .env.example .env
+        # localhost certificates come from Caddy's own CA: the `local` folder of its store.
+        run: |
+          cp .env.example .env
+          echo 'CADDY_CERT_ISSUER=local' >> .env
       - name: Build and start production stack
         run: docker compose -f infra/docker-compose.yml --env-file .env up -d --build --wait --wait-timeout 180
       - name: Smoke test production stack

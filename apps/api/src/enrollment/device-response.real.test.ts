@@ -23,7 +23,8 @@ describe.skipIf(!fixture)('real iOS answer', () => {
   it('chains to Apple Root CA through "Apple iPhone Device CA"', async () => {
     const { content, signer } = await verifyDeviceCms(der());
     const answer = parseDeviceResponse(content);
-    expect(answer.udid).toMatch(/^[0-9A-Fa-f-]{25,40}$/);
+    // A boolean, so a failure never prints the UDID.
+    expect(/^[0-9A-Fa-f-]{25,40}$/.test(answer.udid), 'UDID has the form of a UDID').toBe(true);
     expect(answer.product).toMatch(/^(iPhone|iPad)\d+,\d+$/);
     expect(answer.version.length).toBeGreaterThan(0);
     expect(answer.challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);

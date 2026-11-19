@@ -1,9 +1,8 @@
 import { generateKeyPairSync, type X509Certificate } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import plist from 'plist';
-import { signCms } from '../../src/enrollment/cms.js';
 import { issueCertificate, type SigningHash } from '../../src/enrollment/x509.js';
+import { type DeviceAnswerFields, signDeviceAnswer } from './device-answer.js';
 import type { TestCa } from './test-ca.js';
 
 export { createTestCa, type TestCa } from './test-ca.js';
@@ -11,12 +10,12 @@ export { createTestCa, type TestCa } from './test-ca.js';
 const DAY = 24 * 60 * 60 * 1000;
 
 /** The signed plist iOS posts to the profile service URL after the person installs the profile. */
-export async function signDeviceResponse(
-  fields: { UDID: string; PRODUCT: string; VERSION: string; CHALLENGE: string },
+export function signDeviceResponse(
+  fields: DeviceAnswerFields,
   ca: TestCa,
   options: { hash?: SigningHash } = {},
 ): Promise<Buffer> {
-  return signCms(Buffer.from(plist.build({ ...fields }), 'utf8'), ca.device, options);
+  return signDeviceAnswer(fields, ca.device, options);
 }
 
 /**

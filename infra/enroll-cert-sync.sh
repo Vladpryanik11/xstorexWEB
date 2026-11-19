@@ -5,6 +5,8 @@
 # is picked up on the next pass; the api re-reads changed files and, while the new certificate and
 # key are not yet both copied, keeps signing with the last good pair.
 set -eu
+# Nothing this script creates is readable by others, not even for a moment.
+umask 077
 
 src="/caddy-data/caddy/certificates/${CADDY_CERT_ISSUER}/${SITE_DOMAIN}"
 dst=/enroll
@@ -13,15 +15,22 @@ interval="${ENROLL_CERT_SYNC_SECONDS:-300}"
 # copy <from> <to>: atomically replaces <to> when <from> differs.
 copy() {
   if [ -f "$1" ] && ! cmp -s "$1" "$2"; then
-    cp "$1" "$2.tmp"
-    chown 1000:1000 "$2.tmp"
-    chmod 0400 "$2.tmp"
+    install -m 0400 -o 1000 -g 1000 "$1" "$2.tmp"
     mv -f "$2.tmp" "$2"
     echo "enroll-cert: updated $(basename "$2")"
   fi
 }
 
+waiting=0
 while :; do
+  if [ ! -f "$src/$SITE_DOMAIN.crt" ] || [ ! -f "$src/$SITE_DOMAIN.key" ]; then
+    if [ "$waiting" = 0 ]; then
+      echo "enroll-cert: waiting for Caddy's certificate in $src (check CADDY_CERT_ISSUER: Let's Encrypt acme-v02.api.letsencrypt.org-directory, ZeroSSL acme.zerossl.com-v2-dv90, localhost local)"
+      waiting=1
+    fi
+  else
+    waiting=0
+  fi
   copy "$src/$SITE_DOMAIN.key" "$dst/key.pem"
   copy "$src/$SITE_DOMAIN.crt" "$dst/cert.pem"
   # Until Caddy has the first certificate, look often.

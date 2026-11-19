@@ -125,7 +125,8 @@ services:
   # see enroll-cert-sync.sh. CADDY_CERT_ISSUER is the folder Caddy keeps the certificate in:
   # Let's Encrypt by default, `local` for localhost, `acme.zerossl.com-v2-dv90` for ZeroSSL.
   enroll-cert:
-    image: alpine:3.22
+    # Pinned by digest: this container reads all of caddydata (ACME account and local CA keys too).
+    image: alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
     restart: unless-stopped
     command: ['sh', '/enroll-cert-sync.sh']
     environment:

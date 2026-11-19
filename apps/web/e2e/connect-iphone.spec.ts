@@ -18,7 +18,7 @@ async function connectIphone(page: Page, ios: APIRequestContext): Promise<void> 
   expect(file.suggestedFilename()).toBe('xstore-connect.mobileconfig');
   const chunks: Buffer[] = [];
   for await (const chunk of await file.createReadStream()) chunks.push(chunk as Buffer);
-  const { challenge, url } = readProfile(Buffer.concat(chunks));
+  const { challenge, url } = await readProfile(Buffer.concat(chunks));
   expect(url).toBe(`${SITE}/api/v1/enrollment/callback?s=${challenge}`);
 
   // Settings is installing: Safari waits.
@@ -97,11 +97,10 @@ test('iPhone: pay → connect in Safari → «Готово, iPhone подклю�
 
 test('computer pays → «Откройте сайт на iPhone» → iPhone signs in by code and connects', async ({
   page,
-  browser,
   isMobile,
   playwright,
 }, testInfo) => {
-  test.skip(isMobile, 'a computer pays here; the iPhone is a second browser context');
+  test.skip(isMobile, 'a computer pays here; the iPhone is a WebKit browser of its own');
   const email = buyerEmail(testInfo, 'connect-desktop');
   await page.goto('/get');
   await payOnGetPage(page, email);
@@ -116,9 +115,10 @@ test('computer pays → «Откройте сайт на iPhone» → iPhone sig
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Подключить iPhone', exact: true })).toHaveCount(0);
 
-  // The same buyer on an iPhone: a new browser without the computer's session.
+  // The same buyer on an iPhone: Safari's engine, without the computer's session.
   const { defaultBrowserType: _, ...iphone } = devices['iPhone 15'];
-  const phone = await browser.newContext({ ...iphone, baseURL: SITE });
+  const webkit = await playwright.webkit.launch();
+  const phone = await webkit.newContext({ ...iphone, baseURL: SITE });
   const ios = await playwright.request.newContext();
   try {
     const mobile = await phone.newPage();
@@ -136,6 +136,7 @@ test('computer pays → «Откройте сайт на iPhone» → iPhone sig
   } finally {
     await ios.dispose();
     await phone.close();
+    await webkit.close();
   }
 
   // The computer sees the connected iPhone in «Мой доступ».

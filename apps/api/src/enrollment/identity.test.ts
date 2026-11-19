@@ -165,3 +165,40 @@ it('does not fall back to an expired identity', async () => {
   await touch();
   await expect(store.get()).rejects.toBeInstanceOf(IdentityError);
 });
+
+it('warns once per failed change while it keeps the last good identity, never with key material', async () => {
+  const first = await selfSigned('ec');
+  await writePair(first);
+  const warnings: { message: string; reason: string }[] = [];
+  const store = new IdentityStore({ certPath, keyPath }, (message, reason) =>
+    warnings.push({ message, reason }),
+  );
+  await store.get();
+  expect(warnings).toEqual([]);
+
+  const second = await selfSigned('ec');
+  await writeFile(certPath, second.cert.toString());
+  await touch();
+  await store.get();
+  await store.get();
+  expect(warnings).toEqual([
+    {
+      message: 'enrollment signer: new files not loaded, signing with the last good certificate',
+      reason: 'Profile signing key does not match the certificate',
+    },
+  ]);
+
+  // Another change that still fails warns again; the new pair loading ends the warnings.
+  const pem = keyPem((await selfSigned('ec')).key);
+  await writeFile(keyPath, pem);
+  await touch();
+  await store.get();
+  expect(warnings).toHaveLength(2);
+  await writeFile(keyPath, keyPem(second.key));
+  await touch();
+  expect((await store.get()).certificate.fingerprint256).toBe(second.cert.fingerprint256);
+  expect(warnings).toHaveLength(2);
+  const body = pem.split('\n')[1] ?? '';
+  expect(JSON.stringify(warnings)).not.toContain(body);
+  expect(JSON.stringify(warnings)).not.toContain(dir);
+});
