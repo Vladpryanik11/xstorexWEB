@@ -56,7 +56,14 @@ function writeWaiting(since: number | null): void {
   }
 }
 
-function statusText(step: ConnectStepState, name: string, error: string): string {
+/** Н3: a device whose files ended waits for new ones under another title. */
+function preparingText(name: string, updating: boolean): string {
+  return updating
+    ? 'Обновляем доступ, обычно до 24 часов'
+    : `Готовим ваш ${name}, обычно до 24 часов`;
+}
+
+function statusText(step: ConnectStepState, name: string, error: string, updating = false): string {
   switch (step) {
     case 'guide':
       return `Подключить ${name}`;
@@ -65,7 +72,7 @@ function statusText(step: ConnectStepState, name: string, error: string): string
     case 'connected':
       return `Готово, ${name} подключён`;
     case 'preparing':
-      return `Готовим ваш ${name}, обычно до 24 часов`;
+      return preparingText(name, updating);
     case 'ready':
       return `${name} готов`;
     case 'help':
@@ -103,6 +110,7 @@ export function ConnectStep({
     detected?.family ??
     'iphone';
   const name = familyName(family);
+  const updating = access.kind === 'active' && access.device?.updating === true;
   const step = connectStep({
     device: device ?? 'ios',
     access,
@@ -201,7 +209,7 @@ export function ConnectStep({
   return (
     <div className={styles.wizard}>
       <p role="status" aria-live="polite" className={styles.srOnly} data-testid="connect-status">
-        {deviceUnknown ? '' : statusText(step, name, error)}
+        {deviceUnknown ? '' : statusText(step, name, error, updating)}
       </p>
       <StepBar current={step === 'no_access' ? 0 : step === 'ready' ? 2 : 1} family={family} />
       {deviceUnknown ? (
@@ -249,7 +257,7 @@ export function ConnectStep({
         </section>
       ) : step === 'preparing' ? (
         <section className={styles.panel}>
-          <h1 className={styles.title}>Готовим ваш {name}, обычно до 24 часов</h1>
+          <h1 className={styles.title}>{preparingText(name, updating)}</h1>
           <p className={styles.lead}>
             {name} уже подключён к вашему доступу. Когда всё будет готово, приложения можно будет
             ставить прямо из каталога.

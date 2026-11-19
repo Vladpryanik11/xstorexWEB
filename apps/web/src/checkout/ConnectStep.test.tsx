@@ -127,6 +127,25 @@ describe('ConnectStep', () => {
     expect(screen.queryByRole('link', { name: /Подключить/ })).toBeNull();
   });
 
+  it('files ended: «Обновляем доступ, обычно до 24 часов»', () => {
+    const access: AccessState = {
+      kind: 'active',
+      until,
+      subscriptionId: 's1',
+      device: {
+        model: 'iPhone 15',
+        family: 'iphone',
+        ready: false,
+        needsHelp: false,
+        updating: true,
+      },
+    };
+    render(<ConnectStep access={access} result={null} device="ios" getAccess={vi.fn()} />);
+    expect(
+      screen.getByRole('heading', { name: 'Обновляем доступ, обычно до 24 часов' }),
+    ).toBeInTheDocument();
+  });
+
   it('without access: «Оформить доступ» on /get', () => {
     render(
       <ConnectStep access={{ kind: 'none' }} result={null} device="ios" getAccess={vi.fn()} />,

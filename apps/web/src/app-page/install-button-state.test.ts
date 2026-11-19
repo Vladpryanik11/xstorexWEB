@@ -19,6 +19,20 @@ const ipad = (over: { ready?: boolean; needsHelp?: boolean } = {}) =>
 const READY = iphone({ ready: true });
 
 describe('installButtonState', () => {
+  it('files ended: «Обновляем доступ, обычно до 24 часов», disabled like preparing', () => {
+    const access = withDevice({
+      model: 'iPhone 15 Pro',
+      family: 'iphone',
+      ready: false,
+      needsHelp: false,
+      updating: true,
+    });
+    expect(installButtonState({ device: 'ios', access, app: app() })).toEqual({
+      kind: 'preparing',
+      label: 'Обновляем доступ, обычно до 24 часов',
+    });
+  });
+
   it('iPhone without access: «Установить» opens the wizard, «Войти» returns to the window', () => {
     expect(installButtonState({ device: 'ios', access: NONE, app: app() })).toEqual({
       kind: 'buy',

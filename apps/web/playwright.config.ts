@@ -28,9 +28,18 @@ const enrollEnv = Object.values(enrollFiles).every((path) => existsSync(path)) ?
  * their test root through SIGNING_TEST_ANCHOR_PATH. Workers inherit the folder through the env.
  */
 export const E2E_KIT_UDIDS = {
-  'mobile-webkit': '00008110-E2E0000000000001',
-  'desktop-chromium': '00008110-E2E0000000000002',
+  admin: {
+    'mobile-webkit': '00008110-E2E0000000000001',
+    'desktop-chromium': '00008110-E2E0000000000002',
+  },
+  connect: {
+    'mobile-webkit': '00008110-E2E0000000000003',
+    'desktop-chromium': '00008110-E2E0000000000004',
+  },
 } as const;
+/** The kit's UDID for one test file and Playwright project (each pair binds its own device). */
+export const e2eKitUdid = (use: keyof typeof E2E_KIT_UDIDS, project: string): string =>
+  E2E_KIT_UDIDS[use][project as keyof (typeof E2E_KIT_UDIDS)['admin']];
 if (!process.env.XSTORE_E2E_KIT_DIR) {
   const dir = mkdtempSync(join(tmpdir(), 'xstore-e2e-kit-'));
   execFileSync(
@@ -47,7 +56,7 @@ if (!process.env.XSTORE_E2E_KIT_DIR) {
        writeFileSync(dir + '/kit.mobileprovision', kit.profile);
        writeFileSync(dir + '/password.txt', kit.password);`,
       dir,
-      ...Object.values(E2E_KIT_UDIDS),
+      ...Object.values(E2E_KIT_UDIDS).flatMap((byProject) => Object.values(byProject)),
     ],
     { cwd: fileURLToPath(new URL('../../packages/signing/', import.meta.url)) },
   );

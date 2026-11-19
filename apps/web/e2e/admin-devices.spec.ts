@@ -1,43 +1,14 @@
-import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { expect, type Page, test } from '@playwright/test';
-import { createPrismaClient } from '@xstore/db';
-import { E2E_KIT_UDIDS, e2eKitDir } from '../playwright.config';
+import { randomBytes } from 'node:crypto';
+import { expect, test } from '@playwright/test';
+import { e2eKitUdid } from '../playwright.config';
+import { adminSession, supplierKit, testDb } from './fixtures/staff';
 
 // Н3: the owner copies the UDID, gets files from the supplier and uploads them on the device page.
 // The files are a fake supplier kit made by the Playwright config for both projects' UDIDs.
 
-function db() {
-  const url = process.env.DATABASE_URL_TEST;
-  if (!url) throw new Error('DATABASE_URL_TEST is not set');
-  return createPrismaClient(url);
-}
-
-async function adminSession(page: Page): Promise<void> {
-  const client = db();
-  const token = randomBytes(32).toString('base64url');
-  try {
-    const user = await client.user.create({ data: { role: 'admin' } });
-    await client.session.create({
-      data: {
-        id: createHash('sha256').update(token).digest('hex'),
-        userId: user.id,
-        kind: 'staff',
-        expiresAt: new Date(Date.now() + 600_000),
-      },
-    });
-  } finally {
-    await client.$disconnect();
-  }
-  await page
-    .context()
-    .addCookies([{ name: 'xs_session', value: token, url: 'http://localhost:3100' }]);
-}
-
 /** A buyer with live access and a connected iPhone that has no files yet. */
 async function waitingBuyer(udid: string): Promise<string> {
-  const client = db();
+  const client = testDb();
   const email = `e2e-dev-${randomBytes(6).toString('hex')}@xstorex.test`;
   try {
     await client.device.deleteMany({ where: { udid } });
@@ -77,9 +48,9 @@ async function waitingBuyer(udid: string): Promise<string> {
 test('admin copies the UDID, uploads the supplier files, the device is ready', async ({
   page,
 }, info) => {
-  const udid = E2E_KIT_UDIDS[info.project.name as keyof typeof E2E_KIT_UDIDS];
+  const udid = e2eKitUdid('admin', info.project.name);
   const email = await waitingBuyer(udid);
-  await adminSession(page);
+  await adminSession(page.context());
   await page.goto('/admin/devices');
   await expect(page.getByRole('heading', { level: 1, name: 'Ждут сертификата' })).toBeVisible();
   const row = page.getByRole('row').filter({ hasText: email });
@@ -91,12 +62,12 @@ test('admin copies the UDID, uploads the supplier files, the device is ready', a
 
   await row.getByRole('link', { name: 'Загрузить сертификат' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'iPhone 15 Pro' })).toBeVisible();
-  const kit = e2eKitDir();
+  const kit = supplierKit();
   const upload = page.getByRole('button', { name: 'Загрузить', exact: true });
   await expect(upload).toBeDisabled();
-  await page.getByLabel('Файл .p12').setInputFiles(join(kit, 'kit.p12'));
-  await page.getByLabel('Пароль').fill(readFileSync(join(kit, 'password.txt'), 'utf8'));
-  await page.getByLabel('Файл .mobileprovision').setInputFiles(join(kit, 'kit.mobileprovision'));
+  await page.getByLabel('Файл .p12').setInputFiles(kit.p12);
+  await page.getByLabel('Пароль').fill(kit.password);
+  await page.getByLabel('Файл .mobileprovision').setInputFiles(kit.profile);
   await upload.click();
   await expect(page.getByText('Сертификат загружен, покупателю отправлено письмо')).toBeVisible();
   await expect(page.getByText('Готов', { exact: true })).toBeVisible();
