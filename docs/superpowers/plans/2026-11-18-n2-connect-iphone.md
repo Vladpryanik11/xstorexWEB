@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Подписчик на iPhone или iPad нажимает «Подключить iPhone», ставит подписанный профиль, iOS возвращает данные устройства, сервер навсегда привязывает устройство к доступу, мастер показывает «Готово, iPhone подключён», а «Мой доступ» и окно приложения — «Готовим ваш iPhone». На компьютере вместо этого шага — QR-код.
+**Goal:** Подписчик на iPhone или iPad нажимает «Подключить iPhone», ставит подписанный профиль, iOS возвращает данные устройства, сервер навсегда привязывает устройство к доступу, мастер показывает «Готово, iPhone подключён», а «Мой доступ» и окно приложения — «Готовим ваш iPhone». На компьютере вместо этого шага — уведомление «Откройте сайт на iPhone, чтобы подключить его».
 
 **Architecture:** Модуль `apps/api/src/enrollment` собирает Profile Service `.mobileconfig`, подписывает его CMS сертификатом сайта (Let's Encrypt от Caddy, в разработке самоподписанный), принимает подписанный ответ iOS, проверяет цепочку до Apple Root CA и привязывает устройство к подписке покупателя. Правила привязки — чистые функции в `@xstore/shared`. Web добавляет шаг мастера `/get/iphone` и показывает состояние устройства в «Мой доступ» и окне приложения. Регистрация устройства в Apple — веха Н3; в Н2 устройство остаётся в статусе `pending`.
 
-**Tech Stack:** NestJS, Prisma/PostgreSQL, Next.js App Router, Zod, Vitest, Playwright; новое — `pkijs` 3.x + `asn1js` 3.x (CMS через WebCrypto, RSA и ECDSA P-256), `plist` 3.1.1 (уже в `packages/ios`), `qrcode` 1.5.x (SVG на сервере). Версии — последние стабильные, вышедшие не позже чем за две недели до начала работ.
+**Tech Stack:** NestJS, Prisma/PostgreSQL, Next.js App Router, Zod, Vitest, Playwright; новое — `pkijs` 3.x + `asn1js` 3.x (CMS через WebCrypto, RSA и ECDSA P-256), `plist` 3.1.1 (уже в `packages/ios`). Версии — последние стабильные, вышедшие не позже чем за две недели до начала работ.
 
 **Spec:** [Xstore v2](../specs/2026-11-18-xstore-v2-design.md) §2 (устройства, смена iPhone, шаг подключения), §3.2 (кнопки окна), §4 шаг 2 и «Правила», §5 («Мой доступ»), §7, §12 (сценарии 1 и 3). Порядок вех — [план v2](2026-11-18-v2-roadmap.md). Технические решения [M2](2026-11-05-m2-auth-cabinet.md) (задачи 3–4: профиль, CMS, разбор ответа iOS) — справочник; где они расходятся с этим планом, прав этот план.
 
@@ -21,7 +21,7 @@
 - Устройство, привязанное к другому покупателю, не переносится (`DEVICE_OWNED`). UDID никогда не даёт вход и не создаёт пользователя.
 - Подключать можно только при активном доступе (`NO_ACCESS`). Подключение не меняет даты доступа.
 - Статусы устройства для человека: нет устройства — «Подключить iPhone»; `pending`/`processing` — «Готовим ваш iPhone, обычно до 24 часов»; `active` — «iPhone готов». На iPad везде «iPad» вместо «iPhone» (по `PRODUCT` устройства или, до подключения, по браузеру).
-- Тексты: «Подключить iPhone», «Вернитесь в Safari», «Готово, iPhone подключён», «Откройте на iPhone». Слова «профиль», «UDID», «сертификат» в интерфейсе не используются; исключение — подписи к скриншотам, где дословно цитируется экран iOS («Профиль загружен», «Установить»).
+- Тексты: «Подключить iPhone», «Вернитесь в Safari», «Готово, iPhone подключён», «Откройте сайт на iPhone, чтобы подключить его». Слова «профиль», «UDID», «сертификат» в интерфейсе не используются; исключение — подписи к скриншотам, где дословно цитируется экран iOS («Профиль загружен», «Установить»).
 - UDID в админке и логах только маской `maskUdid`.
 
 ## Review Focus
@@ -45,7 +45,7 @@
 | Правила устройства и доступа, переносы Н1 | `packages/shared/src/{devices,access}.ts`, `apps/api/src/auth/claim-provisional.ts`, `packages/mail/src/send.ts` | 1 |
 | Профиль и CMS | `apps/api/src/enrollment/{profile,cms,identity,apple-root}.ts`, `apps/api/scripts/enroll-dev-cert.ts` | 2 |
 | API подключения | `apps/api/src/enrollment/{enrollment.controller,enrollment.service,device-response}.ts` | 3 |
-| Шаг мастера | `apps/web/app/(site)/get/iphone/page.tsx`, `apps/web/src/checkout/{ConnectStep,ConnectQr,ConnectGuide}.tsx` | 4 |
+| Шаг мастера | `apps/web/app/(site)/get/iphone/page.tsx`, `apps/web/src/checkout/{ConnectStep,ConnectGuide}.tsx` | 4 |
 | Окно, «Мой доступ», админка | `apps/web/src/app-page/install-button-state.ts`, `apps/web/src/access/AccessCard.tsx`, `apps/web/app/admin/(billing)/subscriptions/page.tsx` | 5 |
 | Прод, E2E, реальный iPhone | `infra/docker-compose.yml`, `.env.example`, `apps/web/e2e/connect-iphone.spec.ts` | 6 |
 
@@ -122,23 +122,23 @@
 ### Task 4: Web: шаг «Подключить iPhone»
 
 **Files:**
-- Create: `apps/web/app/(site)/get/iphone/page.tsx`, `apps/web/src/checkout/{ConnectStep,ConnectGuide,ConnectQr}.tsx`, `apps/web/src/checkout/connect-step.ts`, `*.module.css`
-- Modify: `apps/web/src/checkout/{Wizard,PaidStep,StepBar}.tsx`, `apps/web/app/(site)/get/page.tsx`, `apps/web/package.json` (`qrcode`)
+- Create: `apps/web/app/(site)/get/iphone/page.tsx`, `apps/web/src/checkout/{ConnectStep,ConnectGuide}.tsx`, `apps/web/src/checkout/connect-step.ts`, `*.module.css`
+- Modify: `apps/web/src/checkout/{Wizard,PaidStep,StepBar}.tsx`, `apps/web/app/(site)/get/page.tsx`
 - Test: `apps/web/src/checkout/connect-step.test.ts`, `apps/web/src/checkout/ConnectStep.test.tsx`, `apps/web/app/(site)/get/iphone/page.test.tsx`
 
 **Interfaces:**
 - Consumes: `getAccess` (задача 1 `device`), задача 3 `enrollmentProfileUrl`, `deviceKind` из `apps/web/src/app-page/device.ts`.
 - Produces:
-  - `connectStep(input: { device: 'ios' | 'desktop'; access: AccessState; result: string | null; waiting: boolean }): 'signin' | 'no_access' | 'guide' | 'waiting' | 'connected' | 'preparing' | 'ready' | 'qr' | 'error'`.
+  - `connectStep(input: { device: 'ios' | 'desktop'; access: AccessState; result: string | null; waiting: boolean }): 'signin' | 'no_access' | 'guide' | 'waiting' | 'connected' | 'preparing' | 'ready' | 'open_on_phone' | 'error'`.
   - `/get/iphone`: без сессии → `/signin?next=/get/iphone`; без доступа → «Оформить доступ» на `/get`.
     - iPhone/iPad без устройства: строка шагов на шаге 2, три иллюстрации с подписями («Нажмите «Подключить iPhone» и «Разрешить»», «Откройте Настройки → «Профиль загружен»», «Нажмите «Установить» и вернитесь в Safari»), кнопка «Подключить iPhone» (ссылка на профиль). После нажатия — «Ждём подключения…», опрос `getAccess` раз в 3 секунды до 15 минут и подсказка «Вернитесь в Safari, когда нажмёте «Установить»».
     - `?r=connected` или устройство появилось — «Готово, iPhone подключён», затем «Готовим ваш iPhone, обычно до 24 часов».
     - `?r=<код ошибки>` — текст из `errors.ts` и «Попробовать снова».
-    - Компьютер — QR-код (SVG, `qrcode` на сервере) на `<SITE_URL>/get/iphone` и «Откройте на iPhone».
-  - `/get/[orderId]` после оплаты: вместо заглушки разработки — «Дальше: подключить iPhone» (iPhone) или QR (компьютер). `/get` для подписчика без устройства ведёт на `/get/iphone`, с устройством — на `/access`.
+    - Компьютер — уведомление «Откройте сайт на iPhone, чтобы подключить его» (без QR-кода, решение владельца 19.11).
+  - `/get/[orderId]` после оплаты: вместо заглушки разработки — «Дальше: подключить iPhone» (iPhone) или то же уведомление (компьютер). `/get` для подписчика без устройства ведёт на `/get/iphone`, с устройством — на `/access`.
   - Иллюстрации — собственные схематичные рисунки в CSS/SVG без материалов Apple; настоящие скриншоты подставляются после задачи 6.
 
-- [ ] **Step 1: Write failing tests** — `connectStep` для каждого состояния, включая `return without callback shows hint` (`waiting` и устройство не появилось → подсказка); `ConnectStep`: на iPad тексты «iPad»; QR ведёт на `/get/iphone`; ошибка `DEVICE_OWNED` показывает текст из `errors.ts`; опрос останавливается после появления устройства и после 15 минут; страница: гость → редирект на вход.
+- [ ] **Step 1: Write failing tests** — `connectStep` для каждого состояния, включая `return without callback shows hint` (`waiting` и устройство не появилось → подсказка); `ConnectStep`: на iPad тексты «iPad»; на компьютере уведомление «Откройте сайт на iPhone» и нет кнопки подключения; ошибка `DEVICE_OWNED` показывает текст из `errors.ts`; опрос останавливается после появления устройства и после 15 минут; страница: гость → редирект на вход.
 - [ ] **Step 2: Run** `pnpm --filter @xstore/web test`. Expected: FAIL.
 - [ ] **Step 3: Implement** по скиллу `xstore-design`.
 - [ ] **Step 4: Run the same command,** затем проверка в браузере (Playwright chromium, 390 и 1280) с записанным ответом iOS через тестовый корень. Expected: PASS, без горизонтальной прокрутки.
@@ -177,7 +177,7 @@
 **Interfaces:**
 - Consumes: всё выше.
 
-- [ ] **Step 1: Write E2E** (WebKit, iPhone) — сценарий 1 спецификации до «Готово, iPhone подключён» (ответ iOS отправляет тест через `signDeviceResponse`); сценарий 3: оплата с компьютера → QR ведёт на `/get/iphone` → на iPhone вход кодом → подключение; окно приложения показывает «Готовим ваш iPhone» после подключения и «Скоро можно будет установить» после dev-переключения в `ready`. Тест `device-response.real.test.ts` выполняется только при `IOS_REAL_FIXTURE=<путь>` и проверяет настоящий ответ iOS против Apple Root CA.
+- [ ] **Step 1: Write E2E** (WebKit, iPhone) — сценарий 1 спецификации до «Готово, iPhone подключён» (ответ iOS отправляет тест через `signDeviceResponse`); сценарий 3: оплата с компьютера → уведомление «Откройте сайт на iPhone» → на iPhone вход кодом и `/get/iphone` → подключение; окно приложения показывает «Готовим ваш iPhone» после подключения и «Скоро можно будет установить» после dev-переключения в `ready`. Тест `device-response.real.test.ts` выполняется только при `IOS_REAL_FIXTURE=<путь>` и проверяет настоящий ответ iOS против Apple Root CA.
 - [ ] **Step 2: Run** `pnpm --filter @xstore/web test:e2e -- --trace off`. Expected: PASS (в облачной сессии WebKit — в CI).
 - [ ] **Step 3: Полный набор** `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. Expected: всё зелёное.
 - [ ] **Step 4: Реальный iPhone (с владельцем, на VPS с HTTPS)** — оплатить на тестовом провайдере, скачать профиль в Safari, проверить, что iOS показывает «Проверено», установить, вернуться в Safari, увидеть «Готово, iPhone подключён», убедиться, что в Настройках не осталось профиля. Если iOS не принимает подпись ECDSA — перевести сертификат Caddy на RSA (`key_type rsa2048`) и повторить. Сохранить настоящий ответ iOS вне git и прогнать `IOS_REAL_FIXTURE=<путь> pnpm --filter @xstore/api test -- device-response.real`. Сделать три настоящих скриншота и заменить ими иллюстрации задачи 4.
