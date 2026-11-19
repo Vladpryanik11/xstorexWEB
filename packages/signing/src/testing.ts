@@ -212,3 +212,74 @@ export function strangerRoot(): Issued {
 }
 
 export const sha1Hex = (data: Buffer): string => createHash('sha1').update(data).digest('hex');
+
+/**
+ * A DER OCSP response about `kit.certificate`, signed by `signer` (default: the test «WWDR»).
+ * `status` is what the responder says about the certificate.
+ */
+export async function makeOcspResponse(
+  kit: TestKit,
+  status: 'good' | 'revoked' | 'unknown',
+  signer: Issued = testChain().wwdr,
+): Promise<Buffer> {
+  const { cryptoEngine } = await import('./engine.js');
+  const asn1js = await import('asn1js');
+  const pkijs = await import('pkijs');
+  const { createPrivateKey } = await import('node:crypto');
+  const signerCert = pkijs.Certificate.fromBER(new Uint8Array(der(signer.cert)));
+  const issuer = pkijs.Certificate.fromBER(new Uint8Array(kit.issuer.raw));
+  const certId = new pkijs.CertID();
+  await certId.createForCertificate(
+    pkijs.Certificate.fromBER(new Uint8Array(kit.certificate.raw)),
+    {
+      hashAlgorithm: 'SHA-1',
+      issuerCertificate: issuer,
+    },
+  );
+  const statusBlock =
+    status === 'good'
+      ? new asn1js.Primitive({ idBlock: { tagClass: 3, tagNumber: 0 } })
+      : status === 'revoked'
+        ? new asn1js.Constructed({
+            idBlock: { tagClass: 3, tagNumber: 1 },
+            value: [new asn1js.GeneralizedTime({ valueDate: new Date(Date.now() - 3600_000) })],
+          })
+        : new asn1js.Primitive({ idBlock: { tagClass: 3, tagNumber: 2 } });
+  const basic = new pkijs.BasicOCSPResponse();
+  basic.tbsResponseData.responderID = signerCert.subject;
+  basic.tbsResponseData.producedAt = new Date();
+  basic.tbsResponseData.responses.push(
+    new pkijs.SingleResponse({ certID: certId, certStatus: statusBlock, thisUpdate: new Date() }),
+  );
+  basic.certs = [signerCert];
+  const keyPem = forge.pki.privateKeyToPem(signer.key);
+  const cryptoKey = (await createPrivateKey(keyPem).toCryptoKey(
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )) as CryptoKey;
+  await basic.sign(cryptoKey, 'SHA-256', cryptoEngine);
+  const response = new pkijs.OCSPResponse();
+  response.responseStatus.valueBlock.valueDec = 0;
+  response.responseBytes = new pkijs.ResponseBytes({
+    responseType: '1.3.6.1.5.5.7.48.1.1',
+    response: new asn1js.OctetString({ valueHex: basic.toSchema().toBER(false) }),
+  });
+  return Buffer.from(response.toSchema().toBER(false));
+}
+
+/** A `fetch` stand-in answering every OCSP POST with `body`; records the calls. */
+export function fakeOcspFetch(body: Buffer | (() => Promise<Buffer>)): typeof fetch & {
+  calls: number;
+} {
+  const fn = (async () => {
+    fn.calls += 1;
+    const bytes = typeof body === 'function' ? await body() : body;
+    return new Response(new Uint8Array(bytes), {
+      status: 200,
+      headers: { 'content-type': 'application/ocsp-response' },
+    });
+  }) as unknown as typeof fetch & { calls: number };
+  fn.calls = 0;
+  return fn;
+}
