@@ -116,15 +116,19 @@ export async function sendPaymentPaid(
     where: { id: orderId },
     select: {
       status: true,
+      userId: true,
       checkoutEmail: true,
       entitlement: { select: { expiresAt: true } },
-      subscription: {
-        select: { entitlements: { select: { startsAt: true, expiresAt: true, revokedAt: true } } },
-      },
     },
   });
   if (order?.status !== 'paid' || !order.entitlement) return 'skipped';
-  const until = accessUntil(order.subscription.entitlements, now) ?? order.entitlement.expiresAt;
+  // The buyer's whole access, as `/access` shows it: after a claim the chain can run through
+  // several subscriptions, not only this order's.
+  const rights = await deps.db.entitlement.findMany({
+    where: { subscription: { userId: order.userId } },
+    select: { startsAt: true, expiresAt: true, revokedAt: true },
+  });
+  const until = accessUntil(rights, now) ?? order.entitlement.expiresAt;
   return sendMail(
     deps,
     'payment_paid',

@@ -33,7 +33,7 @@ describe('navStateFrom', () => {
   it('a buyer with access', () => {
     expect(
       navStateFrom({
-        state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+        state: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
         email: 'a@b.ru',
         hasPassword: false,
       }),

@@ -1,3 +1,5 @@
+import { type DeviceFamily, type DeviceStatus, deviceFamily, deviceModelName } from './devices.js';
+
 export type RightLike = { startsAt: Date; expiresAt: Date; revokedAt: Date | null };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,19 +47,28 @@ export function userSessionExpiry(now: Date, until: Date | null): Date {
   return new Date(Math.max(base, fromAccess));
 }
 
+/** The buyer's device as `/access` shows it; `ready` once it is registered (`active`). */
+export type AccessDevice = { model: string; family: DeviceFamily; ready: boolean };
+
 export type AccessState =
   | { kind: 'none' }
   | { kind: 'payment_pending'; orderId: string }
-  | { kind: 'active'; until: Date; subscriptionId: string; deviceReady: boolean };
+  | { kind: 'active'; until: Date; subscriptionId: string; device: AccessDevice | null };
 
 /**
  * A buyer's access is the continuous chain of the live rights of all their subscriptions (after
  * `claimProvisional` a paid guest period and an admin grant can sit in different ones). The
- * subscription shown is the one renewals and grants go to (`pickSubscription`).
+ * subscription shown is the one renewals and grants go to (`pickSubscription`). The device is the
+ * one bound to any of the buyer's subscriptions, the shown one's first: it is bound for good to
+ * the subscription it was connected under, which need not be the one renewals now go to.
  */
 export function accessState(input: {
   signedIn: boolean;
-  subscriptions: { id: string; rights: RightLike[]; deviceReady: boolean }[];
+  subscriptions: {
+    id: string;
+    rights: RightLike[];
+    device: { product: string; status: DeviceStatus } | null;
+  }[];
   pendingOrderId: string | null;
   now: Date;
 }): AccessState {
@@ -68,7 +79,15 @@ export function accessState(input: {
   const subscriptionId = until ? pickSubscription(input.subscriptions, input.now) : null;
   const picked = input.subscriptions.find((s) => s.id === subscriptionId);
   if (until && picked) {
-    return { kind: 'active', until, subscriptionId: picked.id, deviceReady: picked.deviceReady };
+    const bound = picked.device ?? input.subscriptions.find((s) => s.device)?.device ?? null;
+    const device = bound
+      ? {
+          model: deviceModelName(bound.product),
+          family: deviceFamily(bound.product),
+          ready: bound.status === 'active',
+        }
+      : null;
+    return { kind: 'active', until, subscriptionId: picked.id, device };
   }
   if (input.pendingOrderId) return { kind: 'payment_pending', orderId: input.pendingOrderId };
   return { kind: 'none' };

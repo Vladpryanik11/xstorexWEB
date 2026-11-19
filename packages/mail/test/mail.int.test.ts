@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createPrismaClient } from '@xstore/db';
+import { formatRuDate } from '@xstore/shared';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { createSmtpMailer, type MailDeps, sendMail, sendPaymentPaid } from '../src/index.js';
 import { mailpitMessages, testSmtpUrl, waitForMail } from '../src/testing.js';
@@ -136,6 +137,28 @@ describe('sendPaymentPaid', () => {
     expect(msgs[0]?.subject).toMatch(/^Оплата прошла, доступ до \d{1,2} [а-я]+ \d{4}$/);
     const rows = await db.notificationLog.findMany({ where: { to } });
     expect(rows).toMatchObject([{ status: 'sent', dedupeKey: `payment_paid:${order.id}` }]);
+  });
+
+  it('payment mail date follows buyer chain', async () => {
+    const to = rcpt();
+    const paidEnd = new Date(Date.now() + 10 * 86_400_000);
+    const order = await paidOrder(to, paidEnd);
+    // After a claim the buyer can own another subscription whose rights chain after this one.
+    const other = await db.subscription.create({ data: { userId: order.userId } });
+    const chainEnd = new Date(paidEnd.getTime() + 30 * 86_400_000);
+    await db.entitlement.create({
+      data: {
+        subscriptionId: other.id,
+        planCode: 'month',
+        durationDays: 30,
+        startsAt: paidEnd,
+        expiresAt: chainEnd,
+      },
+    });
+
+    expect(await sendPaymentPaid(deps, order.id)).toBe('sent');
+    const msgs = await waitForMail(to);
+    expect(msgs[0]?.subject).toBe(`Оплата прошла, доступ до ${formatRuDate(chainEnd)}`);
   });
 
   it('skips an order that is not paid', async () => {

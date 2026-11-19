@@ -2,7 +2,7 @@ import type { Prisma } from '@xstore/db';
 
 export type ClaimTx = Pick<
   Prisma.TransactionClient,
-  '$executeRaw' | 'user' | 'subscription' | 'order' | 'device' | 'session'
+  '$executeRaw' | 'user' | 'subscription' | 'order' | 'device' | 'session' | 'entitlement'
 >;
 
 /**
@@ -10,8 +10,11 @@ export type ClaimTx = Pick<
  * buyer `verifiedUserId`, then closes those provisional accounts and drops their sessions. Runs in
  * the caller's transaction, after the email has been proven by a code.
  *
- * Subscriptions keep their ids, so entitlements and their dates stay as they are; orders and
- * devices follow their owner. Staff, verified accounts and blocked accounts are never sources.
+ * Subscriptions keep their ids; orders and devices follow their owner. Rights that have already
+ * started keep their dates. Rights of the moved subscriptions that have not started yet (a
+ * renewal or a grant waiting after the guest's period) move to the end of the buyer's chain,
+ * keeping their length, so no two rights of one buyer overlap. Staff, verified accounts and
+ * blocked accounts are never sources.
  *
  * Lock order (always the same, so no cycle with the other lock holders):
  *   1. `hashtext(email)`                 — claims of one email serialize;
@@ -64,6 +67,12 @@ export async function claimProvisional(
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${s.id}))`;
   }
 
+  await chainFutureRights(
+    tx,
+    verifiedUserId,
+    subscriptions.map((s) => s.id),
+  );
+
   const owned = { userId: { in: ids } };
   const moved = await tx.subscription.updateMany({
     where: owned,
@@ -75,4 +84,45 @@ export async function claimProvisional(
   await tx.session.deleteMany({ where: owned });
   await tx.user.updateMany({ where: { id: { in: ids } }, data: { blockedAt: new Date() } });
   return { moved: moved.count };
+}
+
+/**
+ * Puts the not-yet-started live rights of `movedIds` after the verified buyer's chain: in start
+ * order, each starts at `max(startsAt, chain end)` and keeps its length; the chain end is the
+ * latest end of the buyer's own live rights and the moved rights that have already started.
+ */
+async function chainFutureRights(
+  tx: ClaimTx,
+  verifiedUserId: string,
+  movedIds: string[],
+  now = new Date(),
+): Promise<void> {
+  if (movedIds.length === 0) return;
+  const rights = await tx.entitlement.findMany({
+    where: {
+      revokedAt: null,
+      OR: [{ subscription: { userId: verifiedUserId } }, { subscriptionId: { in: movedIds } }],
+    },
+    select: { id: true, subscriptionId: true, startsAt: true, expiresAt: true },
+    orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+  });
+  const moved = new Set(movedIds);
+  const future = rights.filter(
+    (r) => moved.has(r.subscriptionId) && r.startsAt.getTime() > now.getTime(),
+  );
+  let end = 0;
+  for (const r of rights) {
+    if (!future.includes(r)) end = Math.max(end, r.expiresAt.getTime());
+  }
+  for (const r of future) {
+    const length = r.expiresAt.getTime() - r.startsAt.getTime();
+    const start = Math.max(r.startsAt.getTime(), end);
+    if (start !== r.startsAt.getTime()) {
+      await tx.entitlement.update({
+        where: { id: r.id },
+        data: { startsAt: new Date(start), expiresAt: new Date(start + length) },
+      });
+    }
+    end = Math.max(end, start + length);
+  }
 }

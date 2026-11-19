@@ -70,6 +70,19 @@ async function buyAndPay(email: string, paidAt = new Date(Date.now() - 60_000)) 
   return { agent, order, until: access.body.state.until as string };
 }
 
+/** Marks a fake payment paid and delivers its webhook. */
+async function payByWebhook(order: { id: string; providerPaymentId: string | null }, paidAt: Date) {
+  const paymentId = order.providerPaymentId ?? '';
+  await fake.setStatus(paymentId, 'paid', paidAt);
+  const raw = Buffer.from(JSON.stringify({ paymentId, eventId: `ev-${order.id}` }));
+  const hook = await request(app.getHttpServer())
+    .post('/api/v1/billing/webhooks/fake')
+    .set('content-type', 'application/json')
+    .set('x-fake-signature', fakeWebhookSignature(TEST_WEBHOOK_SECRET, raw))
+    .send(raw.toString('utf8'));
+  expect(hook.status).toBe(204);
+}
+
 /** Requests a code and reads it from the newest letter (a payment letter may come first). */
 async function mailedCode(email: string): Promise<string> {
   const before = (await mailpitMessages(email)).length;
@@ -494,4 +507,51 @@ it("a grant to a guest buyer's email before the code login chains after the paid
   expect(renewed.startsAt.toISOString()).toBe(grantEnd);
   const after = await agent.get('/api/v1/access');
   expect(after.body.state.until).toBe(renewed.expiresAt.toISOString());
+});
+
+it('claim moves future rights after the buyer chain', async () => {
+  const email = rcpt();
+  // A guest pays, then renews from the same browser: the renewal waits after the paid period.
+  const guest = await buyAndPay(email, new Date(Date.now() - 2 * DAY_MS));
+  const renew = await postCheckout(guest.agent, checkoutBody(randomUUID(), { email }));
+  expect(renew.status).toBe(200);
+  const guestRenewal = await db.order.findUniqueOrThrow({ where: { id: renew.body.orderId } });
+  await payByWebhook(guestRenewal, new Date(Date.now() - DAY_MS));
+  const future = await db.entitlement.findUniqueOrThrow({ where: { orderId: guestRenewal.id } });
+  expect(future.startsAt.getTime()).toBeGreaterThan(Date.now());
+
+  // The verified buyer of the same email has their own access, ending later than the guest's
+  // paid period. Built directly: a code login would claim the guest purchases right away.
+  const verified = await db.user.create({ data: { email, role: 'user' } });
+  const own = await db.subscription.create({ data: { userId: verified.id } });
+  const ownStart = new Date(Date.now() - DAY_MS);
+  const ownEnd = new Date(ownStart.getTime() + 30 * DAY_MS);
+  await db.entitlement.create({
+    data: {
+      subscriptionId: own.id,
+      planCode: 'month',
+      durationDays: 30,
+      startsAt: ownStart,
+      expiresAt: ownEnd,
+    },
+  });
+  expect(ownEnd.getTime()).toBeGreaterThan(future.startsAt.getTime());
+
+  const agent = await loginByCode(email);
+  const moved = await db.entitlement.findUniqueOrThrow({ where: { id: future.id } });
+  // Same length, starting where the buyer's chain ends: no two rights overlap.
+  expect(moved.startsAt).toEqual(ownEnd);
+  expect(moved.expiresAt.getTime() - moved.startsAt.getTime()).toBe(
+    future.expiresAt.getTime() - future.startsAt.getTime(),
+  );
+  // Rights that have already started keep their dates.
+  const paid = await db.entitlement.findUniqueOrThrow({ where: { orderId: guest.order.id } });
+  expect(paid.startsAt.getTime()).toBeLessThan(Date.now());
+  expect(paid.expiresAt.toISOString()).toBe(guest.until);
+
+  const access = await agent.get('/api/v1/access');
+  expect(access.body.state).toMatchObject({
+    kind: 'active',
+    until: moved.expiresAt.toISOString(),
+  });
 });

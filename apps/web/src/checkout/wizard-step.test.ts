@@ -57,7 +57,7 @@ describe('wizardStep', () => {
     expect(
       wizardStep({
         order: null,
-        access: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+        access: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
       }),
     ).toBe('paid');
   });

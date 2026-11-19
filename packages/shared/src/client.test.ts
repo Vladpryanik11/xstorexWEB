@@ -154,7 +154,7 @@ describe('billing', () => {
         kind: 'active',
         until: '2026-12-18T12:00:00.000Z',
         subscriptionId: 's1',
-        deviceReady: false,
+        device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: false },
       },
       email: 'a@b.ru',
       hasPassword: false,
@@ -165,7 +165,7 @@ describe('billing', () => {
       kind: 'active',
       until: new Date('2026-12-18T12:00:00.000Z'),
       subscriptionId: 's1',
-      deviceReady: false,
+      device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: false },
     });
     const none = await createApiClient({
       baseUrl: 'http://api',

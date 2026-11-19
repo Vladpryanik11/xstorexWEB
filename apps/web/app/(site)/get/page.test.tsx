@@ -34,7 +34,7 @@ describe('/get', () => {
 
   it('sends a subscriber to «Мой доступ»', async () => {
     api.getAccess.mockResolvedValue({
-      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
     });
     const { default: Page } = await import('./page');
     await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /access');
@@ -42,7 +42,7 @@ describe('/get', () => {
 
   it('«Продлить» (?renew=1) shows the payment step to a subscriber', async () => {
     api.getAccess.mockResolvedValue({
-      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
       email: 'buyer@example.com',
       hasPassword: true,
     });
@@ -57,7 +57,7 @@ describe('/get', () => {
         kind: 'active',
         until: new Date('2026-12-18T12:00:00Z'),
         subscriptionId: 's',
-        deviceReady: false,
+        device: null,
       },
       email: 'buyer@example.com',
       hasPassword: true,

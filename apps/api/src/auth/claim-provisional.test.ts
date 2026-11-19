@@ -44,6 +44,16 @@ function fakeTx(opts: {
     order: { updateMany: updateMany('order.updateMany') },
     device: { updateMany: updateMany('device.updateMany') },
     session: { deleteMany: updateMany('session.deleteMany') },
+    entitlement: {
+      findMany: vi.fn(async (_args: unknown) => {
+        calls.push('entitlement.findMany');
+        return [];
+      }),
+      update: vi.fn(async (_args: unknown) => {
+        calls.push('entitlement.update');
+        return {};
+      }),
+    },
   };
   return { tx, calls, locks };
 }

@@ -96,7 +96,7 @@ it('webhook paid grants access visible in GET /access', async () => {
       kind: 'active',
       until: until.toISOString(),
       subscriptionId: order.subscriptionId,
-      deviceReady: false,
+      device: null,
     },
     email: 'buyer@example.ru',
     hasPassword: false,

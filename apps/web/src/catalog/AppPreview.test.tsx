@@ -52,7 +52,7 @@ const ACTIVE: AccessResponse = {
     kind: 'active',
     until: new Date('2026-12-18T10:00:00Z'),
     subscriptionId: 'sub_1',
-    deviceReady: false,
+    device: null,
   },
 };
 

@@ -74,11 +74,49 @@ export function deviceModelName(product: string): string {
   return DEVICE_MODELS[product] ?? product;
 }
 
+export type DeviceFamily = 'iphone' | 'ipad';
+
+/** iPad by the `PRODUCT` prefix iOS sends (`iPad13,1`); anything else is treated as an iPhone. */
+export function deviceFamily(product: string): DeviceFamily {
+  return product.startsWith('iPad') ? 'ipad' : 'iphone';
+}
+
+export type BindDecision =
+  | { ok: true; reuse: boolean }
+  | { ok: false; code: 'NO_ACCESS' | 'DEVICE_OWNED' | 'DEVICE_LIMIT' };
+
+/**
+ * Whether a device iOS reported may be bound to the buyer's access. Stage 1: one device per
+ * buyer, bound for good. A device owned by another buyer never moves; a buyer who already has a
+ * different device gets `DEVICE_LIMIT`. `reuse` means the buyer's own `Device` row is kept (a
+ * repeated enrollment of the same iPhone), otherwise a new row is created.
+ *
+ * `udidOwnerId` — owner of an existing `Device` with this UDID; `buyerDeviceUdid` — UDID of the
+ * device the buyer already has, if any.
+ */
+export function bindDecision(input: {
+  udidOwnerId: string | null;
+  buyerId: string;
+  buyerDeviceUdid: string | null;
+  udid: string;
+  hasAccess: boolean;
+}): BindDecision {
+  if (!input.hasAccess) return { ok: false, code: 'NO_ACCESS' };
+  if (input.udidOwnerId !== null && input.udidOwnerId !== input.buyerId) {
+    return { ok: false, code: 'DEVICE_OWNED' };
+  }
+  if (input.buyerDeviceUdid !== null && input.buyerDeviceUdid !== input.udid) {
+    return { ok: false, code: 'DEVICE_LIMIT' };
+  }
+  return { ok: true, reuse: input.udidOwnerId === input.buyerId };
+}
+
+/** Status texts for people; on an iPad the interface says «iPad» instead of «iPhone». */
 export const deviceStatusLabel: Record<DeviceStatus, string> = {
   new: 'Новое',
-  pending: 'Ожидает регистрации',
-  processing: 'Регистрируется в Apple (до 72 часов)',
-  active: 'Зарегистрировано в Apple',
+  pending: 'Готовим ваш iPhone, обычно до 24 часов',
+  processing: 'Готовим ваш iPhone, обычно до 24 часов',
+  active: 'iPhone готов',
   blocked: 'Заблокировано',
   expired: 'Срок истёк',
 };

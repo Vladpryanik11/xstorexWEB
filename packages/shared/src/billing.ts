@@ -60,7 +60,13 @@ export const accessStateSchema: z.ZodType<AccessState, unknown> = z.discriminate
     kind: z.literal('active'),
     until: isoDate,
     subscriptionId: z.string().min(1),
-    deviceReady: z.boolean(),
+    device: z
+      .object({
+        model: z.string().min(1),
+        family: z.enum(['iphone', 'ipad']),
+        ready: z.boolean(),
+      })
+      .nullable(),
   }),
 ]);
 

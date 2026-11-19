@@ -55,7 +55,7 @@ describe('Header', () => {
 
   it('without a forced state it starts as a guest and asks the API after mount', async () => {
     getAccess.mockResolvedValue({
-      state: { kind: 'active', until: new Date(), subscriptionId: 's', deviceReady: false },
+      state: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
       email: 'a@b.ru',
       hasPassword: true,
     });

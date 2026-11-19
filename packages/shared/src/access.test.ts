@@ -93,7 +93,7 @@ describe('accessState', () => {
   const now = d('2026-12-01T00:00:00Z');
   const sub = {
     id: 's1',
-    deviceReady: true,
+    device: { product: 'iPhone16,2', status: 'active' as const },
     rights: [right('2026-11-18T12:00:00Z', '2026-12-18T12:00:00Z')],
   };
   it('active имеет приоритет над ожидающим заказом', () => {
@@ -103,7 +103,7 @@ describe('accessState', () => {
       kind: 'active',
       until: d('2026-12-18T12:00:00Z'),
       subscriptionId: 's1',
-      deviceReady: true,
+      device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: true },
     });
   });
   it('доступ — непрерывная цепочка прав всех подписок покупателя', () => {
@@ -112,12 +112,12 @@ describe('accessState', () => {
       subscriptions: [
         {
           id: 'paid',
-          deviceReady: false,
+          device: null,
           rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')],
         },
         {
           id: 'grant',
-          deviceReady: false,
+          device: null,
           rights: [right('2026-12-10T00:00:00Z', '2027-01-09T00:00:00Z')],
         },
       ],
@@ -128,7 +128,54 @@ describe('accessState', () => {
       kind: 'active',
       until: d('2027-01-09T00:00:00Z'),
       subscriptionId: 'grant',
-      deviceReady: false,
+      device: null,
+    });
+  });
+  it('устройство берётся из любой подписки покупателя, не только из выбранной', () => {
+    const state = accessState({
+      signedIn: true,
+      subscriptions: [
+        {
+          id: 'paid',
+          device: { product: 'iPad13,1', status: 'pending' },
+          rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')],
+        },
+        {
+          id: 'grant',
+          device: null,
+          rights: [right('2026-12-10T00:00:00Z', '2027-01-09T00:00:00Z')],
+        },
+      ],
+      pendingOrderId: null,
+      now,
+    });
+    expect(state).toMatchObject({
+      kind: 'active',
+      subscriptionId: 'grant',
+      device: { model: 'iPad13,1', family: 'ipad', ready: false },
+    });
+  });
+  it('устройство выбранной подписки важнее устройства другой', () => {
+    const state = accessState({
+      signedIn: true,
+      subscriptions: [
+        {
+          id: 'old',
+          device: { product: 'iPhone15,2', status: 'active' },
+          rights: [right('2026-09-01T00:00:00Z', '2026-10-01T00:00:00Z')],
+        },
+        {
+          id: 'live',
+          device: { product: 'iPhone16,2', status: 'processing' },
+          rights: [right('2026-11-10T00:00:00Z', '2026-12-10T00:00:00Z')],
+        },
+      ],
+      pendingOrderId: null,
+      now,
+    });
+    expect(state).toMatchObject({
+      subscriptionId: 'live',
+      device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: false },
     });
   });
   it('payment_pending без действующей подписки', () => {

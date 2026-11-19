@@ -33,7 +33,7 @@ function Status({ access }: { access: AccessResponse }) {
           ) : null}
           <div className={own.fact}>
             <dt>iPhone</dt>
-            <dd>{state.deviceReady ? 'Устройство подключено' : 'Устройство ещё не подключено'}</dd>
+            <dd>{state.device ? 'Устройство подключено' : 'Устройство ещё не подключено'}</dd>
           </div>
         </dl>
         <Button href="/get?renew=1" className={styles.wide}>

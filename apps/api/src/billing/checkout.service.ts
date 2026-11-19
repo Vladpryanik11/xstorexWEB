@@ -254,7 +254,7 @@ export class CheckoutService {
         subscriptions: {
           select: {
             id: true,
-            deviceId: true,
+            device: { select: { product: true, status: true } },
             entitlements: { select: { startsAt: true, expiresAt: true, revokedAt: true } },
           },
         },
@@ -271,7 +271,7 @@ export class CheckoutService {
       subscriptions: user.subscriptions.map((s) => ({
         id: s.id,
         rights: s.entitlements,
-        deviceReady: s.deviceId !== null,
+        device: s.device,
       })),
       pendingOrderId: pending?.id ?? null,
       now,
