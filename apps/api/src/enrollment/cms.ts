@@ -111,7 +111,8 @@ function commonNames(cert: X509Certificate): string[] {
 
 /**
  * Builds a path from the signer through the certificates carried in the message to one of the
- * anchors. Every certificate on the path must be valid at `now`; every issuer must be a CA. With
+ * anchors. Every certificate on the path must be valid at `now` (unless `now` is `null`); every
+ * issuer must be a CA. With
  * `requireIntermediateCn`, some intermediate strictly between the signer and the anchor must
  * carry one of those common names.
  * Path building is greedy (first matching issuer): a duplicate or cross-signed issuer can only
@@ -121,7 +122,8 @@ function checkChain(
   signer: X509Certificate,
   carried: X509Certificate[],
   anchors: X509Certificate[],
-  now: Date,
+  /** `null` skips validity dates; signatures and CA flags are still checked. */
+  now: Date | null,
   requireIntermediateCn: string[] | undefined,
 ): void {
   const intermediates: X509Certificate[] = [];
@@ -134,7 +136,8 @@ function checkChain(
   };
   let current = signer;
   for (let depth = 0; depth < MAX_CHAIN; depth += 1) {
-    if (!isValidAt(current, now)) throw new CmsError('Certificate outside its validity period');
+    if (now && !isValidAt(current, now))
+      throw new CmsError('Certificate outside its validity period');
     if (anchors.some((anchor) => anchor.fingerprint256 === current.fingerprint256)) {
       done();
       return;
@@ -142,7 +145,7 @@ function checkChain(
     if (current !== signer) intermediates.push(current);
     const anchor = anchors.find((a) => a.ca && issued(current, a));
     if (anchor) {
-      if (!isValidAt(anchor, now)) throw new CmsError('Anchor outside its validity period');
+      if (now && !isValidAt(anchor, now)) throw new CmsError('Anchor outside its validity period');
       done();
       return;
     }
@@ -166,9 +169,14 @@ export async function verifyCms(
     now?: Date;
     /** The path must pass through an intermediate with one of these subject common names. */
     requireIntermediateCn?: string[];
+    /**
+     * `false` accepts certificates outside their validity period; every signature on the path is
+     * still verified. Only for answers whose freshness comes from elsewhere (a single-use nonce).
+     */
+    checkValidity?: boolean;
   },
 ): Promise<{ content: Buffer; signer: X509Certificate }> {
-  const now = opts.now ?? new Date();
+  const now = opts.checkValidity === false ? null : (opts.now ?? new Date());
   let signedData: pkijs.SignedData;
   try {
     const info = pkijs.ContentInfo.fromBER(new Uint8Array(der));

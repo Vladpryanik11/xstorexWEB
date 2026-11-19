@@ -33,7 +33,7 @@ describe.skipIf(!fixture)('real iOS answer', () => {
     console.info('device key', key.asymmetricKeyType, key.asymmetricKeyDetails);
   });
 
-  it('carries both Apple device intermediates, valid today', () => {
+  it('carries both Apple device intermediates', () => {
     const info = pkijs.ContentInfo.fromBER(new Uint8Array(der()));
     const signed = new pkijs.SignedData({ schema: info.content });
     const carried = (signed.certificates ?? [])
@@ -42,11 +42,9 @@ describe.skipIf(!fixture)('real iOS answer', () => {
     const names = carried.map(cn);
     expect(names).toContain(APPLE_DEVICE_CA_CN);
     expect(names).toContain('Apple iPhone Certification Authority');
-    const now = Date.now();
+    // Facts for the report: dates are not checked for device answers (see verifyDeviceCms).
     for (const cert of carried.filter((c) => c.ca)) {
       console.info('intermediate', cn(cert), 'valid to', cert.validTo);
-      expect(new Date(cert.validFrom).getTime()).toBeLessThanOrEqual(now);
-      expect(new Date(cert.validTo).getTime()).toBeGreaterThan(now);
     }
   });
 

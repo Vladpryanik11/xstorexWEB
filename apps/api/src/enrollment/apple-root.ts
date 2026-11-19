@@ -35,14 +35,18 @@ export const APPLE_DEVICE_CA_CN = 'Apple iPhone Device CA';
 /**
  * Verifies the signed answer iOS posts to the profile service: chain to Apple Root CA (or, outside
  * production only, a test anchor) through "Apple iPhone Device CA". Throws `CmsError`.
+ *
+ * Validity dates are not checked: the Apple iPhone intermediates were issued in 2007 and may be
+ * past their end date while iPhones still sign with them (device certificates too). Every
+ * signature on the path is still verified; freshness comes from the single-use Challenge nonce.
  */
 export function verifyDeviceCms(
   der: Buffer,
-  opts: { testAnchors?: X509Certificate[]; now?: Date } = {},
+  opts: { testAnchors?: X509Certificate[] } = {},
 ): ReturnType<typeof verifyCms> {
   return verifyCms(der, {
     anchors: [appleRootCa(), ...(opts.testAnchors ?? [])],
     requireIntermediateCn: [APPLE_DEVICE_CA_CN],
-    ...(opts.now ? { now: opts.now } : {}),
+    checkValidity: false,
   });
 }

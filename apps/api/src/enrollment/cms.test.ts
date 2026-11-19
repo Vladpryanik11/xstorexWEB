@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, X509Certificate } from 'node:crypto';
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 import { describe, expect, it } from 'vitest';
@@ -164,6 +164,54 @@ describe('device answers', () => {
     });
     expect(signed.signerInfos[0]?.digestAlgorithm.algorithmId).toBe('1.3.14.3.2.26');
     await expect(verifyDeviceCms(der, { testAnchors: [ca.root] })).resolves.toBeTruthy();
+  });
+});
+
+describe('device answers with old Apple certificates', () => {
+  // Ended twelve hours ago: the Apple iPhone intermediates of 2007 may be past their end date.
+  const expired = { intermediateValidDays: -0.5, deviceValidDays: -0.5 };
+
+  it('accepts an expired intermediate and an expired device certificate', async () => {
+    const ca = await createTestCa(expired);
+    const der = await signDeviceResponse(answer, ca);
+    await expect(verifyDeviceCms(der, { testAnchors: [ca.root] })).resolves.toBeTruthy();
+  });
+
+  it('still refuses a broken signature in the chain', async () => {
+    const ca = await createTestCa(expired);
+    const [deviceCa, authority] = ca.device.chain;
+    if (!deviceCa || !authority) throw new Error('test CA has two intermediates');
+    const raw = Buffer.from(deviceCa.raw);
+    raw[raw.length - 1] = (raw[raw.length - 1] ?? 0) ^ 0x01;
+    const broken = new X509Certificate(raw);
+    const der = await signDeviceResponse(answer, {
+      ...ca,
+      device: { ...ca.device, chain: [broken, authority] },
+    });
+    await expect(verifyDeviceCms(der, { testAnchors: [ca.root] })).rejects.toBeInstanceOf(CmsError);
+  });
+
+  it('still refuses a changed answer', async () => {
+    const ca = await createTestCa(expired);
+    const der = await signDeviceResponse(answer, ca);
+    const at = der.indexOf(Buffer.from('iPhone16,2'));
+    expect(at).toBeGreaterThan(0);
+    const tampered = Buffer.from(der);
+    tampered[at] = (tampered[at] ?? 0) ^ 0x01;
+    await expect(verifyDeviceCms(tampered, { testAnchors: [ca.root] })).rejects.toBeInstanceOf(
+      CmsError,
+    );
+  });
+
+  it('keeps the date check for any other CMS', async () => {
+    const ca = await createTestCa(expired);
+    const der = await signDeviceResponse(answer, ca);
+    await expect(
+      verifyCms(der, {
+        anchors: [ca.root],
+        requireIntermediateCn: [APPLE_DEVICE_CA_CN],
+      }),
+    ).rejects.toBeInstanceOf(CmsError);
   });
 });
 
