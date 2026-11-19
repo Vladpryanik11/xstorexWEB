@@ -88,8 +88,11 @@ export const errorMessages: Record<ErrorCode, string> = {
 
 /** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */
 export const signinMessages = {
-  /** Any 429 on a sign-in step (password, code request, code check). */
+  /** A 429 on a code step (code request, code check). */
   TOO_MANY_ATTEMPTS: 'Слишком много попыток, попробуйте позже',
+  /** A 429 on password sign-in: the code from the email still works. */
+  PASSWORD_LOCKED:
+    'Слишком много попыток входа по паролю. Нажмите «Войти по коду из письма» — код придёт на почту.',
   /** Staff sign in with a TOTP code as well; INVALID_CREDENTIALS covers all three fields. */
   STAFF_INVALID_CREDENTIALS: 'Неверная почта, пароль или код из приложения',
   CHECK_EMAIL: 'Проверьте почту и попробуйте ещё раз',

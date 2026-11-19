@@ -50,8 +50,11 @@ export class CustomerAuthController {
   }
 
   /**
-   * Two limits: 5 per IP (guard) and 10 per email from any IP (here, after the body is parsed).
-   * Both answer the same 429 whether or not the email has an account.
+   * Two limits: 5 attempts per IP (guard) and 10 failed attempts per email from any IP (here,
+   * after the body is parsed). A failure is counted the same way whether or not the email has an
+   * account, so the 429 does not tell. The attempt takes a hit up front (no race between parallel
+   * guesses) and a success gives it back. Code login has its own limits, so a stranger who locks
+   * the password login of an email does not lock its owner out.
    */
   @Post('login')
   @HttpCode(204)
@@ -62,8 +65,9 @@ export class CustomerAuthController {
     @Res({ passthrough: true }) res: HttpRes,
   ): Promise<void> {
     // `body.email` is already normalized by the schema (trimmed, lower case).
+    const perEmailKey = `buyer-login:email:${body.email}`;
     const perEmail = await this.limiter.consume(
-      `buyer-login:email:${body.email}`,
+      perEmailKey,
       LOGIN_PER_EMAIL.limit,
       LOGIN_PER_EMAIL.windowSec,
     );
@@ -72,6 +76,7 @@ export class CustomerAuthController {
       throw new DomainError(ErrorCode.RATE_LIMITED, 429);
     }
     const session = await this.auth.login(body, meta(req));
+    await this.limiter.release(perEmailKey);
     await this.replaceSession(req, res, session);
   }
 

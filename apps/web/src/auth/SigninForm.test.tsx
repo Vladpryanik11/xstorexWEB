@@ -58,7 +58,7 @@ describe('SigninForm, password', () => {
     expect(go).not.toHaveBeenCalled();
   });
 
-  it('too many attempts get their own text', async () => {
+  it('too many password attempts point to the code from the email', async () => {
     const api = fakeApi({
       login: vi.fn().mockRejectedValue(new ApiClientError(429, ErrorCode.RATE_LIMITED, 'slow')),
     });
@@ -67,8 +67,11 @@ describe('SigninForm, password', () => {
     type('Пароль', 'long-enough-1');
     fireEvent.click(screen.getByRole('button', { name: 'Войти' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Слишком много попыток, попробуйте позже',
+      'Слишком много попыток входа по паролю. Нажмите «Войти по коду из письма»',
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Войти по коду из письма' }));
+    expect(screen.getByLabelText('Почта')).toHaveValue('buyer@example.com');
+    expect(screen.getByRole('button', { name: 'Получить код' })).toBeInTheDocument();
   });
 });
 

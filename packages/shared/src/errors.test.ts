@@ -42,6 +42,9 @@ it('carries publish blockers in details', () => {
 
 it('sign-in texts live here too', () => {
   expect(signinMessages.TOO_MANY_ATTEMPTS).toBe('Слишком много попыток, попробуйте позже');
+  expect(signinMessages.PASSWORD_LOCKED).toBe(
+    'Слишком много попыток входа по паролю. Нажмите «Войти по коду из письма» — код придёт на почту.',
+  );
   // Staff sign in with a TOTP code as well, so their wrong-credentials text names it.
   expect(signinMessages.STAFF_INVALID_CREDENTIALS).toBe(
     'Неверная почта, пароль или код из приложения',

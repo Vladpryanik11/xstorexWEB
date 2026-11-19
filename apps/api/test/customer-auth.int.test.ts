@@ -146,24 +146,36 @@ it('wrong password returns INVALID_CREDENTIALS', async () => {
   expect(limited.body.code).toBe('RATE_LIMITED');
 });
 
-it('password login allows ten per email in 15 minutes, from any IP, known or not', async () => {
+it('password login allows ten failures per email in 15 minutes, from any IP, known or not', async () => {
   const email = rcpt();
   const { agent } = await buyAndPay(email);
   await post(agent, 'password', { password: 'correct horse' });
   const unknown = rcpt();
   // A new address per attempt keeps the per-IP limit (five) out of the way.
   let ip = 0;
-  const from = (body: object) =>
-    agentOf()
+  const from = (body: object) => {
+    ip += 1;
+    return agentOf()
       .post('/api/v1/auth/login')
       .set('Origin', SITE)
-      .set('X-Forwarded-For', `10.0.0.${(ip += 1)}`)
+      .set('X-Forwarded-For', `10.0.0.${ip}`)
       .send(body);
+  };
 
-  for (let i = 0; i < 10; i += 1) {
+  // Successful logins do not count: five failures, three successes, five more failures.
+  for (let i = 0; i < 5; i += 1) {
     expect((await from({ email: email.toUpperCase(), password: 'nope-nope' })).status).toBe(401);
+  }
+  for (let i = 0; i < 3; i += 1) {
+    expect((await from({ email, password: 'correct horse' })).status).toBe(204);
+  }
+  for (let i = 0; i < 5; i += 1) {
+    expect((await from({ email, password: 'nope-nope' })).status).toBe(401);
+  }
+  for (let i = 0; i < 10; i += 1) {
     expect((await from({ email: unknown, password: 'nope-nope' })).status).toBe(401);
   }
+  // Ten failures lock password login for the email, even with the right password.
   const limited = await from({ email, password: 'correct horse' });
   expect(limited.status).toBe(429);
   expect(limited.body.code).toBe('RATE_LIMITED');

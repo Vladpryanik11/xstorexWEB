@@ -50,7 +50,7 @@ export function SigninForm({ next, api = defaultApi, go = defaultGo }: SigninFor
       await api.login({ email: parsed.data, password });
       done();
     } catch (err) {
-      setError(signinErrorText(err));
+      setError(signinErrorText(err, 'password'));
       setBusy(false);
     }
   }
