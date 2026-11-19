@@ -1,4 +1,7 @@
-import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
@@ -18,6 +21,39 @@ const enrollFiles = {
   ENROLL_TEST_ANCHOR_PATH: `${enrollDir}test-anchor.pem`,
 };
 const enrollEnv = Object.values(enrollFiles).every((path) => existsSync(path)) ? enrollFiles : {};
+
+/**
+ * Н3: supplier files for the admin upload test (`e2e/admin-devices.spec.ts`), made once per run by
+ * `@xstore/signing/testing` (fake keys, a temporary folder, never committed). The e2e API trusts
+ * their test root through SIGNING_TEST_ANCHOR_PATH. Workers inherit the folder through the env.
+ */
+export const E2E_KIT_UDIDS = {
+  'mobile-webkit': '00008110-E2E0000000000001',
+  'desktop-chromium': '00008110-E2E0000000000002',
+} as const;
+if (!process.env.XSTORE_E2E_KIT_DIR) {
+  const dir = mkdtempSync(join(tmpdir(), 'xstore-e2e-kit-'));
+  execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import { writeFileSync } from 'node:fs';
+       import { makeKit } from '@xstore/signing/testing';
+       const [dir, ...udids] = process.argv.slice(1);
+       const kit = makeKit({ udids });
+       writeFileSync(dir + '/anchor.pem', kit.anchor.toString());
+       writeFileSync(dir + '/kit.p12', kit.p12);
+       writeFileSync(dir + '/kit.mobileprovision', kit.profile);
+       writeFileSync(dir + '/password.txt', kit.password);`,
+      dir,
+      ...Object.values(E2E_KIT_UDIDS),
+    ],
+    { cwd: fileURLToPath(new URL('../../packages/signing/', import.meta.url)) },
+  );
+  process.env.XSTORE_E2E_KIT_DIR = dir;
+}
+export const e2eKitDir = (): string => process.env.XSTORE_E2E_KIT_DIR as string;
 
 const port = 3100;
 const apiPort = 3101;
@@ -82,6 +118,7 @@ export default defineConfig({
       env: {
         ...e2eApiEnv(),
         ...enrollEnv,
+        SIGNING_TEST_ANCHOR_PATH: join(e2eKitDir(), 'anchor.pem'),
         API_PORT: String(apiPort),
         SITE_URL: `http://localhost:${port}`,
         LOG_LEVEL: 'warn',
