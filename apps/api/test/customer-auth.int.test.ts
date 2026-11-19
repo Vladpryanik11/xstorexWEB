@@ -600,3 +600,50 @@ it('access shows the device bound most recently when the buyer has two', async (
     device: { family: 'ipad', ready: false },
   });
 });
+
+it("claim keeps the buyer's own device and unbinds the guest's one", async () => {
+  const email = rcpt();
+  const guest = await buyAndPay(email);
+  const device = (userId: string, udid: string, product: string) =>
+    db.device.create({
+      data: { userId, udid, product, iosVersion: '18.0', name: product, status: 'pending' },
+    });
+  // The guest connected one iPhone; the verified buyer of the same email another one.
+  const guestDevice = await device(guest.order.userId, 'c'.repeat(40), 'iPhone15,2');
+  await db.subscription.update({
+    where: { id: guest.order.subscriptionId },
+    data: { deviceId: guestDevice.id, assignedAt: new Date() },
+  });
+  const verified = await db.user.create({ data: { email, role: 'user' } });
+  const ownDevice = await device(verified.id, 'd'.repeat(40), 'iPhone16,2');
+  const own = await db.subscription.create({
+    data: {
+      userId: verified.id,
+      deviceId: ownDevice.id,
+      assignedAt: new Date(Date.now() - DAY_MS),
+    },
+  });
+  await db.entitlement.create({
+    data: {
+      subscriptionId: own.id,
+      planCode: 'month',
+      durationDays: 30,
+      startsAt: new Date(Date.now() - DAY_MS),
+      expiresAt: new Date(Date.now() + 29 * DAY_MS),
+    },
+  });
+
+  const agent = await loginByCode(email);
+  expect(await db.subscription.findUniqueOrThrow({ where: { id: own.id } })).toMatchObject({
+    deviceId: ownDevice.id,
+  });
+  expect(
+    await db.subscription.findUniqueOrThrow({ where: { id: guest.order.subscriptionId } }),
+  ).toMatchObject({ userId: verified.id, deviceId: null, assignedAt: null });
+  // Only one device stays bound across the buyer's subscriptions.
+  expect(
+    await db.subscription.count({ where: { userId: verified.id, deviceId: { not: null } } }),
+  ).toBe(1);
+  const access = await agent.get('/api/v1/access');
+  expect(access.body.state.device).toMatchObject({ model: 'iPhone 15 Pro Max' });
+});

@@ -6,7 +6,12 @@ type Target = { role: string; isProvisional: boolean; blockedAt: Date | null } |
 function fakeTx(opts: {
   target?: Target;
   sources?: { id: string }[];
-  subscriptions?: { id: string; userId?: string }[];
+  subscriptions?: {
+    id: string;
+    userId?: string;
+    deviceId?: string | null;
+    assignedAt?: Date | null;
+  }[];
   rights?: { id: string; subscriptionId: string; startsAt: Date; expiresAt: Date }[];
 }) {
   const calls: string[] = [];
@@ -107,7 +112,7 @@ describe('claimProvisional', () => {
     });
     const result = await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
     expect(result).toEqual({ moved: 2 });
-    expect(locks).toEqual(['a@b.ru', 'checkout:p1', 'checkout:p2', 's1', 's2']);
+    expect(locks).toEqual(['a@b.ru', 'checkout:p1', 'checkout:p2', 'checkout:v1', 's1', 's2']);
     expect(calls.indexOf('subscription.updateMany')).toBeGreaterThan(calls.lastIndexOf('lock'));
 
     const sources = { userId: { in: ['p1', 'p2'] } };
@@ -141,7 +146,7 @@ describe('claimProvisional', () => {
         orderBy: { id: 'asc' },
       }),
     );
-    expect(locks).toEqual(['a@b.ru', 'checkout:p1', 'a-own', 'b-moved', 'c-own']);
+    expect(locks).toEqual(['a@b.ru', 'checkout:p1', 'checkout:v1', 'a-own', 'b-moved', 'c-own']);
     // The chain is read only after every subscription involved is locked.
     expect(tx.entitlement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -207,6 +212,53 @@ describe('claimProvisional', () => {
     });
     await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
     expect(tx.entitlement.update).not.toHaveBeenCalled();
+  });
+
+  it("takes the buyer's checkout lock with the sources' ones, sorted by id", async () => {
+    const { tx, locks } = fakeTx({ sources: [{ id: 'a1' }, { id: 'z9' }] });
+    await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
+    expect(locks).toEqual(['a@b.ru', 'checkout:a1', 'checkout:v1', 'checkout:z9']);
+  });
+
+  it("keeps the buyer's own device and unbinds a different moved one", async () => {
+    const { tx } = fakeTx({
+      sources: [{ id: 'p1' }],
+      subscriptions: [
+        { id: 's-moved', userId: 'p1', deviceId: 'd-guest', assignedAt: new Date(2) },
+        { id: 's-own', userId: 'v1', deviceId: 'd-own', assignedAt: new Date(1) },
+        { id: 's-same', userId: 'p1', deviceId: 'd-own', assignedAt: new Date(3) },
+      ],
+    });
+    await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
+    expect(tx.subscription.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['s-moved'] } },
+      data: { deviceId: null, assignedAt: null },
+    });
+  });
+
+  it('without an own device keeps the moved device bound most recently', async () => {
+    const { tx } = fakeTx({
+      sources: [{ id: 'p1' }, { id: 'p2' }],
+      subscriptions: [
+        { id: 's1', userId: 'p1', deviceId: 'd-old', assignedAt: new Date(1) },
+        { id: 's2', userId: 'p2', deviceId: 'd-new', assignedAt: new Date(2) },
+        { id: 's3', userId: 'v1', deviceId: null, assignedAt: null },
+      ],
+    });
+    await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
+    expect(tx.subscription.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['s1'] } },
+      data: { deviceId: null, assignedAt: null },
+    });
+  });
+
+  it('a single device unbinds nothing', async () => {
+    const { tx } = fakeTx({
+      sources: [{ id: 'p1' }],
+      subscriptions: [{ id: 's1', userId: 'p1', deviceId: 'd1', assignedAt: new Date(1) }],
+    });
+    await claimProvisional(tx as unknown as ClaimTx, 'v1', 'a@b.ru');
+    expect(tx.subscription.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it.each([
