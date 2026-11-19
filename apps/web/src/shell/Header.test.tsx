@@ -107,6 +107,12 @@ describe('Header', () => {
     expect(pills[0]?.closest('a')).toHaveTextContent('Вопросы');
   });
 
+  it('has no logo: no image and no «на главную» link in the pill', () => {
+    const { container } = render(<Header nav={GUEST} />);
+    expect(container.querySelector('header img')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Xstore, на главную' })).toBeNull();
+  });
+
   it('forcedPath overrides the current path', () => {
     render(<Header nav={SUB} forcedPath="/support" />);
     expect(screen.getByRole('link', { name: 'Поддержка' })).toHaveAttribute('aria-current', 'page');
@@ -223,15 +229,17 @@ describe('MobileMenu', () => {
   it('closes when a header link above the sheet navigates, keeping focus on that link', () => {
     const { rerender } = render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    const logo = screen.getByRole('link', { name: 'Xstore, на главную' });
-    expect(logo.querySelector('img')).toHaveAttribute('src', '/brand/mark.png');
-    logo.focus();
+    const pricing = screen
+      .getAllByRole('link', { name: 'Тарифы' })
+      .find((link) => !link.closest('[role="dialog"]'));
+    if (!pricing) throw new Error('no «Тарифы» pill above the sheet');
+    pricing.focus();
 
-    nav.pathname = '/';
+    nav.pathname = pricing.getAttribute('href') ?? '/pricing';
     rerender(<Header nav={GUEST} />);
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(logo).toHaveFocus();
+    expect(pricing).toHaveFocus();
   });
 
   it('a forced path does not close the sheet', () => {

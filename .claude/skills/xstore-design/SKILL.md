@@ -36,7 +36,7 @@ Spec `docs/superpowers/specs/2026-11-17-typography-design.md`. Manrope 700 (`--x
 
 ## Header
 
-White floating glass pill (spec §5): top offset `.75rem + safe-area`, side `--x-gutter`, max width `--x-page-max`, background `rgba(255,255,255,.78)` + `backdrop-filter: blur(12px) saturate(1.4)`, `--x-shadow`, 1px inner white ring. Active item `--x-sky-50` / `--x-quiet-fg`, the highlight slides between items (motion `layoutId`). After 24px of scroll it narrows to max 56rem and 48px height. Below 48em: logo, «Тарифы» (guest), round menu button opening a Card Nav (cards «Каталог», «Доступ», «Помощь»).
+White floating glass pill (spec §5): top offset `.75rem + safe-area`, side `--x-gutter`, max width `--x-page-max`, background `rgba(255,255,255,.78)` + `backdrop-filter: blur(12px) saturate(1.4)`, `--x-shadow`, 1px inner white ring. Active item `--x-sky-50` / `--x-quiet-fg`, the highlight slides between items (motion `layoutId`). After 24px of scroll it narrows to max 56rem and 48px height. Below 48em: «Тарифы» (guest), round menu button opening a Card Nav (cards «Каталог», «Доступ», «Помощь»). No logo in the header (owner, 2026-11-19); the mark lives in the footer.
 
 Middle row for everyone: Блог · Вопросы · Поддержка. End slot (`navFor`): guest Тарифы + Войти; subscriber Мой доступ; signed in without access Тарифы + Мой доступ. «Выйти» is on `/access`. The word «аккаунт» never appears in the UI.
 
