@@ -7,6 +7,9 @@ import forge from 'node-forge';
 import plist from 'plist';
 
 export const TEST_TEAM_ID = 'TEAM123456';
+/** The responder host of test certificates; pass it in `allowedHosts`. */
+export const TEST_OCSP_HOST = 'ocsp.test.invalid';
+
 export const TEST_UDID = '00008110-001A2B3C4D5E6F70';
 
 type Issued = { cert: forge.pki.Certificate; key: forge.pki.rsa.PrivateKey };
@@ -221,6 +224,7 @@ export async function makeOcspResponse(
   kit: TestKit,
   status: 'good' | 'revoked' | 'unknown',
   signer: Issued = testChain().wwdr,
+  times: { thisUpdate?: Date; nextUpdate?: Date | null } = {},
 ): Promise<Buffer> {
   const { cryptoEngine } = await import('./engine.js');
   const asn1js = await import('asn1js');
@@ -249,7 +253,14 @@ export async function makeOcspResponse(
   basic.tbsResponseData.responderID = signerCert.subject;
   basic.tbsResponseData.producedAt = new Date();
   basic.tbsResponseData.responses.push(
-    new pkijs.SingleResponse({ certID: certId, certStatus: statusBlock, thisUpdate: new Date() }),
+    new pkijs.SingleResponse({
+      certID: certId,
+      certStatus: statusBlock,
+      thisUpdate: times.thisUpdate ?? new Date(),
+      ...(times.nextUpdate === null
+        ? {}
+        : { nextUpdate: times.nextUpdate ?? new Date(Date.now() + 12 * 3600_000) }),
+    }),
   );
   basic.certs = [signerCert];
   const keyPem = forge.pki.privateKeyToPem(signer.key);

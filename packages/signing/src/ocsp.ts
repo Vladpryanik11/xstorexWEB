@@ -9,6 +9,11 @@ export type Revocation = 'good' | 'revoked' | 'unknown';
 export const OCSP_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const OID_OCSP = '1.3.6.1.5.5.7.48.1';
+/** Apple's responder for developer and distribution certificates. */
+export const APPLE_OCSP_HOSTS: readonly string[] = ['ocsp.apple.com'];
+const SKEW_MS = 5 * 60_000;
+/** A response without nextUpdate is trusted for this long after thisUpdate. */
+const MAX_AGE_MS = 7 * 24 * 3600_000;
 const OID_AIA = '1.3.6.1.5.5.7.1.1';
 const OID_BASIC = '1.3.6.1.5.5.7.48.1.1';
 
@@ -50,13 +55,19 @@ function ocspUrl(cert: pkijs.Certificate): string | null {
 export async function checkRevocation(
   cert: X509Certificate,
   issuer: X509Certificate,
-  fetchFn: typeof fetch = fetch,
+  opts: { fetchFn?: typeof fetch; allowedHosts?: readonly string[]; now?: Date } = {},
 ): Promise<Revocation> {
+  const fetchFn = opts.fetchFn ?? fetch;
+  const allowedHosts = opts.allowedHosts ?? APPLE_OCSP_HOSTS;
+  const now = (opts.now ?? new Date()).getTime();
   try {
+    // Only ask about a certificate this issuer really signed, and only Apple's responder: the
+    // URL comes from an uploaded file and must not point the server anywhere else.
+    if (!cert.checkIssued(issuer) || !cert.verify(issuer.publicKey)) return 'unknown';
     const target = toPkijs(cert);
     const issuerCert = toPkijs(issuer);
     const url = ocspUrl(target);
-    if (!url) return 'unknown';
+    if (!url || !allowedHosts.includes(new URL(url).hostname.toLowerCase())) return 'unknown';
 
     const request = new pkijs.OCSPRequest();
     await request.createForCertificate(
@@ -78,11 +89,18 @@ export async function checkRevocation(
         redirect: 'error',
       });
       if (!res.ok) return 'unknown';
-      bytes = await res.arrayBuffer();
+      const declared = Number(res.headers.get('content-length') ?? '0');
+      if (declared > MAX_RESPONSE_BYTES) return 'unknown';
+      const read = await readCapped(res, MAX_RESPONSE_BYTES);
+      if (!read) {
+        controller.abort();
+        return 'unknown';
+      }
+      bytes = read;
     } finally {
       clearTimeout(timer);
     }
-    if (bytes.byteLength === 0 || bytes.byteLength > MAX_RESPONSE_BYTES) return 'unknown';
+    if (bytes.byteLength === 0) return 'unknown';
 
     const response = pkijs.OCSPResponse.fromBER(bytes);
     if (response.responseStatus.valueBlock.valueDec !== 0) return 'unknown';
@@ -94,6 +112,7 @@ export async function checkRevocation(
 
     for (const single of basic.tbsResponseData.responses) {
       if (!(await single.certID.isEqual(await certIdFor(target, issuerCert)))) continue;
+      if (!fresh(single, now)) return 'unknown';
       const tag = (single.certStatus as asn1js.BaseBlock).idBlock.tagNumber;
       if (tag === 0) return 'good';
       if (tag === 1) return 'revoked';
@@ -106,6 +125,39 @@ export async function checkRevocation(
 }
 
 const OID_OCSP_SIGNING = '1.3.6.1.5.5.7.3.9';
+
+/** RFC 6960 §3.2: not from the future, not past nextUpdate, not older than a week without it. */
+function fresh(single: pkijs.SingleResponse, now: number): boolean {
+  const thisUpdate = single.thisUpdate.getTime();
+  if (thisUpdate > now + SKEW_MS) return false;
+  if (single.nextUpdate) return single.nextUpdate.getTime() + SKEW_MS >= now;
+  return now - thisUpdate <= MAX_AGE_MS;
+}
+
+/** The body, or `null` as soon as it grows past `limit` (the rest is never read). */
+async function readCapped(res: Response, limit: number): Promise<ArrayBuffer | null> {
+  if (!res.body) return new ArrayBuffer(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.byteLength;
+  }
+  return out.buffer;
+}
 
 /**
  * RFC 6960 §4.2.2.2: the response is signed by the issuer itself or by a responder certificate
