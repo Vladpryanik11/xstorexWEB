@@ -113,8 +113,8 @@ export default async function DevUiPage({ searchParams }: { searchParams: Promis
             <SectionTitle>Иконки приложений</SectionTitle>
             <div className={styles.row}>
               <AppIcon alt="Без картинки" size={56} />
-              <AppIcon src="/brand/mark.svg" alt="Xstore" size={76} />
-              <AppIcon src="/brand/mark.svg" alt="Xstore" size={120} />
+              <AppIcon src="/brand/mark.png" alt="Xstore" size={76} />
+              <AppIcon src="/brand/mark.png" alt="Xstore" size={120} />
             </div>
           </section>
 
