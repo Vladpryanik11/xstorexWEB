@@ -6,6 +6,19 @@ import { defineConfig, devices } from '@playwright/test';
 const rootEnv = fileURLToPath(new URL('../../.env', import.meta.url));
 if (!process.env.DATABASE_URL_TEST && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
+/**
+ * Profile signer and test device root for the e2e API, from `pnpm --filter @xstore/api
+ * enroll:dev-cert` and `enroll:test-ca` (.secrets/enroll/, gitignored). Without them the
+ * connection tests fail with a hint; everything else runs.
+ */
+const enrollDir = fileURLToPath(new URL('../../.secrets/enroll/', import.meta.url));
+const enrollFiles = {
+  ENROLL_CERT_PATH: `${enrollDir}cert.pem`,
+  ENROLL_KEY_PATH: `${enrollDir}key.pem`,
+  ENROLL_TEST_ANCHOR_PATH: `${enrollDir}test-anchor.pem`,
+};
+const enrollEnv = Object.values(enrollFiles).every((path) => existsSync(path)) ? enrollFiles : {};
+
 const port = 3100;
 const apiPort = 3101;
 
@@ -68,6 +81,7 @@ export default defineConfig({
       url: `http://localhost:${apiPort}/api/v1/health`,
       env: {
         ...e2eApiEnv(),
+        ...enrollEnv,
         API_PORT: String(apiPort),
         SITE_URL: `http://localhost:${port}`,
         LOG_LEVEL: 'warn',

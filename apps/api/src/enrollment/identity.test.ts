@@ -22,7 +22,10 @@ afterEach(async () => {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-async function selfSigned(type: 'rsa' | 'ec'): Promise<{ cert: X509Certificate; key: KeyObject }> {
+async function selfSigned(
+  type: 'rsa' | 'ec',
+  validDays = 30,
+): Promise<{ cert: X509Certificate; key: KeyObject }> {
   const keys =
     type === 'rsa'
       ? generateKeyPairSync('rsa', { modulusLength: 2048 })
@@ -31,8 +34,8 @@ async function selfSigned(type: 'rsa' | 'ec'): Promise<{ cert: X509Certificate; 
     subject: 'localhost',
     keys,
     ca: false,
-    notBefore: new Date(Date.now() - DAY),
-    notAfter: new Date(Date.now() + 30 * DAY),
+    notBefore: new Date(Date.now() - 2 * DAY),
+    notAfter: new Date(Date.now() + validDays * DAY),
   });
   return { cert, key: keys.privateKey };
 }
@@ -114,4 +117,51 @@ it('wraps a read failure in IdentityError', async () => {
   await mkdir(keyPath);
   const error = await new IdentityStore({ certPath, keyPath }).get().catch((e: unknown) => e);
   expect(error).toBeInstanceOf(IdentityError);
+});
+
+/** Marks both files as changed, as a renewal does. */
+async function touch(): Promise<void> {
+  const later = new Date(Date.now() + 60_000 + Math.random() * 60_000);
+  await utimes(certPath, later, later);
+  await utimes(keyPath, later, later);
+}
+
+it('keeps the last good identity while a renewal has written the certificate but not the key', async () => {
+  const first = await selfSigned('ec');
+  await writePair(first);
+  const store = new IdentityStore({ certPath, keyPath });
+  expect((await store.get()).certificate.fingerprint256).toBe(first.cert.fingerprint256);
+
+  const second = await selfSigned('ec');
+  await writeFile(certPath, second.cert.toString());
+  await touch();
+  expect((await store.get()).certificate.fingerprint256).toBe(first.cert.fingerprint256);
+
+  // The key lands: the new pair is used from the next request on.
+  await writeFile(keyPath, keyPem(second.key));
+  await touch();
+  expect((await store.get()).certificate.fingerprint256).toBe(second.cert.fingerprint256);
+});
+
+it('keeps the last good identity while a file is briefly missing or half written', async () => {
+  const first = await selfSigned('ec');
+  await writePair(first);
+  const store = new IdentityStore({ certPath, keyPath });
+  await store.get();
+  await writeFile(keyPath, '-----BEGIN EC PRIVATE KEY-----\nAAAA');
+  await touch();
+  expect((await store.get()).certificate.fingerprint256).toBe(first.cert.fingerprint256);
+  await rm(keyPath);
+  expect((await store.get()).certificate.fingerprint256).toBe(first.cert.fingerprint256);
+});
+
+it('does not fall back to an expired identity', async () => {
+  const old = await selfSigned('ec', -1);
+  await writePair(old);
+  const store = new IdentityStore({ certPath, keyPath });
+  await store.get();
+  const next = await selfSigned('ec');
+  await writeFile(certPath, next.cert.toString());
+  await touch();
+  await expect(store.get()).rejects.toBeInstanceOf(IdentityError);
 });

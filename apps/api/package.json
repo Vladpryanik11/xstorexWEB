@@ -11,7 +11,8 @@
     "test": "vitest run src",
     "test:int": "vitest run --config vitest.int.config.ts test/",
     "admin:create": "node dist/cli/create-admin.js",
-    "enroll:dev-cert": "node scripts/enroll-dev-cert.ts"
+    "enroll:dev-cert": "node scripts/enroll-dev-cert.ts",
+    "enroll:test-ca": "node scripts/enroll-test-ca.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1161.0",

@@ -74,6 +74,12 @@ services:
       # Letters; SMTP_URL may hold a password and stays in .env.
       SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env}
       MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+      # The iPhone connection file is signed with Caddy's certificate for SITE_DOMAIN, copied by
+      # `enroll-cert`. Fixed here: the development paths in .env do not exist in the container.
+      ENROLL_CERT_PATH: /run/enroll/cert.pem
+      ENROLL_KEY_PATH: /run/enroll/key.pem
+    volumes:
+      - enrollcert:/run/enroll:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -114,6 +120,21 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+
+  # Copies Caddy's certificate and key for SITE_DOMAIN from caddydata (read-only) for the api user;
+  # see enroll-cert-sync.sh. CADDY_CERT_ISSUER is the folder Caddy keeps the certificate in:
+  # Let's Encrypt by default, `local` for localhost, `acme.zerossl.com-v2-dv90` for ZeroSSL.
+  enroll-cert:
+    image: alpine:3.22
+    restart: unless-stopped
+    command: ['sh', '/enroll-cert-sync.sh']
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+      CADDY_CERT_ISSUER: ${CADDY_CERT_ISSUER:-acme-v02.api.letsencrypt.org-directory}
+    volumes:
+      - ./enroll-cert-sync.sh:/enroll-cert-sync.sh:ro
+      - caddydata:/caddy-data:ro
+      - enrollcert:/enroll
 
   migrate:
     build: *api-build
@@ -176,3 +197,4 @@ volumes:
   redisdata:
   miniodata:
   caddydata:
+  enrollcert:

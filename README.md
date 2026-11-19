@@ -46,7 +46,7 @@ pnpm dev           # web, api и worker
 
 Перед коммитом: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:int && pnpm test:e2e`. CI (`.github/workflows/ci.yml`) на pull request и на push в `main` проверяет почти то же. Job `check` вместо `pnpm lint` (`biome check .`) запускает `pnpm biome ci .`: те же правила Biome в режиме CI, только чтение. Затем идут `pnpm typecheck` и `pnpm test`. `integration` запускает `pnpm test:int`, `e2e` запускает `pnpm test:e2e`, `docker` собирает production-стек через Compose, запускает его с миграциями и проверяет `infra/smoke.sh`, затем удаляет тестовые контейнеры и volumes. Проверка использует `.env.example` и localhost в изолированном runner; локальный набор образы не собирает.
 
-Первый запуск Playwright: `pnpm infra:up`, затем `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium` (установка системных библиотек Linux требует прав администратора). Сборка web берёт шрифты из Google Fonts, нужен интернет.
+Первый запуск Playwright: `pnpm infra:up`, `pnpm --filter @xstore/api enroll:dev-cert && pnpm --filter @xstore/api enroll:test-ca`, затем `pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium` (установка системных библиотек Linux требует прав администратора). Сборка web берёт шрифты из Google Fonts, нужен интернет.
 
 E2E очищает и наполняет синтетическими данными только базу из `DATABASE_URL_TEST` (имя должно оканчиваться на `_test`), использует `REDIS_URL_TEST` и бакеты с `S3_BUCKET_PREFIX_TEST`. Эти значения должны быть отделены от рабочих данных. Интеграционные и E2E-тесты запускайте последовательно: оба набора очищают тестовую базу. Небольшие IPA в `apps/web/e2e/fixtures` содержат созданные для тестов plist, иконку и синтетический Mach-O, без сторонних приложений.
 
@@ -86,6 +86,12 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 `PAYMENT_PROVIDER=fake` (по умолчанию в `.env.example`) хранит платежи в Redis и подписывает вебхуки ключом `FAKE_PAYMENT_WEBHOOK_SECRET`. При `NODE_ENV=production` API с `fake` не запускается; production compose задаёт `PAYMENT_PROVIDER=platega`. С `XSTORE_DEV_PAGES=1` API открывает `POST /api/v1/billing/dev/fake-payments/<id>/pay` и `/fail`: они меняют статус фейкового платежа и проводят его тем же путём, что и вебхук. Страница `/dev/pay/<id>` на сайте (тоже только с `XSTORE_DEV_PAGES=1`) играет платёжную страницу: кнопки «Оплатить» и «Отказать» вызывают эти маршруты с сервера Next.js и возвращают в мастер `/get/<orderId>`. Так весь путь «Оплата → Мой доступ» проходится локально без ключей Platega; e2e-тесты (`purchase-*.spec.ts`) идут тем же путём и читают письма с кодом входа из Mailpit (`MAILPIT_API_URL`).
 
+### Подключение iPhone в разработке
+
+Профиль подключения подписывается парой `ENROLL_CERT_PATH` / `ENROLL_KEY_PATH` (PEM). Локально: `pnpm --filter @xstore/api enroll:dev-cert` пишет самоподписанную пару в `.secrets/enroll/` (в git не попадает), пути вставьте в `.env`. Ответ iPhone проверяется по Apple Root CA; для тестовых устройств `pnpm --filter @xstore/api enroll:test-ca` создаёт там же тестовый корень `test-anchor.pem` (`ENROLL_TEST_ANCHOR_PATH`, при `NODE_ENV=production` API его не принимает) и ключ тестового устройства. E2E (`connect-iphone.spec.ts`) берёт эти файлы сам и играет iOS: скачивает профиль и отправляет подписанный ответ. Без них падают только тесты подключения. Пока регистрации устройств нет, с `XSTORE_DEV_PAGES=1` состояние «iPhone готов» включает `POST /api/v1/devices/dev/mine/ready`.
+
+Настоящий ответ iOS (содержит UDID, хранится вне git) проверяется так: `IOS_REAL_FIXTURE=<путь> pnpm --filter @xstore/api exec vitest run device-response.real`. Без переменной этот тест пропускается.
+
 ### Письма
 
 Пакет `@xstore/mail` (только API и воркер) отправляет письма «Оплата прошла, доступ до <дата>» и «Код для входа» по SMTP: адрес `SMTP_URL`, отправитель `MAIL_FROM`. В разработке письма ловит Mailpit из `pnpm infra:up`: http://127.0.0.1:8025. Каждое письмо пишется в `NotificationLog` (тема, адрес, статус, ошибка; текст письма и код входа не хранятся). «Оплата прошла» уходит не больше одного раза на заказ (`dedupeKey`), каким бы путём ни прошла оплата; неудачная отправка остаётся со статусом `failed` и сама не повторяется. Ошибка почты не роняет вебхук и задания сверки. Интеграционные тесты читают письма через API Mailpit (`MAILPIT_API_URL`, `SMTP_URL_TEST`) и не очищают его: каждый тест пишет на свой адрес. В production `SMTP_URL` и `MAIL_FROM` обязательны.
@@ -94,9 +100,11 @@ $env:XSTORE_DEV_PAGES='1'; pnpm dev         # PowerShell
 
 `infra/docker-compose.yml` поднимает web, api, worker, Postgres, Redis, MinIO и Caddy; наружу публикует порты 80 и 443 только Caddy. Конфигурация берётся из `.env` (домены `SITE_DOMAIN` и `DL_DOMAIN`, пароли `POSTGRES_PASSWORD` и `MINIO_ROOT_PASSWORD`; на сервере задайте настоящие значения). API и воркер ходят в MinIO с учётными данными `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, presigned-ссылки выдаются на `https://DL_DOMAIN`; при старте API создаёт недостающие бакеты (`S3_BUCKET_PREFIX` + `originals`, `media`, `signed`, `uploads`).
 
+Профиль подключения iPhone подписывается сертификатом Caddy для `SITE_DOMAIN`. Caddy хранит ключ в томе `caddydata` с доступом только для root, поэтому сервис `enroll-cert` (`infra/enroll-cert-sync.sh`) читает том только на чтение и копирует сертификат и ключ в том `enrollcert` для пользователя API; продление подхватывается в течение 5 минут, API перечитывает файлы без перезапуска. Папку выпускающего центра в хранилище Caddy задаёт `CADDY_CERT_ISSUER`: по умолчанию Let's Encrypt (`acme-v02.api.letsencrypt.org-directory`), `local` для localhost, `acme.zerossl.com-v2-dv90` для ZeroSSL.
+
 ```bash
 docker compose -f infra/docker-compose.yml --env-file .env up -d --build
-bash infra/smoke.sh    # health API, публичный каталог, главная, zsign в worker
+bash infra/smoke.sh    # health API, каталог, главная, zsign, вход для гостя по ссылке профиля, сертификат у API
 ```
 
 Образы собираются из корня репозитория, например `docker build -f apps/api/Dockerfile .`.

@@ -24,12 +24,25 @@ export class IdentityStore {
     this.keyPath = paths.keyPath;
   }
 
+  /**
+   * A renewal writes the certificate and the key one after the other, so for a moment the files
+   * may be missing, half written or not a pair. Until the new pair loads, the last good identity
+   * keeps signing while its certificate is still valid; the files are tried again on each call.
+   */
   async get(): Promise<SigningIdentity> {
-    const stamp = await this.stamp();
-    if (this.cached?.stamp === stamp) return this.cached.identity;
-    const identity = await this.load();
-    this.cached = { stamp, identity };
-    return identity;
+    try {
+      const stamp = await this.stamp();
+      if (this.cached?.stamp === stamp) return this.cached.identity;
+      const identity = await this.load();
+      this.cached = { stamp, identity };
+      return identity;
+    } catch (err) {
+      const last = this.cached?.identity;
+      if (err instanceof IdentityError && last && new Date(last.certificate.validTo) > new Date()) {
+        return last;
+      }
+      throw err;
+    }
   }
 
   private async stamp(): Promise<string> {
