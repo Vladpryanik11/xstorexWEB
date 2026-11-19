@@ -27,7 +27,8 @@ export type ClaimTx = Pick<
  *                                          `applyPayment` takes, so a payment being applied finishes
  *                                          before its row moves or the buyer's chain is read.
  * `openOrder` takes only (checkoutKey →) 2, the device bind 2 → 3 and `applyPayment` only 3,
- * never 1, so none can wait on a lock this function holds while holding one it needs.
+ * never 1, so none can wait on a lock this function holds while holding one it needs. The admin
+ * grant and refund (`AdminBillingService`) take 1 → 2 → 3 in this same order.
  *
  * Stage 1 allows one device per buyer. If the merge would leave two different devices bound,
  * the verified buyer's own device stays bound (without one, the moved device bound most

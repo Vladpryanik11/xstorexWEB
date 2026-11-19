@@ -402,18 +402,42 @@ export class AdminBillingService {
 
   /**
    * Marks a refund already made in the provider's dashboard: the order becomes `refunded`, its
-   * right is revoked and the later live rights of the subscription are pulled forward without a
-   * gap (`rechainAfterRefund`), all under the subscription lock. Moves no money. A repeat answers
-   * the refunded order and changes nothing.
+   * right is revoked and the later live rights of the buyer are pulled forward without a gap
+   * (`rechainAfterRefund`). After a claim one buyer owns several subscriptions and access is the
+   * chain across all of them, so every subscription of the buyer is re-chained. Moves no money. A
+   * repeat answers the refunded order and changes nothing.
+   *
+   * Locks in the order `claimProvisional` documents: the buyer's email (a claim cannot move the
+   * subscription meanwhile), `checkout:<buyer>` (no new subscription appears), then every
+   * subscription of the buyer sorted by id (no payment lands in the chain being moved).
    */
   async refund(orderId: string, note: string, actor: Actor): Promise<AdminOrder> {
     const found = await this.db.order.findUnique({
       where: { id: orderId },
-      select: { subscriptionId: true },
+      select: {
+        subscription: { select: { user: { select: { email: true, checkoutEmail: true } } } },
+      },
     });
     if (!found) throw new DomainError(ErrorCode.NOT_FOUND, 404);
+    // A provisional buyer has no email yet; a claim of its purchases takes the checkout email.
+    const owner = found.subscription.user;
+    const email = owner.email ?? owner.checkoutEmail;
     return this.db.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${found.subscriptionId}))`;
+      if (email) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${email}))`;
+      // Read under the email lock: a claim that ran before has already moved the subscription.
+      const { userId } = await tx.subscription.findFirstOrThrow({
+        where: { orders: { some: { id: orderId } } },
+        select: { userId: true },
+      });
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checkout:${userId}`}))`;
+      const subscriptions = await tx.subscription.findMany({
+        where: { userId },
+        select: { id: true },
+        orderBy: { id: 'asc' },
+      });
+      for (const s of subscriptions) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${s.id}))`;
+      }
       const order = await tx.order.findUniqueOrThrow({
         where: { id: orderId },
         select: { status: true },
@@ -436,7 +460,7 @@ export class AdminBillingService {
       const moves = refunded
         ? rechainAfterRefund(
             await tx.entitlement.findMany({
-              where: { subscriptionId: found.subscriptionId, revokedAt: null },
+              where: { subscriptionId: { in: subscriptions.map((s) => s.id) }, revokedAt: null },
               select: { id: true, startsAt: true, expiresAt: true },
             }),
             refunded,

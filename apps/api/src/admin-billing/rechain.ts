@@ -6,12 +6,12 @@ export type ChainMove = {
 };
 
 /**
- * Refund rule (recommended, awaiting the owner's decision; spec v2 §6): after the refunded right is
- * revoked, the live rights that started at or after it are pulled forward so access has no gap.
- * Each keeps its duration and starts at max(now, end of the previous live right); a right is only
- * ever moved earlier, never later. `live` holds the subscription's unrevoked rights; the refunded
- * one may be among them and is skipped. Returns the moves to apply; swap this function to change
- * the rule (e.g. «revoke everything»).
+ * Refund rule (spec v2 §6, accepted by the owner 19.11): after the refunded right is revoked, the
+ * live rights that started at or after it are pulled forward so access has no gap. Each keeps its
+ * duration and starts at max(now, end of the previous live right); a right is only ever moved
+ * earlier, never later. `live` holds the unrevoked rights of every subscription of the buyer (after
+ * a claim there can be several); the refunded one may be among them and is skipped. Returns the
+ * moves to apply.
  */
 export function rechainAfterRefund(
   live: ChainRight[],

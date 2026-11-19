@@ -467,6 +467,36 @@ describe('orders', () => {
     ]);
   });
 
+  it('refund pulls later periods forward across all subscriptions of the buyer', async () => {
+    // After a claim one buyer owns several subscriptions; access is the chain across all of them.
+    const email = 'merged@example.ru';
+    const a = await paidBuyer(email, new Date(Date.now() - 5 * DAY_MS));
+    const second = await db.subscription.create({ data: { userId: a.user.id } });
+    const b = await paidOrder(a.user.id, second.id, email, a.entitlement.expiresAt);
+    const c = await paidOrder(a.user.id, a.subscription.id, email, b.entitlement.expiresAt);
+
+    const t0 = Date.now();
+    const res = await admin().post(`/admin/billing/orders/${a.order.id}/refund`, { note: '' });
+    expect(res.status).toBe(201);
+
+    const movedB = await db.entitlement.findUniqueOrThrow({ where: { id: b.entitlement.id } });
+    const movedC = await db.entitlement.findUniqueOrThrow({ where: { id: c.entitlement.id } });
+    expect(movedB.startsAt.getTime()).toBeGreaterThanOrEqual(t0 - 1000);
+    expect(movedB.startsAt.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(movedB.expiresAt.getTime() - movedB.startsAt.getTime()).toBe(30 * DAY_MS);
+    expect(movedC.startsAt).toEqual(movedB.expiresAt);
+    expect(movedC.expiresAt.getTime() - movedC.startsAt.getTime()).toBe(30 * DAY_MS);
+
+    const access = await as(await cookieFor(a.user.id, 'user')).get('/access');
+    expect(access.body.state).toMatchObject({
+      kind: 'active',
+      until: movedC.expiresAt.toISOString(),
+    });
+    const audit = await db.auditLog.findFirstOrThrow({ where: { action: 'order.refund' } });
+    const moved = (audit.diff as { moved: { entitlementId: string }[] }).moved;
+    expect(moved.map((m) => m.entitlementId)).toEqual([b.entitlement.id, c.entitlement.id]);
+  });
+
   it('refund of a future period leaves the current one untouched', async () => {
     const a = await paidBuyer('future@example.ru', new Date(Date.now() - 5 * DAY_MS));
     const b = await paidOrder(
