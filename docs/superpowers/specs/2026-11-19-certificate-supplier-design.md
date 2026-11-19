@@ -106,7 +106,7 @@
 ## 8. Модель данных
 
 - **`DeviceCertificate`** (новая): `id`, `deviceId`, `status` (`active` / `replaced` / `revoked` / `expired` / `deleted`), `p12Enc` (байты, AES-256-GCM мастер-ключом, формат `@xstore/secrets`), `p12PasswordEnc`, `profile` (байты `.mobileprovision`, не секрет), `profileUuid`, `teamId`, `appIdPattern`, `certSerial`, `certSha1`, `certNotAfter`, `profileExpiresAt`, `uploadedById`, `createdAt`, `revokedAt`. Не больше одной записи `active` на устройство (частичный уникальный индекс).
-- **`Device.status`**: `pending` — ждёт файлов, `active` — есть действующие файлы. Причина ожидания («новое», «отозван», «истёк») выводится из последней записи `DeviceCertificate`. `Device.appleAccountId` и `registeredAt` не используются.
+- **`Device.status`**: `pending` — файлов не было ни разу, `active` — есть действующие файлы, `processing` — файлы были, но действующих нет (покупатель видит «Обновляем доступ»). Причина («отозван», «истёк», «удалён») выводится из последней записи `DeviceCertificate`. `Device.appleAccountId` и `registeredAt` не используются.
 - Кэш подписанных сборок ссылается на `DeviceCertificate.id` вместо пары «аккаунт Apple × ревизия профиля».
 - Модели `AppleAccount`, `AppleCertificate`, `ProvisioningProfile` из плана Н3 не создаются до появления своего аккаунта Apple.
 
