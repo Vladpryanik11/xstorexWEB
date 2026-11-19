@@ -32,12 +32,25 @@ describe('/get', () => {
     await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /get/ord_7');
   });
 
-  it('sends a subscriber to «Мой доступ»', async () => {
+  it('sends a subscriber with a device to «Мой доступ»', async () => {
+    api.getAccess.mockResolvedValue({
+      state: {
+        kind: 'active',
+        until: new Date(),
+        subscriptionId: 's',
+        device: { model: 'iPhone 15', family: 'iphone', ready: false },
+      },
+    });
+    const { default: Page } = await import('./page');
+    await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /access');
+  });
+
+  it('sends a subscriber without a device to «Подключить iPhone»', async () => {
     api.getAccess.mockResolvedValue({
       state: { kind: 'active', until: new Date(), subscriptionId: 's', device: null },
     });
     const { default: Page } = await import('./page');
-    await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /access');
+    await expect(Page({ searchParams })).rejects.toThrow('REDIRECT /get/iphone');
   });
 
   it('«Продлить» (?renew=1) shows the payment step to a subscriber', async () => {

@@ -346,16 +346,6 @@
   letter-spacing: var(--x-track-small);
 }
 
-.stub {
-  margin: 0;
-  padding: 0.875rem 1rem;
-  border: 1px dashed var(--x-sky-200);
-  border-radius: var(--x-radius-field);
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
-}
-
 .spinner {
   width: 2.5rem;
   height: 2.5rem;

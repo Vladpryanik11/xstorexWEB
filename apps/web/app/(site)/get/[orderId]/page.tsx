@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 type Props = { params: Promise<{ orderId: string }> };
 
-/** Wizard after the payment page: «Проверяем оплату…», then the access and the password offer. */
+/** Wizard after the payment page: «Проверяем оплату…», then the access, the password offer and «Дальше: подключить iPhone». */
 export default async function OrderPage({ params }: Props) {
   const { orderId } = await params;
   const api = await serverApi();
@@ -20,7 +20,7 @@ export default async function OrderPage({ params }: Props) {
     <Wizard
       initialOrder={order}
       hasPassword={access.hasPassword === true}
-      devPages={process.env.XSTORE_DEV_PAGES === '1'}
+      hasDevice={access.state.kind === 'active' && access.state.device !== null}
     />
   );
 }

@@ -1,19 +1,25 @@
 'use client';
-import type { OrderView, SetPassword } from '@xstore/shared';
+import type { DeviceFamily, OrderView, SetPassword } from '@xstore/shared';
 import { formatRuDate } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useEffect, useState } from 'react';
+import type { DeviceKind } from '../app-page/device';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
 import { clearCheckoutKey } from './checkout-key';
 import { PaidStep } from './PaidStep';
 import { StepBar } from './StepBar';
+import { useBrowserDevice } from './use-browser-device';
 import { POLL_INTERVAL_MS, POLL_LIMIT_MS, settledTitle, wizardStep } from './wizard-step';
 
 export type WizardProps = {
   initialOrder: OrderView;
   hasPassword: boolean;
-  devPages?: boolean;
+  /** A device is already bound to the access (a renewal): step 2 is skipped. */
+  hasDevice?: boolean;
+  /** Detected in the browser when left out (tests pass it). */
+  device?: DeviceKind;
+  family?: DeviceFamily;
   getOrder?: (id: string) => Promise<OrderView>;
   setPassword?: (body: SetPassword) => Promise<void>;
 };
@@ -33,10 +39,15 @@ const payable = (url: string | null): url is string => !!url && /^https?:\/\//.t
 export function Wizard({
   initialOrder,
   hasPassword,
-  devPages = false,
+  hasDevice = false,
+  device: deviceProp,
+  family: familyProp,
   getOrder = defaultGetOrder,
   setPassword,
 }: WizardProps) {
+  const detected = useBrowserDevice();
+  const device = deviceProp ?? detected?.kind ?? null;
+  const family = familyProp ?? detected?.family ?? 'iphone';
   const [order, setOrder] = useState(initialOrder);
   const [timedOut, setTimedOut] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -101,12 +112,14 @@ export function Wizard({
       <p role="status" aria-live="polite" className={styles.srOnly} data-testid="wizard-status">
         {status}
       </p>
-      <StepBar current={step === 'paid' ? 1 : 0} />
+      <StepBar current={step === 'paid' ? 1 : 0} family={family} />
       {step === 'paid' ? (
         <PaidStep
           until={order.accessUntil ? new Date(order.accessUntil) : null}
           hasPassword={hasPassword}
-          devPages={devPages}
+          hasDevice={hasDevice}
+          device={device}
+          family={family}
           returnTo={order.returnTo}
           setPassword={setPassword}
         />

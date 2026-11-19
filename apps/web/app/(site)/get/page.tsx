@@ -35,9 +35,11 @@ export default async function GetPage({ searchParams }: { searchParams: Promise<
   const renew = one(params.renew) === '1';
   const api = await serverApi();
   const access: AccessResponse = await api.getAccess();
-  // A subscriber never sees the payment form (spec v2 §4); «Мой доступ» leads on from there.
-  // «Продлить» on «Мой доступ» opens it on purpose with `?renew=1`.
-  if (access.state.kind === 'active' && !renew) redirect('/access');
+  // A subscriber never sees the payment form (spec v2 §4): without a device the wizard goes on to
+  // step 2, with one «Мой доступ» leads on. «Продлить» there opens it on purpose with `?renew=1`.
+  if (access.state.kind === 'active' && !renew) {
+    redirect(access.state.device ? '/access' : '/get/iphone');
+  }
   // No second payment while the first is unresolved (spec v2 §4): continue that order.
   if (access.state.kind === 'payment_pending') {
     redirect(`/get/${encodeURIComponent(access.state.orderId)}`);

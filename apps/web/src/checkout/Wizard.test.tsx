@@ -122,13 +122,37 @@ describe('Wizard', () => {
     expect(screen.getByRole('link', { name: 'Оплатить снова' })).toBeInTheDocument();
   });
 
-  it('skips the password form for a buyer who has one; the iPhone stub is dev-only', () => {
-    const { rerender } = render(
-      <Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} devPages={false} />,
-    );
+  it('skips the password form for a buyer who has one', () => {
+    render(<Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} device="ios" />);
     expect(screen.queryByRole('heading', { name: 'Придумайте пароль' })).not.toBeInTheDocument();
-    expect(screen.queryByText(/Подключение iPhone появится/)).not.toBeInTheDocument();
-    rerender(<Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} devPages />);
-    expect(screen.getByText('Подключение iPhone появится в ближайшее время')).toBeInTheDocument();
+    expect(screen.queryByText(/появится в ближайшее время/)).not.toBeInTheDocument();
+  });
+
+  it('after payment on iPhone: «Дальше: подключить iPhone»', () => {
+    render(<Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} device="ios" />);
+    expect(screen.getByRole('link', { name: 'Дальше: подключить iPhone' })).toHaveAttribute(
+      'href',
+      '/get/iphone',
+    );
+  });
+
+  it('after payment on iPad: «Дальше: подключить iPad»', () => {
+    render(
+      <Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} device="ios" family="ipad" />,
+    );
+    expect(screen.getByRole('link', { name: 'Дальше: подключить iPad' })).toBeInTheDocument();
+  });
+
+  it('after payment on a computer: the notice, no connect link', () => {
+    render(<Wizard initialOrder={paid} hasPassword getOrder={vi.fn()} device="desktop" />);
+    expect(screen.getByText('Откройте сайт на iPhone, чтобы подключить его')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /подключить/ })).toBeNull();
+  });
+
+  it('a renewal with a device already connected: no connect step', () => {
+    render(<Wizard initialOrder={paid} hasPassword hasDevice getOrder={vi.fn()} device="ios" />);
+    expect(screen.queryByRole('link', { name: /подключить/ })).toBeNull();
+    expect(screen.queryByText(/Откройте сайт на iPhone/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'В каталог' })).toBeInTheDocument();
   });
 });

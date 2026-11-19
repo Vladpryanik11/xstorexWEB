@@ -53,9 +53,16 @@ test('first visit: app window → /get → email → pay on fake page → access
   await expect(page).toHaveURL(/\/\?app=testovoe-prilozhenie-1$/);
   await expect(page.getByRole('dialog', { name: 'Тестовое приложение 1' })).toBeVisible();
 
-  // A subscriber never sees the payment form again: /get leads to «Мой доступ».
+  // A subscriber never sees the payment form again: without a device /get leads to step 2.
   await page.goto('/get');
-  await expect(page).toHaveURL(/\/access$/);
+  await expect(page).toHaveURL(/\/get\/iphone$/);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: isMobile ? 'Подключить iPhone' : 'Откройте сайт на iPhone, чтобы подключить его',
+    }),
+  ).toBeVisible();
+  await page.goto('/access');
   expect(await accessUntil(page)).toBe(until);
   await expect(page.getByText(email)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Пароль' })).toHaveCount(0);
@@ -79,8 +86,9 @@ test('desktop: pay from computer, access page works', async ({ page, isMobile },
   await payOnGetPage(page, email);
   const until = await paidUntil(page);
   await expect(page.getByTestId('wizard-status')).toHaveText(termEndingFrom(before));
-  // The iPhone step is not built yet (Н2–Н4): the wizard says so instead of a dead end.
-  await expect(page.getByText('Подключение iPhone появится в ближайшее время')).toBeVisible();
+  // Connecting happens on the iPhone itself: a computer gets the notice instead (no QR code).
+  await expect(page.getByText('Откройте сайт на iPhone, чтобы подключить его')).toBeVisible();
+  await expect(page.getByRole('link', { name: /подключить iPhone/i })).toHaveCount(0);
   await page.getByRole('button', { name: 'Пропустить' }).click();
 
   await page.goto('/access');

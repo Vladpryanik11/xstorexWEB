@@ -1,12 +1,21 @@
+import type { DeviceFamily } from '@xstore/shared';
 import styles from './checkout.module.css';
 
-const STEPS = ['Оплата', 'iPhone', 'Установка'] as const;
-
-/** «1 Оплата · 2 iPhone · 3 Установка»; `current` is the index of the open step. */
-export function StepBar({ current }: { current: 0 | 1 | 2 }) {
+/**
+ * «1 Оплата · 2 iPhone · 3 Установка» («iPad» on an iPad); `current` is the index of the open
+ * step.
+ */
+export function StepBar({
+  current,
+  family = 'iphone',
+}: {
+  current: 0 | 1 | 2;
+  family?: DeviceFamily;
+}) {
+  const steps = ['Оплата', family === 'ipad' ? 'iPad' : 'iPhone', 'Установка'];
   return (
     <ol className={styles.steps} aria-label="Шаги">
-      {STEPS.map((title, i) => {
+      {steps.map((title, i) => {
         const state = i < current ? 'done' : i === current ? 'current' : 'next';
         return (
           <li
