@@ -16,8 +16,11 @@ packages/db/src/generated
 **/*.p8
 **/*.p12
 **/*.pem
+# Public Apple Root CA that verifies iPhone answers; must come after **/*.pem.
+!apps/api/src/enrollment/apple-root-ca.pem
 **/*.key
 **/*.mobileprovision
+.secrets
 
 # Not needed to build any image.
 .git

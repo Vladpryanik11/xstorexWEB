@@ -1,5 +1,5 @@
 import { generateKeyPairSync, type KeyObject, X509Certificate } from 'node:crypto';
-import { mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
@@ -106,4 +106,12 @@ it('names a missing file without reading anything', async () => {
   await expect(new IdentityStore({ certPath, keyPath }).get()).rejects.toBeInstanceOf(
     IdentityError,
   );
+});
+
+it('wraps a read failure in IdentityError', async () => {
+  await writePair(await selfSigned('ec'));
+  await rm(keyPath);
+  await mkdir(keyPath);
+  const error = await new IdentityStore({ certPath, keyPath }).get().catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(IdentityError);
 });

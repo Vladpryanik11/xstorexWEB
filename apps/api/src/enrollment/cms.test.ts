@@ -1,9 +1,16 @@
+import { createHash } from 'node:crypto';
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 import { describe, expect, it } from 'vitest';
 import { createTestCa, signDeviceResponse } from '../../test/support/ios.js';
-import { APPLE_ROOT_CA_SHA256, appleRootCa } from './apple-root.js';
-import { CmsError, signCms, verifyCms } from './cms.js';
+import {
+  APPLE_DEVICE_CA_CN,
+  APPLE_ROOT_CA_SHA256,
+  appleRootCa,
+  verifyDeviceCms,
+} from './apple-root.js';
+import { CmsError, type SigningIdentity, signCms, verifyCms } from './cms.js';
+import { cryptoEngine, toSigningCryptoKey } from './x509.js';
 
 const content = Buffer.from('<?xml version="1.0"?><plist><dict/></plist>', 'utf8');
 
@@ -31,7 +38,7 @@ describe('signCms → verifyCms', () => {
     expect(signer?.signedAttrs?.attributes.map((a) => a.type)).toEqual(
       expect.arrayContaining(['1.2.840.113549.1.9.3', '1.2.840.113549.1.9.4']),
     );
-    expect(signed.certificates).toHaveLength(2);
+    expect(signed.certificates).toHaveLength(3);
   });
 
   it('rejects a changed byte of the content', async () => {
@@ -91,6 +98,140 @@ describe('signCms → verifyCms', () => {
     expect(plistXml.toString('utf8')).toContain('<string>iPhone16,2</string>');
   });
 });
+
+const answer = {
+  UDID: '00008110-000A1B2C3D4E5F60',
+  PRODUCT: 'iPhone16,2',
+  VERSION: '22A3354',
+  CHALLENGE: 'n',
+};
+
+describe('required intermediate', () => {
+  it('accepts a chain through an intermediate with the required name', async () => {
+    const ca = await createTestCa();
+    const der = await signCms(content, ca.device);
+    await expect(
+      verifyCms(der, { anchors: [ca.root], requireIntermediateCn: [APPLE_DEVICE_CA_CN] }),
+    ).resolves.toBeTruthy();
+  });
+
+  it('rejects a chain to the anchor without that intermediate', async () => {
+    const ca = await createTestCa({ deviceCaCn: 'Apple Worldwide Developer Relations' });
+    const der = await signCms(content, ca.device);
+    await expect(verifyCms(der, { anchors: [ca.root] })).resolves.toBeTruthy();
+    await expect(
+      verifyCms(der, { anchors: [ca.root], requireIntermediateCn: [APPLE_DEVICE_CA_CN] }),
+    ).rejects.toBeInstanceOf(CmsError);
+  });
+
+  it('rejects a signer that is itself the anchor when an intermediate is required', async () => {
+    const ca = await createTestCa();
+    const der = await signCms(content, ca.device);
+    await expect(
+      verifyCms(der, {
+        anchors: [ca.device.certificate],
+        requireIntermediateCn: [APPLE_DEVICE_CA_CN],
+      }),
+    ).rejects.toBeInstanceOf(CmsError);
+  });
+});
+
+describe('device answers', () => {
+  it('verifies against a test anchor with the Apple device rule', async () => {
+    const ca = await createTestCa();
+    const der = await signDeviceResponse(answer, ca);
+    const { content: out } = await verifyDeviceCms(der, { testAnchors: [ca.root] });
+    expect(out.toString('utf8')).toContain('<string>iPhone16,2</string>');
+  });
+
+  it('refuses a chain without Apple iPhone Device CA even under a trusted anchor', async () => {
+    const ca = await createTestCa({ deviceCaCn: 'Apple Development' });
+    const der = await signDeviceResponse(answer, ca);
+    await expect(verifyDeviceCms(der, { testAnchors: [ca.root] })).rejects.toBeInstanceOf(CmsError);
+  });
+
+  it('refuses a test device without the test anchor', async () => {
+    const ca = await createTestCa();
+    const der = await signDeviceResponse(answer, ca);
+    await expect(verifyDeviceCms(der)).rejects.toBeInstanceOf(CmsError);
+  });
+
+  it('accepts a SHA-1 answer with SHA-1 certificates', async () => {
+    const ca = await createTestCa({ hash: 'SHA-1' });
+    const der = await signDeviceResponse(answer, ca, { hash: 'SHA-1' });
+    const signed = new pkijs.SignedData({
+      schema: pkijs.ContentInfo.fromBER(new Uint8Array(der)).content,
+    });
+    expect(signed.signerInfos[0]?.digestAlgorithm.algorithmId).toBe('1.3.14.3.2.26');
+    await expect(verifyDeviceCms(der, { testAnchors: [ca.root] })).resolves.toBeTruthy();
+  });
+});
+
+describe('chain checks', () => {
+  it('rejects an expired intermediate', async () => {
+    const ca = await createTestCa({ intermediateValidDays: 30 });
+    const der = await signCms(content, ca.device);
+    const later = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+    await expect(verifyCms(der, { anchors: [ca.root] })).resolves.toBeTruthy();
+    await expect(verifyCms(der, { anchors: [ca.root], now: later })).rejects.toBeInstanceOf(
+      CmsError,
+    );
+  });
+
+  it('rejects a signed content type that differs from the embedded one', async () => {
+    const ca = await createTestCa();
+    const der = await signWithContentType(content, ca.device, '1.2.840.113549.1.7.2');
+    await expect(verifyCms(der, { anchors: [ca.root] })).rejects.toBeInstanceOf(CmsError);
+  });
+});
+
+/** SignedData whose signed contentType attribute names `contentType`, while eContent is id-data. */
+async function signWithContentType(
+  data: Buffer,
+  identity: SigningIdentity,
+  contentType: string,
+): Promise<Buffer> {
+  const signer = pkijs.Certificate.fromBER(identity.certificate.raw);
+  const signedData = new pkijs.SignedData({
+    version: 1,
+    encapContentInfo: new pkijs.EncapsulatedContentInfo({
+      eContentType: '1.2.840.113549.1.7.1',
+      eContent: new asn1js.OctetString({ valueHex: data }),
+    }),
+    signerInfos: [
+      new pkijs.SignerInfo({
+        version: 1,
+        sid: new pkijs.IssuerAndSerialNumber({
+          issuer: signer.issuer,
+          serialNumber: signer.serialNumber,
+        }),
+        signedAttrs: new pkijs.SignedAndUnsignedAttributes({
+          type: 0,
+          attributes: [
+            new pkijs.Attribute({
+              type: '1.2.840.113549.1.9.3',
+              values: [new asn1js.ObjectIdentifier({ value: contentType })],
+            }),
+            new pkijs.Attribute({
+              type: '1.2.840.113549.1.9.4',
+              values: [
+                new asn1js.OctetString({ valueHex: createHash('sha256').update(data).digest() }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    ],
+    certificates: [signer, ...identity.chain.map((c) => pkijs.Certificate.fromBER(c.raw))],
+  });
+  const key = await toSigningCryptoKey(identity.privateKey);
+  await signedData.sign(key, 0, 'SHA-256', undefined, cryptoEngine);
+  const info = new pkijs.ContentInfo({
+    contentType: pkijs.ContentInfo.SIGNED_DATA,
+    content: signedData.toSchema(true),
+  });
+  return Buffer.from(info.toSchema().toBER(false));
+}
 
 describe('Apple Root CA', () => {
   it('is the published Apple Root CA', () => {

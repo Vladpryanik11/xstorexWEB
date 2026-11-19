@@ -4,7 +4,7 @@
 import { createHash, type KeyObject, X509Certificate } from 'node:crypto';
 import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
-import { cryptoEngine, toSigningCryptoKey } from './x509.js';
+import { cryptoEngine, type SigningHash, toSigningCryptoKey } from './x509.js';
 
 export type X509 = X509Certificate;
 
@@ -29,14 +29,23 @@ const OID_SIGNING_TIME = '1.2.840.113549.1.9.5';
 const MAX_CHAIN = 5;
 
 const toPkijs = (cert: X509Certificate): pkijs.Certificate => pkijs.Certificate.fromBER(cert.raw);
+/** `toSchema(false)` keeps the parsed bytes, so fingerprints and signatures stay exact. */
 const toNode = (cert: pkijs.Certificate): X509Certificate =>
-  new X509Certificate(Buffer.from(cert.toSchema(true).toBER(false)));
+  new X509Certificate(Buffer.from(cert.toSchema(false).toBER(false)));
+
+const HASH_NODE: Record<SigningHash, string> = { 'SHA-256': 'sha256', 'SHA-1': 'sha1' };
 
 /**
  * DER `ContentInfo` with `SignedData`: content embedded, SHA-256, signed attributes (content type,
  * message digest, signing time), the signer certificate and its whole chain.
  */
-export async function signCms(content: Buffer, identity: SigningIdentity): Promise<Buffer> {
+export async function signCms(
+  content: Buffer,
+  identity: SigningIdentity,
+  /** `hash: 'SHA-1'` only for test fixtures that model old iOS answers. */
+  options: { hash?: SigningHash } = {},
+): Promise<Buffer> {
+  const hash = options.hash ?? 'SHA-256';
   const signer = toPkijs(identity.certificate);
   const signedData = new pkijs.SignedData({
     version: 1,
@@ -66,7 +75,7 @@ export async function signCms(content: Buffer, identity: SigningIdentity): Promi
               type: OID_MESSAGE_DIGEST,
               values: [
                 new asn1js.OctetString({
-                  valueHex: createHash('sha256').update(content).digest(),
+                  valueHex: createHash(HASH_NODE[hash]).update(content).digest(),
                 }),
               ],
             }),
@@ -76,8 +85,8 @@ export async function signCms(content: Buffer, identity: SigningIdentity): Promi
     ],
     certificates: [signer, ...identity.chain.map(toPkijs)],
   });
-  const key = await toSigningCryptoKey(identity.privateKey);
-  await signedData.sign(key, 0, 'SHA-256', undefined, cryptoEngine);
+  const key = await toSigningCryptoKey(identity.privateKey, hash);
+  await signedData.sign(key, 0, hash, undefined, cryptoEngine);
   const info = new pkijs.ContentInfo({
     contentType: pkijs.ContentInfo.SIGNED_DATA,
     content: signedData.toSchema(true),
@@ -92,23 +101,49 @@ function isValidAt(cert: X509Certificate, now: Date): boolean {
 const issued = (child: X509Certificate, parent: X509Certificate): boolean =>
   child.checkIssued(parent) && child.verify(parent.publicKey);
 
+/** Common names of a certificate subject (Node prints one `KEY=value` per line). */
+function commonNames(cert: X509Certificate): string[] {
+  return cert.subject
+    .split('\n')
+    .filter((line) => line.startsWith('CN='))
+    .map((line) => line.slice(3));
+}
+
 /**
  * Builds a path from the signer through the certificates carried in the message to one of the
- * anchors. Every certificate on the path must be valid at `now`; every issuer must be a CA.
+ * anchors. Every certificate on the path must be valid at `now`; every issuer must be a CA. With
+ * `requireIntermediateCn`, some intermediate strictly between the signer and the anchor must
+ * carry one of those common names.
+ * Path building is greedy (first matching issuer): a duplicate or cross-signed issuer can only
+ * cause a false reject, never an accept.
  */
 function checkChain(
   signer: X509Certificate,
   carried: X509Certificate[],
   anchors: X509Certificate[],
   now: Date,
+  requireIntermediateCn: string[] | undefined,
 ): void {
+  const intermediates: X509Certificate[] = [];
+  const done = (): void => {
+    if (!requireIntermediateCn) return;
+    const found = intermediates.some((cert) =>
+      commonNames(cert).some((cn) => requireIntermediateCn.includes(cn)),
+    );
+    if (!found) throw new CmsError('Chain lacks the required intermediate');
+  };
   let current = signer;
   for (let depth = 0; depth < MAX_CHAIN; depth += 1) {
     if (!isValidAt(current, now)) throw new CmsError('Certificate outside its validity period');
-    if (anchors.some((anchor) => anchor.fingerprint256 === current.fingerprint256)) return;
+    if (anchors.some((anchor) => anchor.fingerprint256 === current.fingerprint256)) {
+      done();
+      return;
+    }
+    if (current !== signer) intermediates.push(current);
     const anchor = anchors.find((a) => a.ca && issued(current, a));
     if (anchor) {
       if (!isValidAt(anchor, now)) throw new CmsError('Anchor outside its validity period');
+      done();
       return;
     }
     const next = carried.find(
@@ -126,7 +161,12 @@ function checkChain(
  */
 export async function verifyCms(
   der: Buffer,
-  opts: { anchors: X509Certificate[]; now?: Date },
+  opts: {
+    anchors: X509Certificate[];
+    now?: Date;
+    /** The path must pass through an intermediate with one of these subject common names. */
+    requireIntermediateCn?: string[];
+  },
 ): Promise<{ content: Buffer; signer: X509Certificate }> {
   const now = opts.now ?? new Date();
   let signedData: pkijs.SignedData;
@@ -143,8 +183,18 @@ export async function verifyCms(
   if (!eContent || signedData.signerInfos.length !== 1 || !signerInfo) {
     throw new CmsError('Expected one signer and embedded content');
   }
-  const hasDigest = signerInfo.signedAttrs?.attributes.some((a) => a.type === OID_MESSAGE_DIGEST);
-  if (!hasDigest) throw new CmsError('Signed attributes with a message digest are required');
+  const attributes = signerInfo.signedAttrs?.attributes ?? [];
+  if (!attributes.some((a) => a.type === OID_MESSAGE_DIGEST)) {
+    throw new CmsError('Signed attributes with a message digest are required');
+  }
+  // RFC 5652 §5.3: the signed content type must equal eContentType.
+  const signedType = attributes.find((a) => a.type === OID_CONTENT_TYPE)?.values[0];
+  if (
+    !(signedType instanceof asn1js.ObjectIdentifier) ||
+    signedType.getValue() !== signedData.encapContentInfo.eContentType
+  ) {
+    throw new CmsError('Signed content type does not match the content');
+  }
 
   let signer: X509Certificate;
   try {
@@ -162,7 +212,7 @@ export async function verifyCms(
   for (const cert of signedData.certificates ?? []) {
     if (cert instanceof pkijs.Certificate) carried.push(toNode(cert));
   }
-  checkChain(signer, carried, opts.anchors, now);
+  checkChain(signer, carried, opts.anchors, now, opts.requireIntermediateCn);
 
   return { content: Buffer.from(eContent.getValue()), signer };
 }

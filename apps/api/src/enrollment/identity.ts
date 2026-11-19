@@ -42,10 +42,16 @@ export class IdentityStore {
   }
 
   private async load(): Promise<SigningIdentity> {
-    const [certPem, keyPem] = await Promise.all([
-      readFile(this.certPath, 'utf8'),
-      readFile(this.keyPath, 'utf8'),
-    ]);
+    let certPem: string;
+    let keyPem: string;
+    try {
+      [certPem, keyPem] = await Promise.all([
+        readFile(this.certPath, 'utf8'),
+        readFile(this.keyPath, 'utf8'),
+      ]);
+    } catch {
+      throw new IdentityError('Profile signing certificate or key file cannot be read');
+    }
     let certificates: X509Certificate[];
     try {
       certificates = (certPem.match(PEM_CERT) ?? []).map((pem) => new X509Certificate(pem));

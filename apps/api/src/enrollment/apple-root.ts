@@ -1,5 +1,6 @@
 import { X509Certificate } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { verifyCms } from './cms.js';
 
 /**
  * SHA-256 fingerprint of "Apple Root CA" as published at https://www.apple.com/certificateauthority/.
@@ -22,4 +23,26 @@ export function appleRootCa(): X509Certificate {
   }
   cached = cert;
   return cert;
+}
+
+/**
+ * Device identities chain root → "Apple iPhone Certification Authority" → "Apple iPhone Device CA"
+ * → device. Requiring this intermediate keeps other certificates under Apple Root CA (developer
+ * and distribution certificates anyone can obtain) from posting forged device answers.
+ */
+export const APPLE_DEVICE_CA_CN = 'Apple iPhone Device CA';
+
+/**
+ * Verifies the signed answer iOS posts to the profile service: chain to Apple Root CA (or, outside
+ * production only, a test anchor) through "Apple iPhone Device CA". Throws `CmsError`.
+ */
+export function verifyDeviceCms(
+  der: Buffer,
+  opts: { testAnchors?: X509Certificate[]; now?: Date } = {},
+): ReturnType<typeof verifyCms> {
+  return verifyCms(der, {
+    anchors: [appleRootCa(), ...(opts.testAnchors ?? [])],
+    requireIntermediateCn: [APPLE_DEVICE_CA_CN],
+    ...(opts.now ? { now: opts.now } : {}),
+  });
 }

@@ -13,14 +13,20 @@ export const cryptoEngine = new pkijs.CryptoEngine({
 });
 pkijs.setEngine('node', cryptoEngine);
 
+/** SHA-1 only models old device answers in tests; everything Xstore signs uses SHA-256. */
+export type SigningHash = 'SHA-256' | 'SHA-1';
+
 /**
- * WebCrypto signing key for an RSA or ECDSA P-256 private key, SHA-256 in both cases. Other key
+ * WebCrypto signing key for an RSA or ECDSA P-256 private key (SHA-256 by default). Other key
  * types are refused: the profile signer is Caddy's key (P-256 by default) or an RSA key.
  */
-export async function toSigningCryptoKey(privateKey: KeyObject): Promise<CryptoKey> {
+export async function toSigningCryptoKey(
+  privateKey: KeyObject,
+  hash: SigningHash = 'SHA-256',
+): Promise<CryptoKey> {
   const type = privateKey.asymmetricKeyType;
   if (type === 'rsa') {
-    return privateKey.toCryptoKey({ name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, [
+    return privateKey.toCryptoKey({ name: 'RSASSA-PKCS1-v1_5', hash }, false, [
       'sign',
     ]) as CryptoKey;
   }
@@ -43,6 +49,8 @@ export type IssueCertificateInput = {
   notAfter: Date;
   /** subjectAltName DNS names (leaf certificates). */
   dnsNames?: string[];
+  /** Signature hash; SHA-256 unless a test models an old SHA-1 chain. */
+  hash?: SigningHash;
 };
 
 function commonName(name: string): pkijs.RelativeDistinguishedNames {
@@ -105,6 +113,7 @@ export async function issueCertificate(input: IssueCertificateInput): Promise<X5
   certificate.extensions = extensions;
 
   const signingKey = input.issuer?.privateKey ?? input.keys.privateKey;
-  await certificate.sign(await toSigningCryptoKey(signingKey), 'SHA-256', cryptoEngine);
+  const hash = input.hash ?? 'SHA-256';
+  await certificate.sign(await toSigningCryptoKey(signingKey, hash), hash, cryptoEngine);
   return new X509Certificate(Buffer.from(certificate.toSchema(true).toBER(false)));
 }
