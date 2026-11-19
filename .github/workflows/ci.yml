@@ -90,6 +90,8 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # A hung browser download once held this job for over 40 minutes; fail fast instead.
+    timeout-minutes: 30
     # Same infra as `integration`: the e2e API (port 3101) runs on the *_TEST database, Redis db 1
     # and the test buckets; the Playwright global setup migrates, wipes and seeds them (seed:e2e).
     services:
@@ -145,6 +147,7 @@ jobs:
       # connect-iphone.spec.ts plays iOS with the test device.
       - run: pnpm --filter @xstore/api enroll:dev-cert && pnpm --filter @xstore/api enroll:test-ca
       - run: pnpm --filter @xstore/web exec playwright install --with-deps webkit chromium
+        timeout-minutes: 10
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
