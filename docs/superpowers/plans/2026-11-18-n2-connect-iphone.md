@@ -16,7 +16,7 @@
 - `.mobileconfig`: `Content-Type: application/x-apple-aspen-config`, имя файла `xstore-connect.mobileconfig`, `PayloadType` `Profile Service`, `PayloadIdentifier` `ru.xstorex.enroll`, `PayloadDisplayName` «Xstore — подключение iPhone», `PayloadOrganization` «Xstore», `DeviceAttributes` `UDID, PRODUCT, VERSION`, `Challenge` = nonce, URL ответа `<SITE_URL>/api/v1/enrollment/callback?s=<nonce>`.
 - Nonce: 32 случайных байта base64url, живёт 15 минут, одноразовый; хранит `userId` и `sessionId` того, кто скачал профиль.
 - Ответ iOS: `application/pkcs7-signature`, сырое тело ≤ 64 КБ, без Origin-проверки. Цепочка подписи — до Apple Root CA (публичный сертификат в репозитории). Дополнительный тестовый корень принимается только при `NODE_ENV !== 'production'` через `ENROLL_TEST_ANCHOR_PATH`.
-- Подпись профиля: `ENROLL_CERT_PATH`, `ENROLL_KEY_PATH` (PEM). В проде это сертификат Caddy для `SITE_DOMAIN` из тома `caddydata` (только чтение); файл перечитывается при смене `mtime`, без перезапуска. Ключ не попадает в логи и ответы.
+- Подпись профиля: `ENROLL_CERT_PATH`, `ENROLL_KEY_PATH` (PEM). В проде это сертификат Caddy для `SITE_DOMAIN`: служба `enroll-cert` читает том `caddydata` (только чтение) и копирует пару в том `enrollcert` с правами для API, API монтирует его только для чтения; файл перечитывается при смене `mtime`, без перезапуска. Ключ не попадает в логи и ответы.
 - В этапе 1 у покупателя не больше одного устройства. Устройство привязывается к подписке навсегда; другое устройство к этому доступу не привязывается (`DEVICE_LIMIT`). Покупка второго доступа для второго устройства — не в Н2.
 - Устройство, привязанное к другому покупателю, не переносится (`DEVICE_OWNED`). UDID никогда не даёт вход и не создаёт пользователя.
 - Подключать можно только при активном доступе (`NO_ACCESS`). Подключение не меняет даты доступа.
@@ -171,7 +171,7 @@
 
 **Files:**
 - Create: `apps/web/e2e/connect-iphone.spec.ts`
-- Modify: `infra/docker-compose.yml` (том `caddydata` в `api` только для чтения, `ENROLL_CERT_PATH`/`ENROLL_KEY_PATH`), `.env.example`, `apps/web/playwright.config.ts`, `.github/workflows/ci.yml` (dev-сертификат и тестовый корень для e2e и integration), `infra/smoke.sh` (гость получает 401 на профиль), `README.md`, `CLAUDE.md`
+- Modify: `infra/docker-compose.yml` (служба `enroll-cert`: `caddydata` → том `enrollcert`, в `api` только для чтения; `ENROLL_CERT_PATH`/`ENROLL_KEY_PATH`), `.env.example`, `apps/web/playwright.config.ts`, `.github/workflows/ci.yml` (dev-сертификат и тестовый корень для e2e и integration), `infra/smoke.sh` (гостя ссылка подключения отправляет на вход, 302), `README.md`, `CLAUDE.md`
 - Test: `apps/web/e2e/connect-iphone.spec.ts`, `apps/api/src/enrollment/device-response.real.test.ts`
 
 **Interfaces:**
