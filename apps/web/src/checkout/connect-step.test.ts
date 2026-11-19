@@ -14,7 +14,9 @@ const active = (device: { ready: boolean } | null = null): AccessState => ({
   kind: 'active',
   until,
   subscriptionId: 's1',
-  device: device ? { model: 'iPhone 15', family: 'iphone', ready: device.ready } : null,
+  device: device
+    ? { model: 'iPhone 15', family: 'iphone', ready: device.ready, needsHelp: false }
+    : null,
 });
 const base = { device: 'ios' as const, access: active(), result: null, waiting: false };
 

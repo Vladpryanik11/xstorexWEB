@@ -15,6 +15,21 @@ const active = (over: Partial<AccessResponse> = {}): AccessResponse => ({
   ...over,
 });
 
+const withDevice = (device: { ready: boolean; needsHelp: boolean; family?: 'iphone' | 'ipad' }) =>
+  active({
+    state: {
+      kind: 'active',
+      until: new Date('2026-12-18T12:00:00Z'),
+      subscriptionId: 'sub_1',
+      device: {
+        model: device.family === 'ipad' ? 'iPad Air (3-го поколения)' : 'iPhone 15 Pro',
+        family: device.family ?? 'iphone',
+        ready: device.ready,
+        needsHelp: device.needsHelp,
+      },
+    },
+  });
+
 const none: AccessResponse = {
   state: { kind: 'none' },
   email: 'buyer@example.com',
@@ -27,10 +42,54 @@ describe('AccessCard', () => {
     expect(
       screen.getByRole('heading', { name: 'Доступ активен до 18 декабря 2026' }),
     ).toBeVisible();
-    expect(screen.getByText('Устройство ещё не подключено')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Продлить' })).toHaveAttribute('href', '/get?renew=1');
     expect(screen.getByText('buyer@example.com')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Оформить доступ' })).toBeNull();
+  });
+
+  it('no device yet: «Подключить iPhone» leads to the connect step', () => {
+    render(<AccessCard access={active()} />);
+    expect(screen.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+      'href',
+      '/get/iphone',
+    );
+  });
+
+  it('no device yet, seen on an iPad: «Подключить iPad»', () => {
+    render(<AccessCard access={active()} family="ipad" />);
+    expect(screen.getByRole('link', { name: 'Подключить iPad' })).toHaveAttribute(
+      'href',
+      '/get/iphone',
+    );
+  });
+
+  it('a device being prepared: the model and «Готовим, обычно до 24 часов»', () => {
+    render(<AccessCard access={withDevice({ ready: false, needsHelp: false })} />);
+    expect(screen.getByText('iPhone 15 Pro · Готовим, обычно до 24 часов')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Подключить/ })).toBeNull();
+  });
+
+  it('a ready device: the model and «Готов»', () => {
+    render(<AccessCard access={withDevice({ ready: true, needsHelp: false })} />);
+    expect(screen.getByText('iPhone 15 Pro · Готов')).toBeInTheDocument();
+  });
+
+  it('a connected iPad is called «iPad»', () => {
+    render(<AccessCard access={withDevice({ ready: true, needsHelp: false, family: 'ipad' })} />);
+    const line = screen.getByText('iPad Air (3-го поколения) · Готов');
+    expect(line.closest('div')).toHaveTextContent(/^iPad/);
+  });
+
+  it('a device that needs a hand: a calm line with a link to support, no technical words', () => {
+    const { container } = render(
+      <AccessCard access={withDevice({ ready: false, needsHelp: true })} />,
+    );
+    expect(screen.getByRole('link', { name: 'Нужна помощь поддержки' })).toHaveAttribute(
+      'href',
+      '/support',
+    );
+    expect(screen.queryByText(/Готов/)).toBeNull();
+    expect(container.textContent).not.toMatch(/аккаунт|UDID|профил|сертификат|блок|истёк/i);
   });
 
   it('no access: «Доступа нет» and «Оформить доступ»', () => {

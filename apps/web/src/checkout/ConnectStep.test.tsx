@@ -10,7 +10,7 @@ const withDevice = (ready = false): AccessState => ({
   kind: 'active',
   until,
   subscriptionId: 's1',
-  device: { model: 'iPhone 15', family: 'iphone', ready },
+  device: { model: 'iPhone 15', family: 'iphone', ready, needsHelp: false },
 });
 const response = (state: AccessState): AccessResponse => ({
   state,

@@ -568,6 +568,38 @@ describe('subscriptions', () => {
       ],
     });
   });
+
+  it('shows the bound device: model, status, masked UDID and binding date, never the UDID', async () => {
+    const { user, subscription } = await paidBuyer('buyer@example.ru');
+    const udid = '00008130-001A2B3C4D5E6F70';
+    const assignedAt = new Date('2026-11-19T08:00:00Z');
+    const device = await db.device.create({
+      data: {
+        userId: user.id,
+        udid,
+        product: 'iPhone16,1',
+        iosVersion: '18.1',
+        name: 'iPhone 15 Pro',
+        status: 'pending',
+      },
+    });
+    await db.subscription.update({
+      where: { id: subscription.id },
+      data: { deviceId: device.id, assignedAt },
+    });
+    const res = await admin().get('/admin/billing/subscriptions?email=buyer');
+    expect(res.status).toBe(200);
+    expect(res.body.items[0].device).toEqual({
+      id: device.id,
+      name: 'iPhone 15 Pro',
+      model: 'iPhone 15 Pro',
+      status: 'pending',
+      udidMasked: '00008130-…6F70',
+      assignedAt: assignedAt.toISOString(),
+    });
+    expect(res.text).not.toContain(udid);
+    expect(res.text).not.toContain('001A2B3C4D5E');
+  });
 });
 
 it('support role gets 403', async () => {

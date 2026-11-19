@@ -1,10 +1,17 @@
 'use client';
-import { type AccessResponse, formatRuDate } from '@xstore/shared';
+import {
+  type AccessDevice,
+  type AccessResponse,
+  type DeviceFamily,
+  formatRuDate,
+} from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useState } from 'react';
 import { browserApi } from '../checkout/browser-api';
 import styles from '../checkout/checkout.module.css';
+import { familyName } from '../checkout/connect-step';
 import { PasswordForm } from '../checkout/PasswordForm';
+import { useBrowserDevice } from '../checkout/use-browser-device';
 import own from './access.module.css';
 
 export type AccessCardProps = {
@@ -12,12 +19,49 @@ export type AccessCardProps = {
   logout?: () => Promise<void>;
   /** Full page load after sign-out, so the header turns back into the guest one. */
   go?: (url: string) => void;
+  /** iPhone or iPad before a device is connected; read from the browser when left out. */
+  family?: DeviceFamily;
 };
 
 const defaultLogout = () => browserApi().logout();
 const defaultGo = (url: string) => window.location.assign(url);
 
-function Status({ access }: { access: AccessResponse }) {
+/**
+ * The device row: connect, being prepared, ready, or a calm pointer to support when registration
+ * stopped (`needsHelp`); the technical reason stays in the admin.
+ */
+function DeviceFact({ device, family }: { device: AccessDevice | null; family: DeviceFamily }) {
+  if (!device) {
+    const name = familyName(family);
+    return (
+      <div className={own.fact}>
+        <dt>{name}</dt>
+        <dd>
+          <a className={own.action} href="/get/iphone">
+            Подключить {name}
+          </a>
+        </dd>
+      </div>
+    );
+  }
+  return (
+    <div className={own.fact}>
+      <dt>{familyName(device.family)}</dt>
+      {device.needsHelp ? (
+        <dd>
+          {device.model} ·{' '}
+          <a className={own.action} href="/support">
+            Нужна помощь поддержки
+          </a>
+        </dd>
+      ) : (
+        <dd>{`${device.model} · ${device.ready ? 'Готов' : 'Готовим, обычно до 24 часов'}`}</dd>
+      )}
+    </div>
+  );
+}
+
+function Status({ access, family }: { access: AccessResponse; family: DeviceFamily }) {
   const { state } = access;
   if (state.kind === 'active') {
     return (
@@ -31,10 +75,7 @@ function Status({ access }: { access: AccessResponse }) {
               <dd>{access.email}</dd>
             </div>
           ) : null}
-          <div className={own.fact}>
-            <dt>iPhone</dt>
-            <dd>{state.device ? 'Устройство подключено' : 'Устройство ещё не подключено'}</dd>
-          </div>
+          <DeviceFact device={state.device} family={family} />
         </dl>
         <Button href="/get?renew=1" className={styles.wide}>
           Продлить
@@ -74,7 +115,13 @@ function Status({ access }: { access: AccessResponse }) {
 }
 
 /** «Мой доступ» (spec v2 §5): the term, the device, renewal, the password, support, sign-out. */
-export function AccessCard({ access, logout = defaultLogout, go = defaultGo }: AccessCardProps) {
+export function AccessCard({
+  access,
+  logout = defaultLogout,
+  go = defaultGo,
+  family,
+}: AccessCardProps) {
+  const browser = useBrowserDevice();
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -93,7 +140,7 @@ export function AccessCard({ access, logout = defaultLogout, go = defaultGo }: A
   return (
     <>
       <section className={styles.panel} aria-label="Срок доступа">
-        <Status access={access} />
+        <Status access={access} family={family ?? browser?.family ?? 'iphone'} />
       </section>
       {access.hasPassword === false ? (
         <section className={styles.panel} aria-label="Пароль">

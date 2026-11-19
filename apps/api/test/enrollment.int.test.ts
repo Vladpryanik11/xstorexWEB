@@ -266,6 +266,7 @@ describe('POST /enrollment/callback', () => {
       model: 'iPhone 15 Pro',
       family: 'iphone',
       ready: false,
+      needsHelp: false,
     });
   });
 

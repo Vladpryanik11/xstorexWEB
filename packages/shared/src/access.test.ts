@@ -103,7 +103,7 @@ describe('accessState', () => {
       kind: 'active',
       until: d('2026-12-18T12:00:00Z'),
       subscriptionId: 's1',
-      device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: true },
+      device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: true, needsHelp: false },
     });
   });
   it('доступ — непрерывная цепочка прав всех подписок покупателя', () => {
@@ -152,7 +152,7 @@ describe('accessState', () => {
     expect(state).toMatchObject({
       kind: 'active',
       subscriptionId: 'grant',
-      device: { model: 'iPad13,1', family: 'ipad', ready: false },
+      device: { model: 'iPad13,1', family: 'ipad', ready: false, needsHelp: false },
     });
   });
   it('устройство выбранной подписки важнее устройства другой', () => {
@@ -177,6 +177,25 @@ describe('accessState', () => {
       subscriptionId: 'live',
       device: { model: 'iPhone 15 Pro Max', family: 'iphone', ready: false },
     });
+  });
+  it('new/pending/processing — готовим; blocked/expired — нужна помощь поддержки', () => {
+    const cases = [
+      ['new', false, false],
+      ['pending', false, false],
+      ['processing', false, false],
+      ['active', true, false],
+      ['blocked', false, true],
+      ['expired', false, true],
+    ] as const;
+    for (const [status, ready, needsHelp] of cases) {
+      const state = accessState({
+        signedIn: true,
+        subscriptions: [{ ...sub, device: { product: 'iPhone16,2', status } }],
+        pendingOrderId: null,
+        now,
+      });
+      expect(state).toMatchObject({ device: { ready, needsHelp } });
+    }
   });
   it('payment_pending без действующей подписки', () => {
     expect(accessState({ signedIn: true, subscriptions: [], pendingOrderId: 'o1', now })).toEqual({

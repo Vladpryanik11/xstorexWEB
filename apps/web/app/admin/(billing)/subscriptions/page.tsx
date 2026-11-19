@@ -1,4 +1,4 @@
-import { type AdminSubscription, formatRuDate, type Page } from '@xstore/shared';
+import { type AdminSubscription, deviceStatusLabel, formatRuDate, type Page } from '@xstore/shared';
 import Link from 'next/link';
 import s from '../../../../src/admin/admin.module.css';
 import { GrantForm, RevokedPeriod } from '../../../../src/admin/BillingForms';
@@ -64,7 +64,20 @@ export default async function SubscriptionsPage({
                 })}
               </ul>
             </td>
-            <td data-label="iPhone">{sub.device?.name ?? 'не подключён'}</td>
+            <td data-label="iPhone">
+              {sub.device ? (
+                <>
+                  {sub.device.model}
+                  <div className={s.muted}>{deviceStatusLabel[sub.device.status]}</div>
+                  <div className={s.muted}>UDID {sub.device.udidMasked}</div>
+                  {sub.device.assignedAt && (
+                    <div className={s.muted}>привязан {date(sub.device.assignedAt)}</div>
+                  )}
+                </>
+              ) : (
+                'не подключён'
+              )}
+            </td>
           </tr>
         ))}
       </DataTable>

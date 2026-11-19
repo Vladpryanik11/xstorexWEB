@@ -65,6 +65,7 @@ export const accessStateSchema: z.ZodType<AccessState, unknown> = z.discriminate
         model: z.string().min(1),
         family: z.enum(['iphone', 'ipad']),
         ready: z.boolean(),
+        needsHelp: z.boolean(),
       })
       .nullable(),
   }),

@@ -38,7 +38,7 @@ describe('/get', () => {
         kind: 'active',
         until: new Date(),
         subscriptionId: 's',
-        device: { model: 'iPhone 15', family: 'iphone', ready: false },
+        device: { model: 'iPhone 15', family: 'iphone', ready: false, needsHelp: false },
       },
     });
     const { default: Page } = await import('./page');

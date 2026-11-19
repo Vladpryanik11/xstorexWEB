@@ -48,3 +48,20 @@
 .wideRow {
   flex-basis: 100%;
 }
+
+.action {
+  border-radius: var(--x-radius-pill);
+  color: var(--x-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.action:hover {
+  color: var(--x-blue-deep);
+  text-decoration: underline;
+}
+
+.action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--x-sky-200);
+}

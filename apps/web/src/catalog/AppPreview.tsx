@@ -1,6 +1,6 @@
 'use client';
 
-import { type AccessState, formatRuDate } from '@xstore/shared';
+import { type AccessState, type DeviceFamily, formatRuDate } from '@xstore/shared';
 import { AppIcon } from '@xstore/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { type DeviceKind, deviceKind } from '../app-page/device';
 import { installButtonState } from '../app-page/install-button-state';
 import { browserApi } from '../checkout/browser-api';
+import { browserFamily } from '../checkout/connect-step';
 import styles from './AppPreview.module.css';
 
 export type AppPreviewProps = {
@@ -60,6 +61,7 @@ export function AppPreview({
   const [mounted, setMounted] = useState(false);
   // Rendered as a phone on the server; a computer gets its note after hydration.
   const [device, setDevice] = useState<DeviceKind>('ios');
+  const [family, setFamily] = useState<DeviceFamily>('iphone');
   // Asked from the browser once the window opens, so the catalog pages stay cacheable;
   // `null` while the answer is on its way. Any failure falls back to the guest button.
   const [access, setAccess] = useState<AccessState | null>(null);
@@ -76,6 +78,7 @@ export function AppPreview({
   const latestVersion = { encrypted: false };
   const install = installButtonState({
     device,
+    family,
     access: access ?? GUEST,
     app: { slug, latestVersion },
   });
@@ -94,10 +97,11 @@ export function AppPreview({
     if (variant === 'none') window.history.replaceState(null, '', window.location.pathname);
   }, [variant]);
 
-  useEffect(
-    () => setDevice(deviceKind(window.navigator.userAgent, window.navigator.maxTouchPoints)),
-    [],
-  );
+  useEffect(() => {
+    const { userAgent, maxTouchPoints } = window.navigator;
+    setDevice(deviceKind(userAgent, maxTouchPoints));
+    setFamily(browserFamily(userAgent, maxTouchPoints));
+  }, []);
 
   useEffect(() => {
     if (!open) return;

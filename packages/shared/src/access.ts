@@ -47,8 +47,17 @@ export function userSessionExpiry(now: Date, until: Date | null): Date {
   return new Date(Math.max(base, fromAccess));
 }
 
-/** The buyer's device as `/access` shows it; `ready` once it is registered (`active`). */
-export type AccessDevice = { model: string; family: DeviceFamily; ready: boolean };
+/**
+ * The buyer's device as `/access` shows it: `ready` once it is registered (`active`); `needsHelp`
+ * when registration stopped (`blocked`, `expired`) and only support can move it on. Everything
+ * else (`new`, `pending`, `processing`) is still being prepared.
+ */
+export type AccessDevice = {
+  model: string;
+  family: DeviceFamily;
+  ready: boolean;
+  needsHelp: boolean;
+};
 
 export type AccessState =
   | { kind: 'none' }
@@ -86,6 +95,7 @@ export function accessState(input: {
           model: deviceModelName(bound.product),
           family: deviceFamily(bound.product),
           ready: bound.status === 'active',
+          needsHelp: bound.status === 'blocked' || bound.status === 'expired',
         }
       : null;
     return { kind: 'active', until, subscriptionId: picked.id, device };

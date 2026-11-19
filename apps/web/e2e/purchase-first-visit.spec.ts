@@ -95,7 +95,10 @@ test('desktop: pay from computer, access page works', async ({ page, isMobile },
   await expect(page.getByRole('heading', { level: 1, name: 'Мой доступ' })).toBeVisible();
   expect(await accessUntil(page)).toBe(until);
   const term = page.getByRole('region', { name: 'Срок доступа' });
-  await expect(term.getByText('Устройство ещё не подключено')).toBeVisible();
+  await expect(term.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+    'href',
+    '/get/iphone',
+  );
   await expect(term.getByRole('link', { name: 'Продлить' })).toHaveAttribute(
     'href',
     '/get?renew=1',

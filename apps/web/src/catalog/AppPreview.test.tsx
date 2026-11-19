@@ -52,9 +52,20 @@ const ACTIVE: AccessResponse = {
     kind: 'active',
     until: new Date('2026-12-18T10:00:00Z'),
     subscriptionId: 'sub_1',
-    device: null,
+    device: { model: 'iPhone 15 Pro', family: 'iphone', ready: true, needsHelp: false },
   },
 };
+
+type Bound = Extract<AccessResponse['state'], { kind: 'active' }>['device'];
+const subscriber = (device: Bound): AccessResponse => ({
+  state: {
+    kind: 'active',
+    until: new Date('2026-12-18T10:00:00Z'),
+    subscriptionId: 'sub_1',
+    device,
+  },
+});
+const IPAD = 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) Safari/604.1';
 
 function deferred() {
   let resolve: (value: AccessResponse) => void = () => {};
@@ -224,6 +235,40 @@ describe('install sheet', () => {
     expect(dialog.querySelector('[aria-disabled]')).toBeNull();
     expect(within(dialog).queryByText(/Регистрация не нужна/)).toBeNull();
     expect(dialog).toHaveTextContent('Доступ активен до 18 декабря 2026');
+  });
+
+  it('a subscriber without a device: «Подключить iPhone» to the connect step', async () => {
+    api.getAccess.mockResolvedValue(subscriber(null));
+    const dialog = openOnIphone();
+    expect(await within(dialog).findByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+      'href',
+      '/get/iphone',
+    );
+    expect(dialog).toHaveTextContent('Доступ активен до 18 декабря 2026');
+    expect(within(dialog).queryByRole('link', { name: 'Войти' })).toBeNull();
+  });
+
+  it('on an iPad the subscriber connects «iPad»', async () => {
+    api.getAccess.mockResolvedValue(subscriber(null));
+    ua(IPAD);
+    render(<IconGrid apps={[app]} label="Раздел" />);
+    fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByRole('link', { name: 'Подключить iPad' })).toHaveAttribute(
+      'href',
+      '/get/iphone',
+    );
+  });
+
+  it('while the iPhone is prepared the button is inactive', async () => {
+    api.getAccess.mockResolvedValue(
+      subscriber({ model: 'iPhone 15 Pro', family: 'iphone', ready: false, needsHelp: false }),
+    );
+    const dialog = openOnIphone();
+    expect(
+      await within(dialog).findByRole('button', { name: 'Готовим ваш iPhone, до 24 часов' }),
+    ).toBeDisabled();
+    expect(within(dialog).queryByRole('link')).toBeNull();
   });
 
   it('on a computer: installs from iPhone or iPad, «Оформить доступ» here', async () => {

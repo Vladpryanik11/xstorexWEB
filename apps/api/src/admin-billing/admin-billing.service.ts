@@ -8,9 +8,11 @@ import {
   type AdminSubscriptionsQuery,
   accessUntil,
   DEFAULT_PLAN,
+  deviceModelName,
   ErrorCode,
   type GrantRequest,
   type GrantResult,
+  maskUdid,
   nextWindow,
   type Page,
   type UpdatePlan,
@@ -243,7 +245,8 @@ export class AdminBillingService {
         id: true,
         createdAt: true,
         user: { select: { email: true, checkoutEmail: true, isProvisional: true } },
-        device: { select: { id: true, name: true } },
+        assignedAt: true,
+        device: { select: { id: true, name: true, product: true, status: true, udid: true } },
         entitlements: {
           orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
           select: {
@@ -264,7 +267,17 @@ export class AdminBillingService {
         id: s.id,
         email: s.user.email ?? s.user.checkoutEmail,
         provisional: s.user.isProvisional,
-        device: s.device,
+        // The UDID leaves this method only masked.
+        device: s.device
+          ? {
+              id: s.device.id,
+              name: s.device.name,
+              model: deviceModelName(s.device.product),
+              status: s.device.status,
+              udidMasked: maskUdid(s.device.udid),
+              assignedAt: iso(s.assignedAt),
+            }
+          : null,
         createdAt: s.createdAt.toISOString(),
         accessUntil: iso(accessUntil(s.entitlements, now)),
         rights: s.entitlements.map((r) => ({

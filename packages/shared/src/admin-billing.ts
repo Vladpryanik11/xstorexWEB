@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { emailSchema } from './auth.js';
 import { type OrderStatus, orderStatusSchema } from './billing.js';
+import type { DeviceStatus } from './devices.js';
 
 /** `GET/PATCH /admin/billing/plan`: the one plan the site sells. */
 /**
@@ -79,12 +80,24 @@ export type AdminRight = {
   note: string | null;
 };
 
+export type AdminSubscriptionDevice = {
+  id: string;
+  name: string;
+  /** Model name, e.g. «iPhone 15 Pro». */
+  model: string;
+  status: DeviceStatus;
+  udidMasked: string;
+  /** When the device was bound to this subscription. */
+  assignedAt: string | null;
+};
+
 export type AdminSubscription = {
   id: string;
   email: string | null;
   /** A guest purchase not yet merged into a verified buyer by a code login. */
   provisional: boolean;
-  device: { id: string; name: string } | null;
+  /** The bound device; the UDID only as `maskUdid`, never in full. */
+  device: AdminSubscriptionDevice | null;
   createdAt: string;
   /** End of the access running now; null when there is none. */
   accessUntil: string | null;
