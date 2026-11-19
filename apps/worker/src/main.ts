@@ -7,7 +7,11 @@ import { createIpaWorker } from './queues/ipa.js';
 import { createSystemWorker } from './queues/system.js';
 
 const config = loadWorkerConfig(process.env);
-const logger = pino({ level: config.logLevel });
+const logger = pino({
+  level: config.logLevel,
+  // Supplier certificates never reach the log, encrypted or not.
+  redact: ['*.p12', '*.password', '*.p12Enc', '*.p12PasswordEnc', '*.privateKeyPem'],
+});
 const deps = createWorkerDeps(config, logger);
 
 const workers = [

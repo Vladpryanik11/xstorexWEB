@@ -36,6 +36,23 @@
   },
   "overrides": [
     {
+      "includes": ["**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@xstore/secrets/decrypt": "Расшифровка секретов только в модуле apps/api/src/apple и воркере."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["apps/api/**"],
       "linter": {
         "rules": {
@@ -56,10 +73,23 @@
                 "paths": {
                   "@xstore/billing": "Пакет оплаты только для API и воркера: сайт его не импортирует.",
                   "@xstore/mail": "Пакет писем только для API и воркера: сайт его не импортирует.",
-                  "@xstore/mail/testing": "Пакет писем только для API и воркера: сайт его не импортирует."
+                  "@xstore/mail/testing": "Пакет писем только для API и воркера: сайт его не импортирует.",
+                  "@xstore/secrets/decrypt": "Расшифровка секретов только в модуле apps/api/src/apple и воркере.",
+                  "@xstore/secrets": "Пакет секретов только для API и воркера: сайт его не импортирует.",
+                  "@xstore/signing": "Пакет подписи только для API и воркера: сайт его не импортирует."
                 }
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/api/src/apple/**", "apps/worker/src/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
           }
         }
       }

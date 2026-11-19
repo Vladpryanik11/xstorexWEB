@@ -1,4 +1,5 @@
 import { tmpdir } from 'node:os';
+import { type Keyring, loadKeyring } from '@xstore/secrets';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -17,6 +18,8 @@ const envSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]{0,40}$/)
     .default('xstore-'),
   NODE_ENV: z.string().optional(),
+  /** Master key version and keys (`MASTER_KEY_V<n>`); never logged. */
+  MASTER_KEY_CURRENT: z.string().optional(),
   PAYMENT_PROVIDER: z.enum(['fake', 'platega']),
   FAKE_PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
   /** The site address in letters and the fake provider's redirect links. */
@@ -63,6 +66,8 @@ export type WorkerConfig = {
   s3: WorkerS3Config;
   payment: WorkerPaymentConfig;
   mail: WorkerMailConfig;
+  /** Decrypts supplier certificates; `null` outside production when no master key is set. */
+  keyring: Keyring | null;
 };
 
 export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
@@ -82,8 +87,20 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
   if (e.NODE_ENV === 'production') {
     const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
     if (missing.length > 0) throw invalid(missing.join(', '));
+    if (!e.MASTER_KEY_CURRENT) throw invalid('MASTER_KEY_CURRENT');
+  }
+  let keyring: Keyring | null = null;
+  if (e.MASTER_KEY_CURRENT) {
+    try {
+      keyring = loadKeyring(env);
+    } catch (err) {
+      throw invalid(
+        /MASTER_KEY_\w+/.exec(err instanceof Error ? err.message : '')?.[0] ?? 'MASTER_KEY_CURRENT',
+      );
+    }
   }
   return {
+    keyring,
     redisUrl: e.REDIS_URL,
     databaseUrl: e.DATABASE_URL,
     logLevel: e.LOG_LEVEL,

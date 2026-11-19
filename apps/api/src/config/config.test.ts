@@ -48,6 +48,8 @@ it('names a bad variable without echoing its value', () => {
 const prodMail = {
   SMTP_URL: 'smtps://user:pw@smtp.example.ru:465',
   MAIL_FROM: 'Xstore <noreply@xstorex.ru>',
+  MASTER_KEY_CURRENT: '1',
+  MASTER_KEY_V1: Buffer.alloc(32, 1).toString('base64'),
 };
 
 it('fake provider refused in production', () => {
@@ -126,4 +128,36 @@ it('test enrollment anchor refused in production', () => {
   expect(() => loadConfig({ ...prod, ENROLL_TEST_ANCHOR_PATH: '/t.pem' })).toThrow(
     /^Invalid environment variables: ENROLL_TEST_ANCHOR_PATH$/,
   );
+});
+
+const KEY = Buffer.alloc(32, 7).toString('base64');
+
+it('loads the master keyring when MASTER_KEY_CURRENT is set', () => {
+  const config = loadConfig({ ...valid, MASTER_KEY_CURRENT: '1', MASTER_KEY_V1: KEY });
+  expect(config.keyring?.current).toBe(1);
+  expect(config.keyring?.keys.get(1)?.length).toBe(32);
+});
+
+it('runs without a keyring outside production', () => {
+  expect(loadConfig(valid).keyring).toBeNull();
+});
+
+it('requires the master key in production without echoing it', () => {
+  const prod = {
+    ...valid,
+    ...prodMail,
+    NODE_ENV: 'production',
+    PAYMENT_PROVIDER: 'platega',
+    MASTER_KEY_CURRENT: undefined,
+    MASTER_KEY_V1: undefined,
+  };
+  expect(() => loadConfig(prod)).toThrow(/MASTER_KEY_CURRENT/);
+  expect(() => loadConfig({ ...prod, MASTER_KEY_CURRENT: '1', MASTER_KEY_V1: 'short' })).toThrow(
+    /MASTER_KEY_V1/,
+  );
+  try {
+    loadConfig({ ...prod, MASTER_KEY_CURRENT: '1', MASTER_KEY_V1: 'short' });
+  } catch (err) {
+    expect(String(err)).not.toContain('short');
+  }
 });

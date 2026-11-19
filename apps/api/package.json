@@ -24,6 +24,7 @@
     "@xstore/billing": "workspace:*",
     "@xstore/db": "workspace:*",
     "@xstore/mail": "workspace:*",
+    "@xstore/secrets": "workspace:*",
     "@xstore/shared": "workspace:*",
     "asn1js": "3.1.0",
     "bullmq": "6.5.4",
