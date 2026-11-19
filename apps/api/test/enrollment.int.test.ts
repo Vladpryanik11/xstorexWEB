@@ -5,7 +5,7 @@ import { Writable } from 'node:stream';
 import type { INestApplication } from '@nestjs/common';
 import { createPrismaClient } from '@xstore/db';
 import { resetDatabase } from '@xstore/db/testing';
-import { maskUdid } from '@xstore/shared';
+import { type ErrorCode, errorMessages, maskUdid } from '@xstore/shared';
 import { Redis } from 'ioredis';
 import plist from 'plist';
 import request from 'supertest';
@@ -156,6 +156,12 @@ function expectResult(res: { status: number; headers: Record<string, string> }, 
   expect(res.headers.location).toBe(`${SITE}/get/iphone?r=${r}`);
 }
 
+function expectRefusal(res: { status: number; headers: Record<string, string> }, code: string) {
+  expect(res.status).toBe(302);
+  expect(res.headers.location).toBe(`${SITE}/get/iphone?r=${code}`);
+  expect(errorMessages[code as ErrorCode]).toMatch(/[А-Яа-яЁё]/);
+}
+
 describe('GET /enrollment/profile', () => {
   it('serves a signed profile and stores the nonce hash for 15 minutes', async () => {
     const b = await buyer();
@@ -188,23 +194,23 @@ describe('GET /enrollment/profile', () => {
 
   it('guest cannot download profile', async () => {
     const res = await getProfile();
-    expect(res.status).toBe(401);
-    expect(JSON.parse(String(res.body)).code).toBe('UNAUTHORIZED');
+    // Opened from a link in Safari: refusals lead to pages, never to JSON.
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`${SITE}/signin?next=/get/iphone`);
   });
 
   it('a staff session cannot download it', async () => {
     const staff = await db.user.create({ data: { email: 'a@xstorex.ru', role: 'admin' } });
     const { token } = await app.get(SessionService).create(staff.id, 'staff', {});
     const res = await getProfile(`xs_session=${token}`);
-    expect(res.status).toBe(403);
+    expectRefusal(res, 'FORBIDDEN');
   });
 
   it('no access', async () => {
     const b = await buyer();
     await db.entitlement.update({ where: { id: b.right.id }, data: { revokedAt: new Date() } });
     const res = await getProfile(b.cookie);
-    expect(res.status).toBe(403);
-    expect(JSON.parse(String(res.body)).code).toBe('NO_ACCESS');
+    expectRefusal(res, 'NO_ACCESS');
     expect(await db.enrollmentSession.count()).toBe(0);
   });
 
@@ -213,15 +219,14 @@ describe('GET /enrollment/profile', () => {
     const nonce = await profileNonce(b.cookie);
     expectResult(await postCallback(nonce, await answer(nonce)), 'connected');
     const res = await getProfile(b.cookie);
-    expect(res.status).toBe(409);
-    expect(JSON.parse(String(res.body)).code).toBe('DEVICE_LIMIT');
+    expectRefusal(res, 'DEVICE_LIMIT');
   });
 
   it('allows 10 downloads in 10 minutes per buyer', async () => {
     const b = await buyer();
     for (let i = 0; i < 10; i += 1) expect((await getProfile(b.cookie)).status).toBe(200);
     const res = await getProfile(b.cookie);
-    expect(res.status).toBe(429);
+    expectRefusal(res, 'RATE_LIMITED');
   });
 });
 
@@ -513,8 +518,7 @@ describe('without XSTORE_DEV_PAGES and a signer', () => {
     const res = await request(bare.getHttpServer())
       .get('/api/v1/enrollment/profile')
       .set('Cookie', b.cookie);
-    expect(res.status).toBe(503);
-    expect(res.body.code).toBe('ENROLLMENT_UNAVAILABLE');
+    expectRefusal(res, 'ENROLLMENT_UNAVAILABLE');
     expect(await db.enrollmentSession.count()).toBe(0);
   });
 });

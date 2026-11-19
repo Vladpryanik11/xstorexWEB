@@ -58,6 +58,9 @@ it('connection texts never say «профиль», «UDID», «сертифик�
     'ENROLLMENT_EXPIRED',
     'ENROLLMENT_FAILED',
     'ENROLLMENT_UNAVAILABLE',
+    // The connection link also ends with these (`/get/iphone?r=<code>`).
+    'RATE_LIMITED',
+    'FORBIDDEN',
   ] as const;
   for (const code of codes) {
     expect(ErrorCode[code]).toBe(code);
