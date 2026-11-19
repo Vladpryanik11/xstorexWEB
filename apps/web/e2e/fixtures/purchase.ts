@@ -53,9 +53,21 @@ export function parseRuDate(text: string): number {
 export const daysBetween = (from: string, to: string) =>
   Math.round((parseRuDate(to) - parseRuDate(from)) / DAY_MS);
 
+/**
+ * An address of its own for each paying browser. The API allows 10 checkouts per IP in 10 minutes,
+ * and every e2e browser reaches it from 127.0.0.1 through the site's proxy, so the whole run would
+ * share one budget. Real buyers come from different addresses; the API trusts X-Forwarded-For only
+ * from the local proxy, which keeps this public test-range address (198.18.0.0/15) as the client.
+ */
+const buyerIp = (): string => {
+  const byte = () => 1 + Math.floor(Math.random() * 254);
+  return `198.18.${byte()}.${byte()}`;
+};
+
 /** On `/get`: email, consent and «Оплатить», then «Оплатить» on the fake payment page. */
 export async function payOnGetPage(page: Page, email?: string): Promise<void> {
   await expect(page).toHaveURL(/\/get(\?|$)/);
+  await page.context().setExtraHTTPHeaders({ 'X-Forwarded-For': buyerIp() });
   const input = page.getByLabel('Почта', { exact: true });
   if (email !== undefined) await input.fill(email);
   else await expect(input).not.toHaveValue('');

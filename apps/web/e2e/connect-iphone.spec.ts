@@ -52,12 +52,12 @@ async function connectIphone(page: Page, ios: APIRequestContext): Promise<void> 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
-/** The app window: «Готовим ваш iPhone» until the device is ready, then «Скоро…» (installs: Н4). */
+/** The app window: «Готовим ваш iPhone…» until the device is ready, then «Скоро…» (installs: Н4). */
 async function windowFollowsDevice(page: Page): Promise<void> {
   await page.goto('/?app=testovoe-prilozhenie-1');
   const sheet = page.getByRole('dialog', { name: APP });
   await expect(
-    sheet.getByRole('button', { name: 'Готовим ваш iPhone, до 24 часов' }),
+    sheet.getByRole('button', { name: 'Готовим ваш iPhone, обычно до 24 часов' }),
   ).toBeDisabled();
 
   // Development switch until device registration exists (XSTORE_DEV_PAGES=1 in the e2e API).
@@ -133,13 +133,13 @@ test('computer pays → «Откройте сайт на iPhone» → iPhone sig
 
     await connectIphone(mobile, ios);
     await windowFollowsDevice(mobile);
+    // «Мой доступ» shows the connected iPhone. The computer's guest session ended when the code
+    // confirmed the email on the iPhone (Н1: claiming a guest purchase signs out its sessions).
+    await mobile.goto('/access');
+    await expect(mobile.getByText(/ · Готов$/)).toBeVisible();
   } finally {
     await ios.dispose();
     await phone.close();
     await webkit.close();
   }
-
-  // The computer sees the connected iPhone in «Мой доступ».
-  await page.goto('/access');
-  await expect(page.getByText(/ · Готов$/)).toBeVisible();
 });
