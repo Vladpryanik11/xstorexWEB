@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -40,6 +41,12 @@ export const E2E_KIT_UDIDS = {
 /** The kit's UDID for one test file and Playwright project (each pair binds its own device). */
 export const e2eKitUdid = (use: keyof typeof E2E_KIT_UDIDS, project: string): string =>
   E2E_KIT_UDIDS[use][project as keyof (typeof E2E_KIT_UDIDS)['admin']];
+// The e2e API and worker encrypt the kit with the master key; CI has no .env, so a run makes its
+// own throwaway key (set here once, inherited by the servers and the workers).
+if (!process.env.MASTER_KEY_CURRENT) {
+  process.env.MASTER_KEY_CURRENT = '1';
+  process.env.MASTER_KEY_V1 = randomBytes(32).toString('base64');
+}
 if (!process.env.XSTORE_E2E_KIT_DIR) {
   const dir = mkdtempSync(join(tmpdir(), 'xstore-e2e-kit-'));
   execFileSync(
