@@ -16,6 +16,7 @@ import { zodBody } from '../common/zod-body.js';
 import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { RateLimiter } from '../rate-limit/rate-limiter.js';
 import { CustomerAuthService } from './customer-auth.service.js';
 import { RequireUser } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
@@ -30,6 +31,7 @@ export class CustomerAuthController {
     @Inject(APP_CONFIG) config: AppConfig,
     private readonly auth: CustomerAuthService,
     private readonly sessions: SessionService,
+    private readonly limiter: RateLimiter,
   ) {
     this.secureCookie = config.siteUrl.startsWith('https:');
   }
@@ -47,6 +49,10 @@ export class CustomerAuthController {
     await this.auth.setPassword(auth.userId, body.password, auth.sessionId);
   }
 
+  /**
+   * Two limits: 5 per IP (guard) and 10 per email from any IP (here, after the body is parsed).
+   * Both answer the same 429 whether or not the email has an account.
+   */
   @Post('login')
   @HttpCode(204)
   @RateLimit({ name: 'buyer-login', limit: 5, windowSec: 15 * 60, by: 'ip' })
@@ -55,6 +61,16 @@ export class CustomerAuthController {
     @Req() req: HttpReq,
     @Res({ passthrough: true }) res: HttpRes,
   ): Promise<void> {
+    // `body.email` is already normalized by the schema (trimmed, lower case).
+    const perEmail = await this.limiter.consume(
+      `buyer-login:email:${body.email}`,
+      LOGIN_PER_EMAIL.limit,
+      LOGIN_PER_EMAIL.windowSec,
+    );
+    if (!perEmail.allowed) {
+      res.setHeader('Retry-After', String(perEmail.retryAfterSec));
+      throw new DomainError(ErrorCode.RATE_LIMITED, 429);
+    }
     const session = await this.auth.login(body, meta(req));
     await this.replaceSession(req, res, session);
   }
@@ -96,5 +112,7 @@ export class CustomerAuthController {
     res.setHeader('Set-Cookie', sessionCookie(session.token, session.expiresAt, this.secureCookie));
   }
 }
+
+const LOGIN_PER_EMAIL = { limit: 10, windowSec: 15 * 60 };
 
 const meta = (req: HttpReq) => ({ ip: req.ip, userAgent: header(req, 'user-agent') });

@@ -146,6 +146,37 @@ it('wrong password returns INVALID_CREDENTIALS', async () => {
   expect(limited.body.code).toBe('RATE_LIMITED');
 });
 
+it('password login allows ten per email in 15 minutes, from any IP, known or not', async () => {
+  const email = rcpt();
+  const { agent } = await buyAndPay(email);
+  await post(agent, 'password', { password: 'correct horse' });
+  const unknown = rcpt();
+  // A new address per attempt keeps the per-IP limit (five) out of the way.
+  let ip = 0;
+  const from = (body: object) =>
+    agentOf()
+      .post('/api/v1/auth/login')
+      .set('Origin', SITE)
+      .set('X-Forwarded-For', `10.0.0.${(ip += 1)}`)
+      .send(body);
+
+  for (let i = 0; i < 10; i += 1) {
+    expect((await from({ email: email.toUpperCase(), password: 'nope-nope' })).status).toBe(401);
+    expect((await from({ email: unknown, password: 'nope-nope' })).status).toBe(401);
+  }
+  const limited = await from({ email, password: 'correct horse' });
+  expect(limited.status).toBe(429);
+  expect(limited.body.code).toBe('RATE_LIMITED');
+  expect(Number(limited.headers['retry-after'])).toBeGreaterThan(0);
+  expect(limited.headers['set-cookie']).toBeUndefined();
+  // An address nobody uses gets the same answer, so the limit does not tell whether it exists.
+  const limitedUnknown = await from({ email: unknown, password: 'nope-nope' });
+  expect(limitedUnknown.status).toBe(429);
+  expect(limitedUnknown.body).toEqual(limited.body);
+  // Other addresses are not affected.
+  expect((await from({ email: rcpt(), password: 'nope-nope' })).status).toBe(401);
+});
+
 it('code login restores paid access with same dates', async () => {
   const email = rcpt();
   const { order, until } = await buyAndPay(email);
