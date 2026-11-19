@@ -112,34 +112,6 @@
   letter-spacing: var(--x-track-body);
 }
 
-/* the app the visitor came from */
-.app {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  min-width: 0;
-}
-
-.appText {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.caption {
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
-}
-
-.appName {
-  overflow: hidden;
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* price and plan facts */
 .offer {
   display: grid;

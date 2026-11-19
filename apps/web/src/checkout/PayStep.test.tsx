@@ -96,6 +96,22 @@ describe('PayStep', () => {
     expect(second?.checkoutKey).not.toBe(first?.checkoutKey);
   });
 
+  it('coming from an app: no app block, only the catalog offer; the app is kept for after payment', async () => {
+    const checkout = vi.fn().mockResolvedValue({ orderId: 'o4', redirectUrl: '/dev/pay/p4' });
+    render(<PayStep plan={plan} returnTo="/app/okko" checkout={checkout} navigate={vi.fn()} />);
+    // The subscription is for the whole catalog: no «Вы выбрали <app>» that reads like a single purchase.
+    expect(screen.queryByText('Вы выбрали')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Доступ ко всему каталогу' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Почта'), { target: { value: 'buyer@example.com' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Согласен с условиями/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Оплатить/ }));
+    await waitFor(() => expect(checkout).toHaveBeenCalledTimes(1));
+    expect((checkout.mock.calls[0]?.[0] as CheckoutRequest | undefined)?.returnTo).toBe(
+      '/app/okko',
+    );
+  });
+
   it('renewal: the new end date instead of «Подписка начнётся сразу после оплаты»', () => {
     render(
       <PayStep
