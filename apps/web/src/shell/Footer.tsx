@@ -33,8 +33,8 @@ export function Footer() {
       <div className={styles.inner}>
         <div className={styles.top}>
           <Link className={styles.brand} href="/">
-            {/* biome-ignore lint/performance/noImgElement: a 36px static SVG needs no optimisation */}
-            <img src="/brand/mark.svg" alt="" width={36} height={36} />
+            {/* biome-ignore lint/performance/noImgElement: a 36px static logo needs no optimisation */}
+            <img src="/brand/mark.png" alt="" width={36} height={36} />
             <span>Xstore</span>
           </Link>
           {telegram ? (

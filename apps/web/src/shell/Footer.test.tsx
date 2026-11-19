@@ -9,7 +9,9 @@ afterEach(() => {
 describe('Footer', () => {
   it('shows the brand, the site links and the copyright', () => {
     render(<Footer />);
-    expect(screen.getByRole('link', { name: 'Xstore' })).toHaveAttribute('href', '/');
+    const brand = screen.getByRole('link', { name: 'Xstore' });
+    expect(brand).toHaveAttribute('href', '/');
+    expect(brand.querySelector('img')).toHaveAttribute('src', '/brand/mark.png');
     const links: [string, string][] = [
       ['Блог', '/blog'],
       ['Вопросы', '/faq'],

@@ -224,6 +224,7 @@ describe('MobileMenu', () => {
     const { rerender } = render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
     const logo = screen.getByRole('link', { name: 'Xstore, на главную' });
+    expect(logo.querySelector('img')).toHaveAttribute('src', '/brand/mark.png');
     logo.focus();
 
     nav.pathname = '/';
