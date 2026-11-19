@@ -21,24 +21,25 @@
 .device {
   overflow: hidden;
   padding: 0.25rem;
-  border-radius: 1.125rem;
+  /* the rim follows the screen's corner: field radius plus the rim width */
+  border-radius: calc(var(--x-radius-field) + 0.25rem);
   background: var(--x-text);
   box-shadow: var(--x-shadow-sm);
 }
 
 .device[data-family="ipad"] {
-  border-radius: 0.875rem;
+  border-radius: var(--x-radius-field);
 }
 
 .screen {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 0.875rem;
+  border-radius: var(--x-radius-field);
 }
 
 .device[data-family="ipad"] .screen {
-  border-radius: 0.625rem;
+  border-radius: calc(var(--x-radius-field) - 0.25rem);
 }
 
 .caption {
@@ -91,8 +92,7 @@
 }
 
 .dim {
-  fill: var(--x-text);
-  opacity: 0.28;
+  fill: var(--x-scrim);
 }
 
 .sheet {

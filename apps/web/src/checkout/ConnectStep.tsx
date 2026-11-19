@@ -1,10 +1,5 @@
 'use client';
-import {
-  type AccessResponse,
-  type AccessState,
-  type DeviceFamily,
-  errorMessages,
-} from '@xstore/shared';
+import type { AccessResponse, AccessState, DeviceFamily } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useEffect, useState } from 'react';
 import type { DeviceKind } from '../app-page/device';
@@ -17,7 +12,7 @@ import {
   CONNECT_POLL_LIMIT_MS,
   CONNECT_WAITING_STORAGE,
   type ConnectStepState,
-  connectErrorCode,
+  connectErrorText,
   connectStep,
   familyName,
 } from './connect-step';
@@ -34,9 +29,12 @@ export type ConnectStepProps = {
   getAccess?: () => Promise<AccessResponse>;
   /** The connection file; a plain link, so Safari hands it to Settings. */
   profileUrl?: string;
+  navigate?: (url: string) => void;
 };
 
 const defaultGetAccess = () => browserApi().getAccess();
+const defaultNavigate = (url: string) => window.location.assign(url);
+const SIGNIN = '/signin?next=/get/iphone';
 
 function readWaiting(): number | null {
   try {
@@ -90,6 +88,7 @@ export function ConnectStep({
   family: familyProp,
   getAccess = defaultGetAccess,
   profileUrl = browserApi().enrollmentProfileUrl(),
+  navigate = defaultNavigate,
 }: ConnectStepProps) {
   const detected = useBrowserDevice();
   const device = deviceProp ?? detected?.kind ?? null;
@@ -111,8 +110,7 @@ export function ConnectStep({
   // Until the browser is known, the device-dependent screens wait (no notice flashing on iPad).
   const deviceUnknown =
     device === null && (step === 'guide' || step === 'waiting' || step === 'open_on_phone');
-  const errorCode = connectErrorCode(result);
-  const error = errorCode ? errorMessages[errorCode] : '';
+  const error = step === 'error' && result ? connectErrorText(result) : '';
 
   // A reload or a discarded Safari tab while iOS installs keeps waiting.
   useEffect(() => {
@@ -142,7 +140,16 @@ export function ConnectStep({
       busy = true;
       try {
         const next = await getAccess();
-        if (!stopped) setAccess(next.state);
+        if (stopped) return;
+        // The session ended while iOS was installing (`hasPassword` comes only with one): sign in,
+        // then this step shows the device bound by the answer.
+        if (next.hasPassword === undefined) {
+          stopped = true;
+          clearTimeout(timer);
+          navigate(SIGNIN);
+          return;
+        }
+        setAccess(next.state);
       } catch {
         // A failed check is retried on the next tick.
       } finally {
@@ -166,7 +173,7 @@ export function ConnectStep({
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [step, waitingSince, getAccess]);
+  }, [step, waitingSince, getAccess, navigate]);
 
   function startWaiting() {
     // No preventDefault: the link itself downloads the file and iOS asks to allow it.
@@ -174,6 +181,8 @@ export function ConnectStep({
     writeWaiting(since);
     setTimedOut(false);
     setWaitingSince(since);
+    // The waiting card is shorter: keep the step bar from sliding under the floating header.
+    document.documentElement.scrollTo?.({ top: 0 });
   }
 
   const connectLink = (label: string, variant: 'primary' | 'quiet' = 'primary') => (

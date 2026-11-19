@@ -1,11 +1,12 @@
-import type { AccessState } from '@xstore/shared';
+import { type AccessState, errorMessages } from '@xstore/shared';
 import { describe, expect, it } from 'vitest';
 import {
   browserFamily,
   CONNECT_POLL_INTERVAL_MS,
   CONNECT_POLL_LIMIT_MS,
-  connectErrorCode,
+  connectErrorText,
   connectStep,
+  isConnectError,
 } from './connect-step';
 
 const until = new Date('2026-12-18T10:00:00Z');
@@ -80,9 +81,20 @@ describe('connectStep', () => {
     ]) {
       expect(connectStep({ ...base, result: code })).toBe('error');
     }
+  });
+
+  it('a device on the access wins over a stale ?r=<error>', () => {
     expect(connectStep({ ...base, access: active({ ready: false }), result: 'DEVICE_LIMIT' })).toBe(
-      'error',
+      'preparing',
     );
+    expect(connectStep({ ...base, access: active({ ready: true }), result: 'DEVICE_OWNED' })).toBe(
+      'ready',
+    );
+  });
+
+  it('a new or unknown code still shows the error screen', () => {
+    expect(connectStep({ ...base, result: 'SOMETHING_NEW' })).toBe('error');
+    expect(connectStep({ ...base, result: 'RATE_LIMITED' })).toBe('error');
   });
 
   it('?r=NO_ACCESS without access → no_access, which offers to pay', () => {
@@ -91,17 +103,26 @@ describe('connectStep', () => {
     );
   });
 
-  it('an unknown ?r= is ignored', () => {
+  it('a ?r= that is not code-shaped is ignored', () => {
     expect(connectStep({ ...base, result: '<script>' })).toBe('guide');
+    expect(connectStep({ ...base, result: '' })).toBe('guide');
   });
 });
 
-describe('connectErrorCode', () => {
-  it('only codes the callback can send', () => {
-    expect(connectErrorCode('DEVICE_OWNED')).toBe('DEVICE_OWNED');
-    expect(connectErrorCode('connected')).toBeNull();
-    expect(connectErrorCode('UNAUTHENTICATED')).toBeNull();
-    expect(connectErrorCode(null)).toBeNull();
+describe('connectErrorText', () => {
+  it('the text from errors.ts for a known code, a generic one otherwise', () => {
+    expect(connectErrorText('DEVICE_OWNED')).toBe(errorMessages.DEVICE_OWNED);
+    expect(connectErrorText('ENROLLMENT_UNAVAILABLE')).toBe(errorMessages.ENROLLMENT_UNAVAILABLE);
+    expect(connectErrorText('SOMETHING_NEW')).toBe(
+      'Не получилось подключить устройство. Попробуйте ещё раз.',
+    );
+  });
+
+  it('only code-shaped values are errors', () => {
+    expect(isConnectError('DEVICE_OWNED')).toBe(true);
+    expect(isConnectError('connected')).toBe(false);
+    expect(isConnectError('<b>x</b>')).toBe(false);
+    expect(isConnectError(null)).toBe(false);
   });
 });
 

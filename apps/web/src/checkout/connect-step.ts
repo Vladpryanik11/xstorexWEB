@@ -1,4 +1,4 @@
-import type { AccessState, DeviceFamily, ErrorCode } from '@xstore/shared';
+import { type AccessState, type DeviceFamily, errorMessages } from '@xstore/shared';
 import type { DeviceKind } from '../app-page/device';
 
 export type ConnectStepState =
@@ -19,24 +19,20 @@ export const CONNECT_POLL_LIMIT_MS = 15 * 60 * 1000;
 /** Session storage key: when «Подключить iPhone» was pressed, so a reload keeps waiting. */
 export const CONNECT_WAITING_STORAGE = 'xstore.connectWaitingSince';
 
-/** `?r=` codes the API callback (or a later redirect from the file link) can send back. */
-const RESULT_ERRORS = [
-  'ENROLLMENT_EXPIRED',
-  'ENROLLMENT_FAILED',
-  'ENROLLMENT_INVALID',
-  'ENROLLMENT_UNAVAILABLE',
-  'DEVICE_OWNED',
-  'DEVICE_LIMIT',
-  'NO_ACCESS',
-  'RATE_LIMITED',
-] as const satisfies readonly ErrorCode[];
-export type ConnectErrorCode = (typeof RESULT_ERRORS)[number];
+/** `?r=` error codes look like `DEVICE_OWNED`; anything else in `?r=` is ignored. */
+const CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
 
-/** The error code in `?r=`, or null for `connected`, nothing, or anything unknown. */
-export function connectErrorCode(result: string | null): ConnectErrorCode | null {
-  return (RESULT_ERRORS as readonly string[]).includes(result ?? '')
-    ? (result as ConnectErrorCode)
-    : null;
+/** True for `?r=<error code>`: any code-shaped value, so a code added later still shows an error. */
+export function isConnectError(result: string | null): result is string {
+  return result !== null && result !== 'connected' && CODE.test(result);
+}
+
+const GENERIC_ERROR = 'Не получилось подключить устройство. Попробуйте ещё раз.';
+
+/** The text from `errors.ts` for the code, or a generic one; the raw value is never shown. */
+export function connectErrorText(code: string): string {
+  const messages: Record<string, string> = errorMessages;
+  return Object.hasOwn(messages, code) ? (messages[code] ?? GENERIC_ERROR) : GENERIC_ERROR;
 }
 
 /**
@@ -55,10 +51,11 @@ export function connectStep(input: {
   const { device, access, result, waiting, signedIn = true } = input;
   if (!signedIn) return 'signin';
   if (access.kind !== 'active') return 'no_access';
-  if (connectErrorCode(result)) return 'error';
+  // A device on the access is the truth: a stale `?r=<error>` (history, bookmark) is ignored.
   if (access.device?.ready) return 'ready';
+  if (access.device) return waiting || result === 'connected' ? 'connected' : 'preparing';
+  if (isConnectError(result)) return 'error';
   if (result === 'connected') return 'connected';
-  if (access.device) return waiting ? 'connected' : 'preparing';
   if (device === 'desktop') return 'open_on_phone';
   return waiting ? 'waiting' : 'guide';
 }

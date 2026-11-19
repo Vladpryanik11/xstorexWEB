@@ -172,6 +172,7 @@ describe('ConnectStep', () => {
     await tick(15 * 60 * 1000);
     const calls = getAccess.mock.calls.length;
     expect(calls).toBeLessThanOrEqual(300);
+    expect(calls).toBeGreaterThanOrEqual(290);
     await tick(60_000);
     expect(getAccess).toHaveBeenCalledTimes(calls);
     expect(screen.queryByRole('heading', { name: 'Ждём подключения…' })).toBeNull();
@@ -192,5 +193,66 @@ describe('ConnectStep', () => {
     render(<ConnectStep access={noDevice} result={null} device="ios" getAccess={vi.fn()} />);
     await tick(0);
     expect(screen.getByRole('heading', { name: 'Подключить iPhone' })).toBeInTheDocument();
+  });
+
+  it('a session lost while waiting sends the buyer to sign in', async () => {
+    const getAccess = vi.fn().mockResolvedValue({ state: { kind: 'none' } });
+    const navigate = vi.fn();
+    render(
+      <ConnectStep
+        access={noDevice}
+        result={null}
+        device="ios"
+        profileUrl="#connect"
+        getAccess={getAccess}
+        navigate={navigate}
+      />,
+    );
+    connect();
+    await tick(3000);
+    expect(navigate).toHaveBeenCalledWith('/signin?next=/get/iphone');
+    expect(screen.queryByRole('heading', { name: 'Сначала оформите доступ' })).toBeNull();
+    await tick(30_000);
+    expect(getAccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('a new error code shows a generic text and «Попробовать снова»', () => {
+    render(
+      <ConnectStep access={noDevice} result="SOMETHING_NEW" device="ios" getAccess={vi.fn()} />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Не получилось подключить устройство. Попробуйте ещё раз.',
+    );
+    expect(screen.getByRole('link', { name: 'Попробовать снова' })).toBeInTheDocument();
+  });
+
+  it('a stale ?r=<error> with a device shows the device state', () => {
+    render(
+      <ConnectStep access={withDevice()} result="DEVICE_LIMIT" device="ios" getAccess={vi.fn()} />,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(
+      screen.getByRole('heading', { name: 'Готовим ваш iPhone, обычно до 24 часов' }),
+    ).toBeInTheDocument();
+  });
+
+  it('switching to waiting scrolls to the top', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(document.documentElement, 'scrollTo', {
+      value: scrollTo,
+      configurable: true,
+    });
+    render(
+      <ConnectStep
+        access={noDevice}
+        result={null}
+        device="ios"
+        profileUrl="#connect"
+        getAccess={vi.fn().mockResolvedValue(response(noDevice))}
+      />,
+    );
+    connect();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+    delete (document.documentElement as { scrollTo?: unknown }).scrollTo;
   });
 });
