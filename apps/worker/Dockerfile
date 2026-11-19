@@ -49,6 +49,7 @@ COPY --from=builder /app/packages/db/dist packages/db/dist
 COPY --from=builder /app/packages/ios/dist packages/ios/dist
 COPY --from=builder /app/packages/billing/dist packages/billing/dist
 COPY --from=builder /app/packages/mail/dist packages/mail/dist
+COPY --from=builder /app/packages/secrets/dist packages/secrets/dist
 COPY --from=builder /app/apps/worker/dist apps/worker/dist
 USER node
 CMD ["node", "apps/worker/dist/main.js"]
