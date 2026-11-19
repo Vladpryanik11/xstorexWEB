@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Prisma } from '@xstore/db';
 import { bindDecision, deviceModelName, ErrorCode, maskUdid } from '@xstore/shared';
+import { DeviceWaitingNotifier } from '../apple/device-waiting.notifier.js';
 import { buyerAccessUntil, buyerSubscription } from '../billing/buyer-subscription.js';
 import { DomainError } from '../common/domain-error.js';
 import { isUniqueViolation } from '../common/prisma-errors.js';
@@ -72,6 +73,7 @@ export class EnrollmentService {
   constructor(
     @Inject(APP_CONFIG) config: AppConfig,
     private readonly prisma: PrismaService,
+    private readonly waitingNotifier: DeviceWaitingNotifier,
   ) {
     this.identity = config.enrollment.signer ? new IdentityStore(config.enrollment.signer) : null;
     this.testAnchors = loadTestAnchors(config.enrollment.testAnchorPath);
@@ -165,6 +167,10 @@ export class EnrollmentService {
       // Another buyer's device with this UDID was created meanwhile.
       if (!isUniqueViolation(err)) throw err;
       outcome = { result: 'DEVICE_OWNED' };
+    }
+    // A new device waits for supplier files: the owner hears about it once, at the first bind.
+    if (outcome.result === 'connected' && !outcome.reused) {
+      await this.waitingNotifier.deviceBound(outcome.deviceId);
     }
     return this.done(outcome.result, answer);
   }

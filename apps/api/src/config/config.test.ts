@@ -161,3 +161,21 @@ it('requires the master key in production without echoing it', () => {
     expect(String(err)).not.toContain('short');
   }
 });
+
+it('signing: test anchor refused in production, owner email optional', () => {
+  expect(loadConfig(valid).signing).toEqual({ testAnchorPath: null, adminNotifyEmail: null });
+  expect(
+    loadConfig({ ...valid, SIGNING_TEST_ANCHOR_PATH: '/a.pem', ADMIN_NOTIFY_EMAIL: 'o@x.ru' })
+      .signing,
+  ).toEqual({ testAnchorPath: '/a.pem', adminNotifyEmail: 'o@x.ru' });
+  expect(() =>
+    loadConfig({
+      ...valid,
+      ...prodMail,
+      NODE_ENV: 'production',
+      PAYMENT_PROVIDER: 'platega',
+      SIGNING_TEST_ANCHOR_PATH: '/a.pem',
+    }),
+  ).toThrow(/SIGNING_TEST_ANCHOR_PATH/);
+  expect(() => loadConfig({ ...valid, ADMIN_NOTIFY_EMAIL: 'nope' })).toThrow(/ADMIN_NOTIFY_EMAIL/);
+});

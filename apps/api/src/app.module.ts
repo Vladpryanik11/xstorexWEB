@@ -5,6 +5,8 @@ import { LoggerModule } from 'nestjs-pino';
 import type { DestinationStream } from 'pino';
 import { AdminBillingModule } from './admin-billing/admin-billing.module.js';
 import { AdminCatalogModule } from './admin-catalog/admin-catalog.module.js';
+import { AppleModule } from './apple/apple.module.js';
+import type { OcspOptions } from './apple/ocsp.provider.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BillingModule } from './billing/billing.module.js';
@@ -27,6 +29,8 @@ import { UploadsModule } from './uploads/uploads.module.js';
 export type AppOptions = {
   /** Where logs go instead of stdout (tests inspect them). */
   logStream?: DestinationStream;
+  /** OCSP fetch and allowed responder hosts (tests answer from fixtures). */
+  ocsp?: OcspOptions;
 };
 
 @Module({})
@@ -68,6 +72,7 @@ export class AppModule {
         BillingModule,
         AdminBillingModule,
         EnrollmentModule.forRoot(config),
+        AppleModule.forRoot(options.ocsp),
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }, HealthService],

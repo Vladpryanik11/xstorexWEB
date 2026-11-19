@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { AppModule, type AppOptions } from './app.module.js';
+import { CERTIFICATE_UPLOAD_PATH } from './apple/device-certificates.controller.js';
 import type { AppConfig } from './config/config.js';
 import {
   ENROLLMENT_CALLBACK_PATH,
@@ -34,6 +35,15 @@ export async function createApp(
   const isCallback = (req: { originalUrl?: string; url?: string }) =>
     (req.originalUrl ?? req.url ?? '').split('?')[0] === ENROLLMENT_CALLBACK_PATH;
   app.useBodyParser('raw', { type: isCallback, limit: '64kb' });
+  // Supplier files (base64 JSON, ≤ 50 KB + 1 MB): the only JSON body above the default limit.
+  app.useBodyParser('json', {
+    type: (req: { originalUrl?: string; url?: string; headers?: Record<string, unknown> }) =>
+      CERTIFICATE_UPLOAD_PATH.test((req.originalUrl ?? req.url ?? '').split('?')[0] ?? '') &&
+      String(req.headers?.['content-type'] ?? '').startsWith('application/json'),
+    limit: '1536kb',
+  });
+  // Registering a JSON parser turns Nest's default one off: every other JSON body keeps 100 KB.
+  app.useBodyParser('json', { limit: '100kb' });
   app.use(
     ENROLLMENT_CALLBACK_PATH,
     (

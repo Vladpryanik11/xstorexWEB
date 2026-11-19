@@ -39,6 +39,10 @@ const envSchema = z.object({
   ENROLL_KEY_PATH: z.string().min(1).optional(),
   /** Extra trusted root for answers of test devices; refused in production. */
   ENROLL_TEST_ANCHOR_PATH: z.string().min(1).optional(),
+  /** Extra PEM root for supplier profiles of tests; refused in production. */
+  SIGNING_TEST_ANCHOR_PATH: z.string().min(1).optional(),
+  /** Where «Новый iPhone ждёт сертификата» goes; no letter when unset. */
+  ADMIN_NOTIFY_EMAIL: z.email().optional(),
 });
 
 /** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
@@ -90,6 +94,7 @@ export type AppConfig = {
   devPages: boolean;
   /** Encrypts supplier certificates; `null` outside production when no master key is set. */
   keyring: Keyring | null;
+  signing: { testAnchorPath: string | null; adminNotifyEmail: string | null };
 };
 
 const invalid = (names: string[]): Error =>
@@ -122,6 +127,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     const missing = (['SMTP_URL', 'MAIL_FROM'] as const).filter((name) => !e[name]);
     if (missing.length > 0) throw invalid([...missing]);
     if (e.ENROLL_TEST_ANCHOR_PATH) throw invalid(['ENROLL_TEST_ANCHOR_PATH']);
+    if (e.SIGNING_TEST_ANCHOR_PATH) throw invalid(['SIGNING_TEST_ANCHOR_PATH']);
     if (!e.MASTER_KEY_CURRENT) throw invalid(['MASTER_KEY_CURRENT']);
   }
   if (Boolean(e.ENROLL_CERT_PATH) !== Boolean(e.ENROLL_KEY_PATH)) {
@@ -156,5 +162,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     },
     devPages: e.XSTORE_DEV_PAGES === '1',
     keyring: keyringFrom(env),
+    signing: {
+      testAnchorPath: e.SIGNING_TEST_ANCHOR_PATH ?? null,
+      adminNotifyEmail: e.ADMIN_NOTIFY_EMAIL ?? null,
+    },
   };
 }

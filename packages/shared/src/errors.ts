@@ -39,6 +39,15 @@ export const ErrorCode = {
   WEAK_PASSWORD: 'WEAK_PASSWORD',
   GRANT_STAFF_EMAIL: 'GRANT_STAFF_EMAIL',
   REFUND_NOT_PAID: 'REFUND_NOT_PAID',
+  P12_INVALID: 'P12_INVALID',
+  PROFILE_INVALID: 'PROFILE_INVALID',
+  UDID_NOT_IN_PROFILE: 'UDID_NOT_IN_PROFILE',
+  CERT_NOT_IN_PROFILE: 'CERT_NOT_IN_PROFILE',
+  KIT_EXPIRED: 'KIT_EXPIRED',
+  NOT_WILDCARD: 'NOT_WILDCARD',
+  ALL_DEVICES_PROFILE: 'ALL_DEVICES_PROFILE',
+  CERT_REVOKED: 'CERT_REVOKED',
+  SIGNING_UNAVAILABLE: 'SIGNING_UNAVAILABLE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -84,6 +93,17 @@ export const errorMessages: Record<ErrorCode, string> = {
   WEAK_PASSWORD: 'Пароль должен быть от 8 до 128 символов',
   GRANT_STAFF_EMAIL: 'Эта почта принадлежит сотруднику, выдать на неё доступ нельзя',
   REFUND_NOT_PAID: 'Отметить возврат можно только у оплаченного заказа',
+  P12_INVALID: 'Неверный пароль или файл .p12 повреждён',
+  PROFILE_INVALID: 'Файл профиля повреждён',
+  UDID_NOT_IN_PROFILE:
+    'В профиле нет этого iPhone. Проверьте, что поставщику отправлен UDID этого устройства',
+  CERT_NOT_IN_PROFILE: 'Сертификат и профиль от разных заказов',
+  KIT_EXPIRED: 'Срок сертификата или профиля уже закончился',
+  NOT_WILDCARD:
+    'Профиль подходит только для одного приложения, попросите у поставщика профиль для всех приложений',
+  ALL_DEVICES_PROFILE: 'Этот профиль не для конкретного iPhone',
+  CERT_REVOKED: 'Сертификат уже отозван',
+  SIGNING_UNAVAILABLE: 'Загрузка сертификатов недоступна: не задан мастер-ключ',
 };
 
 /** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */

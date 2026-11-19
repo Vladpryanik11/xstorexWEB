@@ -211,6 +211,9 @@ importers:
       '@xstore/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xstore/signing':
+        specifier: workspace:*
+        version: link:../../packages/signing
       asn1js:
         specifier: 3.1.0
         version: 3.1.0
