@@ -12,6 +12,9 @@ const apiUrl = process.env.API_INTERNAL_URL;
 const nextConfig: NextConfig = {
   output: 'standalone',
   transpilePackages: ['@xstore/ui', '@xstore/shared'],
+  // The production image has no apps/api sources; e2e fixtures import them, so `next build`
+  // type-checks the app without e2e. `pnpm typecheck` still covers everything.
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   async rewrites() {
     return apiUrl ? [{ source: '/api/:path*', destination: `${apiUrl}/api/:path*` }] : [];
   },
