@@ -59,6 +59,8 @@ export type AccessDevice = {
   needsHelp: boolean;
   /** Н3: the device had working files and none is valid now (`processing`): «Обновляем доступ». */
   updating?: boolean;
+  /** Not ready yet: when the wait for files started (connect, or the last files ended). */
+  waitingSince?: Date;
 };
 
 export type AccessState =
@@ -79,7 +81,7 @@ export function accessState(input: {
   subscriptions: {
     id: string;
     rights: RightLike[];
-    device: { product: string; status: DeviceStatus } | null;
+    device: { product: string; status: DeviceStatus; waitingSince?: Date | null } | null;
   }[];
   pendingOrderId: string | null;
   now: Date;
@@ -99,6 +101,9 @@ export function accessState(input: {
           ready: bound.status === 'active',
           needsHelp: bound.status === 'blocked' || bound.status === 'expired',
           updating: bound.status === 'processing',
+          ...(bound.status !== 'active' && bound.waitingSince
+            ? { waitingSince: bound.waitingSince }
+            : {}),
         }
       : null;
     return { kind: 'active', until, subscriptionId: picked.id, device };

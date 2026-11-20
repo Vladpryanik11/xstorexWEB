@@ -127,6 +127,45 @@ describe('ConnectStep', () => {
     expect(screen.queryByRole('link', { name: /Подключить/ })).toBeNull();
   });
 
+  it('a device being prepared shows when it will be ready', () => {
+    const access = withDevice();
+    if (access.kind === 'active' && access.device) {
+      access.device.waitingSince = new Date('2026-11-20T10:40:00Z');
+    }
+    render(
+      <ConnectStep
+        access={access}
+        result={null}
+        device="ios"
+        getAccess={vi.fn()}
+        now={new Date('2026-11-20T12:00:00Z')}
+        timeZone="Europe/Moscow"
+      />,
+    );
+    expect(screen.getByText('Будет готов до 21 ноября, 13:40.')).toBeInTheDocument();
+  });
+
+  it('a device waiting over 24 hours: no time, «чуть дольше обычного»', () => {
+    const access = withDevice();
+    if (access.kind === 'active' && access.device) {
+      access.device.waitingSince = new Date('2026-11-20T10:40:00Z');
+    }
+    render(
+      <ConnectStep
+        access={access}
+        result={null}
+        device="ios"
+        getAccess={vi.fn()}
+        now={new Date('2026-11-21T12:00:00Z')}
+        timeZone="Europe/Moscow"
+      />,
+    );
+    expect(
+      screen.getByText('Готовим чуть дольше обычного, мы уже занимаемся.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Будет готов до/)).toBeNull();
+  });
+
   it('files ended: «Обновляем доступ, обычно до 24 часов»', () => {
     const access: AccessState = {
       kind: 'active',

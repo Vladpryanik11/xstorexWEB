@@ -1,7 +1,14 @@
 'use client';
-import type { AccessResponse, AccessState, DeviceFamily } from '@xstore/shared';
+import {
+  type AccessResponse,
+  type AccessState,
+  type DeviceFamily,
+  waitPhase,
+} from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useEffect, useState } from 'react';
+import { useNow } from '../access/use-now';
+import { formatReadyBy } from '../access/wait-time';
 import type { DeviceKind } from '../app-page/device';
 import { browserApi } from './browser-api';
 import { ConnectGuide } from './ConnectGuide';
@@ -30,6 +37,10 @@ export type ConnectStepProps = {
   /** The connection file; a plain link, so Safari hands it to Settings. */
   profileUrl?: string;
   navigate?: (url: string) => void;
+  /** The clock for the ready-by time; read after mount when left out. */
+  now?: Date;
+  /** Time zone of the ready-by time; the browser's when left out. */
+  timeZone?: string;
 };
 
 const defaultGetAccess = () => browserApi().getAccess();
@@ -57,6 +68,28 @@ function writeWaiting(since: number | null): void {
 }
 
 /** Н3: a device whose files ended waits for new ones under another title. */
+/** Spec §4.1 (supplier certificates): when a waiting device will be ready, in local time. */
+function ReadyBy({
+  access,
+  now,
+  timeZone,
+}: {
+  access: AccessState;
+  now: Date | null;
+  timeZone?: string;
+}) {
+  const since = access.kind === 'active' ? access.device?.waitingSince : undefined;
+  if (!since || !now) return null;
+  const wait = waitPhase(since, now);
+  return (
+    <p className={own.preparing}>
+      {wait.phase === 'late'
+        ? 'Готовим чуть дольше обычного, мы уже занимаемся.'
+        : `Будет готов до ${formatReadyBy(wait.readyBy, timeZone)}.`}
+    </p>
+  );
+}
+
 function preparingText(name: string, updating: boolean): string {
   return updating
     ? 'Обновляем доступ, обычно до 24 часов'
@@ -98,7 +131,10 @@ export function ConnectStep({
   getAccess = defaultGetAccess,
   profileUrl = browserApi().enrollmentProfileUrl(),
   navigate = defaultNavigate,
+  now: fixedNow,
+  timeZone,
 }: ConnectStepProps) {
+  const now = useNow(fixedNow);
   const detected = useBrowserDevice();
   const device = deviceProp ?? detected?.kind ?? null;
   const [access, setAccess] = useState(initialAccess);
@@ -258,6 +294,7 @@ export function ConnectStep({
       ) : step === 'preparing' ? (
         <section className={styles.panel}>
           <h1 className={styles.title}>{preparingText(name, updating)}</h1>
+          <ReadyBy access={access} now={now} timeZone={timeZone} />
           <p className={styles.lead}>
             {name} уже подключён к вашему доступу. Когда всё будет готово, приложения можно будет
             ставить прямо из каталога.

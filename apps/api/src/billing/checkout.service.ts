@@ -40,6 +40,18 @@ export type AccessJson =
   | { state: { kind: 'none' } }
   | { state: AccessStateJson; email: string | null; hasPassword: boolean };
 
+/**
+ * Since when a not-ready device waits (spec §4.1): the bind for a device that never had files,
+ * else the end of its last files. The same moment the admin list shows as «ждёт с».
+ */
+function waitingSince(
+  last: { status: string; createdAt: Date; endedAt: Date | null } | undefined,
+  assignedAt: Date,
+): Date {
+  if (!last || last.status === 'active' || last.status === 'replaced') return assignedAt;
+  return last.endedAt ?? last.createdAt;
+}
+
 /** The buyer behind a session; staff sessions never buy. */
 function buyerId(auth: AuthContext | null | undefined): string | null {
   return auth && auth.kind === 'user' && auth.role === 'user' ? auth.userId : null;
@@ -261,7 +273,19 @@ export class CheckoutService {
           ],
           select: {
             id: true,
-            device: { select: { product: true, status: true } },
+            assignedAt: true,
+            createdAt: true,
+            device: {
+              select: {
+                product: true,
+                status: true,
+                certificates: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 1,
+                  select: { status: true, createdAt: true, endedAt: true },
+                },
+              },
+            },
             entitlements: { select: { startsAt: true, expiresAt: true, revokedAt: true } },
           },
         },
@@ -278,7 +302,13 @@ export class CheckoutService {
       subscriptions: user.subscriptions.map((s) => ({
         id: s.id,
         rights: s.entitlements,
-        device: s.device,
+        device: s.device
+          ? {
+              product: s.device.product,
+              status: s.device.status,
+              waitingSince: waitingSince(s.device.certificates[0], s.assignedAt ?? s.createdAt),
+            }
+          : null,
       })),
       pendingOrderId: pending?.id ?? null,
       now,

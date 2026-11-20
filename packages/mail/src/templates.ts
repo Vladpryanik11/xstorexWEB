@@ -3,6 +3,7 @@ import { type DeviceFamily, formatRuDate } from '@xstore/shared';
 export type MailTemplate =
   | 'payment_paid'
   | 'login_code'
+  | 'device_preparing'
   | 'device_ready'
   | 'reinstall_apps'
   | 'admin_device_waiting';
@@ -54,6 +55,20 @@ export function renderMail(template: MailTemplate, data: MailData, siteUrl: stri
           `Введите его на сайте ${site}.`,
           '',
           'Если вы не запрашивали код, просто проигнорируйте это письмо.',
+          '',
+          'Xstore',
+        ].join('\n'),
+      };
+    }
+    case 'device_preparing': {
+      const device = data.family === 'ipad' ? 'iPad' : 'iPhone';
+      return {
+        subject: `${device} подключён, готовим его`,
+        text: [
+          'Здравствуйте!',
+          '',
+          `Ваш ${device} подключён. Мы готовим его к установке приложений. Обычно это занимает до 24 часов.`,
+          `Пришлём письмо, когда всё будет готово. Статус всегда видно на сайте ${site} в разделе «Мой доступ».`,
           '',
           'Xstore',
         ].join('\n'),

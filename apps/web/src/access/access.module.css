@@ -65,3 +65,42 @@
   outline: none;
   box-shadow: 0 0 0 3px var(--x-sky-200);
 }
+
+/* Spec §4.1 (supplier certificates): the wait for a device's files. */
+.wait {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: var(--x-radius-card);
+  background: var(--x-ice);
+}
+
+.waitBadge,
+.lateBadge {
+  justify-self: start;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.lateBadge {
+  background: var(--x-warn-bg);
+  color: var(--x-warn);
+}
+
+.bar {
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-50);
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--x-blue);
+}
