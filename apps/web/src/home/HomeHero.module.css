@@ -262,6 +262,11 @@
    in a white card with hairlines, the button and audience line right under it, all in the
    first screen; the phone follows without the empty band around it. */
 @media (max-width: 47.99em) {
+  /* Phone headline: «200+ приложений на вашем iPhone» (owner 2026-11-20); Premium is the next line. */
+  .wide {
+    display: none;
+  }
+
   .copy {
     padding-inline: 0.75rem;
   }

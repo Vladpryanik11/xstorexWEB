@@ -32,8 +32,8 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
       <div className={styles.inner}>
         <div className={styles.copy}>
           <h1 className={styles.title}>
-            <span className={styles.accent}>200+</span> приложений с&nbsp;Premium‑доступом
-            на&nbsp;вашем&nbsp;iPhone
+            <span className={styles.accent}>200+</span> приложений{' '}
+            <span className={styles.wide}>с&nbsp;Premium‑доступом</span> на&nbsp;вашем&nbsp;iPhone
           </h1>
           <span id={listId} hidden>
             Что входит в подписку

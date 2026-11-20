@@ -7,7 +7,9 @@ test('home shows collections and an app opens its install sheet', async ({ page,
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
+      name: isMobile
+        ? /^200\+ приложений на\sвашем\siPhone$/
+        : /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
     }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
