@@ -220,6 +220,19 @@ describe('accessState', () => {
       expect(state).toMatchObject({ device: { updating: status === 'processing' } });
     }
   });
+  it('waitingSince передаётся, пока устройство не готово', () => {
+    const since = new Date('2026-11-20T10:00:00Z');
+    for (const status of ['pending', 'processing', 'active'] as const) {
+      const state = accessState({
+        signedIn: true,
+        subscriptions: [{ ...sub, device: { product: 'iPhone16,2', status, waitingSince: since } }],
+        pendingOrderId: null,
+        now,
+      });
+      if (state.kind !== 'active') throw new Error('active expected');
+      expect(state.device?.waitingSince).toEqual(status === 'active' ? undefined : since);
+    }
+  });
   it('payment_pending без действующей подписки', () => {
     expect(accessState({ signedIn: true, subscriptions: [], pendingOrderId: 'o1', now })).toEqual({
       kind: 'payment_pending',

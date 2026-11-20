@@ -13,6 +13,8 @@ import { familyName } from '../checkout/connect-step';
 import { PasswordForm } from '../checkout/PasswordForm';
 import { useBrowserDevice } from '../checkout/use-browser-device';
 import own from './access.module.css';
+import { useNow } from './use-now';
+import { WaitStatus } from './WaitStatus';
 
 export type AccessCardProps = {
   access: AccessResponse;
@@ -21,6 +23,10 @@ export type AccessCardProps = {
   go?: (url: string) => void;
   /** iPhone or iPad before a device is connected; read from the browser when left out. */
   family?: DeviceFamily;
+  /** The clock for the wait status; read after mount when left out (the time is local). */
+  now?: Date;
+  /** Time zone of the ready-by time; the browser's when left out. */
+  timeZone?: string;
 };
 
 const defaultLogout = () => browserApi().logout();
@@ -30,7 +36,16 @@ const defaultGo = (url: string) => window.location.assign(url);
  * The device row: connect, being prepared, ready, or a calm pointer to support when registration
  * stopped (`needsHelp`); the technical reason stays in the admin.
  */
-function DeviceFact({ device, family }: { device: AccessDevice | null; family: DeviceFamily }) {
+function DeviceFact({
+  device,
+  family,
+  detailed = false,
+}: {
+  device: AccessDevice | null;
+  family: DeviceFamily;
+  /** The wait block below tells the status: the row keeps only the model. */
+  detailed?: boolean;
+}) {
   if (!device) {
     const name = familyName(family);
     return (
@@ -54,6 +69,8 @@ function DeviceFact({ device, family }: { device: AccessDevice | null; family: D
             Нужна помощь поддержки
           </a>
         </dd>
+      ) : detailed ? (
+        <dd>{device.model}</dd>
       ) : (
         <dd>{`${device.model} · ${device.ready ? 'Готов' : device.updating ? 'Обновляем доступ, обычно до 24 часов' : 'Готовим, обычно до 24 часов'}`}</dd>
       )}
@@ -61,9 +78,24 @@ function DeviceFact({ device, family }: { device: AccessDevice | null; family: D
   );
 }
 
-function Status({ access, family }: { access: AccessResponse; family: DeviceFamily }) {
+function Status({
+  access,
+  family,
+  now,
+  timeZone,
+}: {
+  access: AccessResponse;
+  family: DeviceFamily;
+  now: Date | null;
+  timeZone?: string;
+}) {
   const { state } = access;
   if (state.kind === 'active') {
+    const device = state.device;
+    const waiting =
+      device && !device.ready && !device.needsHelp && device.waitingSince && now
+        ? { ...device, waitingSince: device.waitingSince }
+        : null;
     return (
       <>
         <span className={styles.okBadge}>Подписка действует</span>
@@ -75,8 +107,9 @@ function Status({ access, family }: { access: AccessResponse; family: DeviceFami
               <dd>{access.email}</dd>
             </div>
           ) : null}
-          <DeviceFact device={state.device} family={family} />
+          <DeviceFact device={state.device} family={family} detailed={waiting !== null} />
         </dl>
+        {waiting && now ? <WaitStatus device={waiting} now={now} timeZone={timeZone} /> : null}
         <Button href="/get?renew=1" className={styles.wide}>
           Продлить
         </Button>
@@ -120,8 +153,11 @@ export function AccessCard({
   logout = defaultLogout,
   go = defaultGo,
   family,
+  now: fixedNow,
+  timeZone,
 }: AccessCardProps) {
   const browser = useBrowserDevice();
+  const now = useNow(fixedNow);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -140,7 +176,12 @@ export function AccessCard({
   return (
     <>
       <section className={styles.panel} aria-label="Срок доступа">
-        <Status access={access} family={family ?? browser?.family ?? 'iphone'} />
+        <Status
+          access={access}
+          family={family ?? browser?.family ?? 'iphone'}
+          now={now}
+          timeZone={timeZone}
+        />
       </section>
       {access.hasPassword === false ? (
         <section className={styles.panel} aria-label="Пароль">

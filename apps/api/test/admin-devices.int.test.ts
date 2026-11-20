@@ -387,6 +387,31 @@ describe('access', () => {
   });
 });
 
+describe('buyer waiting status', () => {
+  it('GET /access tells since when a new device waits, and drops it once ready', async () => {
+    const assignedAt = new Date(Date.now() - 3 * 3600_000);
+    const { user, device } = await boundDevice({ assignedAt });
+    const buyer = as(await cookieFor(user.id, 'user'));
+    const before = (await buyer.get('/access')).body.state.device;
+    expect(before.ready).toBe(false);
+    expect(before.waitingSince).toBe(assignedAt.toISOString());
+    await admin().post(`/admin/devices/${device.id}/certificate`, upload(makeKit()));
+    const after = (await buyer.get('/access')).body.state.device;
+    expect(after.ready).toBe(true);
+    expect(after.waitingSince).toBeUndefined();
+  });
+
+  it('after the files are deleted the wait counts from that moment', async () => {
+    const { user, device } = await boundDevice({ assignedAt: new Date(Date.now() - 5 * DAY) });
+    await admin().post(`/admin/devices/${device.id}/certificate`, upload(makeKit()));
+    const deletedAt = Date.now();
+    await admin().del(`/admin/devices/${device.id}/certificate`);
+    const state = (await as(await cookieFor(user.id, 'user')).get('/access')).body.state;
+    expect(state.device.updating).toBe(true);
+    expect(new Date(state.device.waitingSince).getTime()).toBeGreaterThanOrEqual(deletedAt - 1000);
+  });
+});
+
 describe('owner notification', () => {
   it('owner gets a mail about a new device when ADMIN_NOTIFY_EMAIL is set', async () => {
     const { email, device } = await boundDevice();
@@ -397,5 +422,12 @@ describe('owner notification', () => {
     expect(last?.subject).toBe('Новый iPhone ждёт сертификата');
     expect(last?.text).toContain(email);
     expect(last?.text).not.toContain(TEST_UDID);
+  });
+
+  it('the buyer gets «iPhone подключён, готовим его» at the first bind', async () => {
+    const { email, device } = await boundDevice();
+    await app.get(DeviceWaitingNotifier).deviceBound(device.id);
+    const [mail] = await waitForMail(email);
+    expect(mail?.subject).toBe('iPhone подключён, готовим его');
   });
 });

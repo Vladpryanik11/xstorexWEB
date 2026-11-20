@@ -67,6 +67,7 @@ export const accessStateSchema: z.ZodType<AccessState, unknown> = z.discriminate
         ready: z.boolean(),
         needsHelp: z.boolean(),
         updating: z.boolean().optional(),
+        waitingSince: isoDate.optional(),
       })
       .nullable(),
   }),

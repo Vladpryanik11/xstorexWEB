@@ -36,6 +36,67 @@ const none: AccessResponse = {
   hasPassword: true,
 };
 
+const SINCE = new Date('2026-11-20T10:40:00Z');
+const hoursAfter = (h: number) => new Date(SINCE.getTime() + h * 3600_000);
+const waiting = (updating = false) => {
+  const access = withDevice({ ready: false, needsHelp: false });
+  if (access.state.kind === 'active' && access.state.device) {
+    access.state.device.waitingSince = SINCE;
+    access.state.device.updating = updating;
+  }
+  return access;
+};
+const TZ = 'Europe/Moscow';
+
+describe('AccessCard waiting', () => {
+  it('first hours: «Готовим ваш iPhone», ready-by time and the steps', () => {
+    render(<AccessCard access={waiting()} now={hoursAfter(6)} timeZone={TZ} />);
+    expect(screen.getByRole('heading', { name: 'Готовим ваш iPhone' })).toBeVisible();
+    expect(
+      screen.getByText('Обычно до 24 часов. Будет готов до 21 ноября, 13:40.'),
+    ).toBeInTheDocument();
+    const steps = screen.getByRole('list', { name: 'Шаги' });
+    expect(steps).toHaveTextContent('Оплачено');
+    expect(steps).toHaveTextContent('iPhone подключён');
+    expect(steps).toHaveTextContent('Готовим iPhone');
+    expect(steps).toHaveTextContent('Можно ставить');
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25');
+    expect(screen.getByText('iPhone 15 Pro')).toBeInTheDocument();
+    expect(screen.queryByText(/Готовим, обычно до 24 часов/)).toBeNull();
+  });
+
+  it('after 20 hours: «Почти готово» and the hours left', () => {
+    render(<AccessCard access={waiting()} now={hoursAfter(21.5)} timeZone={TZ} />);
+    expect(screen.getByRole('heading', { name: 'Почти готово' })).toBeVisible();
+    expect(
+      screen.getByText('Осталось около 3 ч. Будет готов до 21 ноября, 13:40.'),
+    ).toBeInTheDocument();
+  });
+
+  it('after 24 hours: «Готовим чуть дольше обычного» and support, no time', () => {
+    render(<AccessCard access={waiting()} now={hoursAfter(25)} timeZone={TZ} />);
+    expect(screen.getByRole('heading', { name: 'Готовим чуть дольше обычного' })).toBeVisible();
+    expect(screen.getByText('Мы уже знаем и занимаемся.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Написать в поддержку' })).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByText(/Будет готов до/)).toBeNull();
+  });
+
+  it('files ended: «Обновляем доступ» as the step and the heading', () => {
+    render(<AccessCard access={waiting(true)} now={hoursAfter(2)} timeZone={TZ} />);
+    expect(screen.getByRole('heading', { name: 'Обновляем доступ' })).toBeVisible();
+    expect(screen.getByRole('list', { name: 'Шаги' })).toHaveTextContent('Обновляем доступ');
+  });
+
+  it('ready: every step done, no waiting block', () => {
+    render(
+      <AccessCard access={withDevice({ ready: true, needsHelp: false })} now={hoursAfter(30)} />,
+    );
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Шаги' })).toBeNull();
+  });
+});
+
 describe('AccessCard', () => {
   it('active access: the date, the device line and «Продлить»', () => {
     render(<AccessCard access={active()} />);

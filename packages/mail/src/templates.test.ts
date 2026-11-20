@@ -59,6 +59,22 @@ describe('device_ready', () => {
   });
 });
 
+describe('device_preparing', () => {
+  it('says the device is connected and being prepared, up to 24 hours', () => {
+    const mail = renderMail('device_preparing', { family: 'iphone' }, SITE);
+    expect(mail.subject).toBe('iPhone подключён, готовим его');
+    expect(mail.text).toContain('Обычно это занимает до 24 часов');
+    expect(mail.text).toContain('Пришлём письмо, когда всё будет готово');
+    expect(mail.text).not.toMatch(/UDID|сертификат|профиль|поставщик/i);
+  });
+
+  it('says iPad for an iPad', () => {
+    expect(renderMail('device_preparing', { family: 'ipad' }, SITE).subject).toBe(
+      'iPad подключён, готовим его',
+    );
+  });
+});
+
 describe('reinstall_apps', () => {
   const mail = renderMail('reinstall_apps', { family: 'iphone' }, SITE);
 
