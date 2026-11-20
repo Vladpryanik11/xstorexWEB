@@ -268,6 +268,8 @@ describe('POST /enrollment/callback', () => {
       ready: false,
       needsHelp: false,
       updating: false,
+      // Spec §4.1: the wait counts from the moment the device was bound to the subscription.
+      waitingSince: sub.assignedAt?.toISOString(),
     });
   });
 

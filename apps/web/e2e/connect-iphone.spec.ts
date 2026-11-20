@@ -177,7 +177,9 @@ test('computer pays → «Откройте сайт на iPhone» → iPhone sig
     // «Мой доступ» shows the connected iPhone. The computer's guest session ended when the code
     // confirmed the email on the iPhone (Н1: claiming a guest purchase signs out its sessions).
     await mobile.goto('/access');
-    await expect(mobile.getByText(/ · Обновляем доступ, обычно до 24 часов$/)).toBeVisible();
+    // Spec §4.1: while waiting, the card shows the wait status with the ready-by time.
+    await expect(mobile.getByRole('heading', { name: 'Обновляем доступ' })).toBeVisible();
+    await expect(mobile.getByText(/^Обычно до 24 часов\. Будет готов до /)).toBeVisible();
   } finally {
     await ios.dispose();
     await phone.close();
