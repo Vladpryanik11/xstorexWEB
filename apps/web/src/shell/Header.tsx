@@ -52,7 +52,6 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
 
   return (
     <HeaderFrame className={overHero ? `${styles.header} ${styles.over}` : styles.header}>
-      {open ? <div className={styles.scrim} aria-hidden="true" /> : null}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: hover only keeps the mouse panel open; keyboard and touch use the «Каталог» button */}
       <div
         ref={pillRef}
@@ -96,6 +95,8 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
           ))}
         </div>
       </div>
+      {/* After the pill, so the pill stays the header's first box; z-index puts it behind. */}
+      {open ? <div className={styles.scrim} aria-hidden="true" /> : null}
     </HeaderFrame>
   );
 }

@@ -139,7 +139,10 @@ test('«Каталог» panel opens under the pill on hover and closes on Escap
   const button = nav.getByRole('button', { name: 'Каталог' });
   await expect(button).toHaveAttribute('aria-expanded', 'false');
 
-  await button.hover();
+  // A mouse opens it on hover; a touch screen (the iPhone project) by a tap.
+  const mouse = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
+  if (mouse) await button.hover();
+  else await button.click();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
   const panel = page.locator(`#${await button.getAttribute('aria-controls')}`);
   await expect(panel).toBeVisible();
@@ -160,9 +163,11 @@ test('«Каталог» panel opens under the pill on hover and closes on Escap
   expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   expect(await noHorizontalScroll(page)).toBe(true);
 
-  // Moving over the gap into the panel keeps it open.
-  await panel.getByRole('link', { name: /Популярные/ }).hover();
-  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  if (mouse) {
+    // Moving over the gap into the panel keeps it open.
+    await panel.getByRole('link', { name: /Популярные/ }).hover();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+  }
 
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
