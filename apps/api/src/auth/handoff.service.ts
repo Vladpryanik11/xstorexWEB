@@ -23,16 +23,34 @@ export class HandoffService {
 
   async issue(userId: string): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + HANDOFF_TTL_MS);
-    await this.prisma.client.loginHandoff.create({
-      data: { tokenHash: hashToken(token), userId, expiresAt },
-    });
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + HANDOFF_TTL_MS);
+    // One live link per buyer: a renewed link voids the one before it.
+    await this.prisma.client.$transaction([
+      this.prisma.client.loginHandoff.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: now },
+      }),
+      this.prisma.client.loginHandoff.create({
+        data: { tokenHash: hashToken(token), userId, expiresAt },
+      }),
+    ]);
     return { token, expiresAt };
   }
 
+  /** Logout and a new password end the buyer's unspent links. */
+  async voidUnspent(userId: string): Promise<void> {
+    await this.prisma.client.loginHandoff.updateMany({
+      where: { userId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+  }
+
   /**
-   * A new session of the link's buyer, or null when this browser is already signed in as that
-   * buyer (a reload where the link was made): then the link is not spent.
+   * A new session of the link's buyer, or null when this browser already has a buyer session:
+   * the same buyer (a reload where the link was made) or another one, which a link never
+   * replaces (someone else's link must not swap the account this browser connects a device to).
+   * Then the link is not spent.
    */
   async redeem(
     token: string,
@@ -46,7 +64,7 @@ export class HandoffService {
       select: { userId: true, expiresAt: true, usedAt: true },
     });
     if (!handoff || handoff.usedAt || handoff.expiresAt <= now) throw invalid();
-    if (handoff.userId === currentUserId) return null;
+    if (currentUserId !== null) return null;
     const user = await this.prisma.client.user.findUnique({
       where: { id: handoff.userId },
       select: { role: true, blockedAt: true },

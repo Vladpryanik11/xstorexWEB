@@ -7,6 +7,7 @@ import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
 import { PrismaService } from '../infra/prisma.service.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { HandoffService } from './handoff.service.js';
 import { RequireAuth } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
 import { clearedSessionCookie, sessionCookie } from './session-cookie.js';
@@ -22,6 +23,7 @@ export class AuthController {
     private readonly sessions: SessionService,
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly handoffs: HandoffService,
   ) {
     this.secureCookie = config.siteUrl.startsWith('https:');
   }
@@ -47,6 +49,8 @@ export class AuthController {
     const auth = req.auth;
     if (auth) {
       await this.sessions.revoke(auth.sessionId);
+      // A sign-in link made in this browser ends with it (spec v2 §4 step 2a).
+      if (auth.kind === 'user') await this.handoffs.voidUnspent(auth.userId);
       await this.audit.record({
         actorId: auth.userId,
         action: 'auth.logout',

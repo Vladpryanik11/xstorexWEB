@@ -127,13 +127,39 @@ it('a blocked buyer cannot use a link issued before the block', async () => {
   expect((await redeem(agentOf(), token)).body.code).toBe('HANDOFF_INVALID');
 });
 
-it('redeeming replaces the other buyer session of that browser', async () => {
+it('a browser signed in as another buyer keeps its session; the link stays unspent', async () => {
   const one = await guestBuyer();
   const two = await guestBuyer();
   const { token } = (await issue(one.agent)).body;
   expect((await redeem(two.agent, token)).status).toBe(204);
-  expect((await two.agent.get('/api/v1/auth/me')).body.user.id).toBe(one.userId);
-  expect(await db.session.count({ where: { userId: two.userId } })).toBe(0);
+  expect((await two.agent.get('/api/v1/auth/me')).body.user.id).toBe(two.userId);
+  expect((await db.loginHandoff.findFirstOrThrow()).usedAt).toBeNull();
+});
+
+it('a new link voids the earlier unspent one', async () => {
+  const { agent } = await guestBuyer();
+  const first = (await issue(agent)).body.token;
+  const second = (await issue(agent)).body.token;
+  expect((await redeem(agentOf(), first)).body.code).toBe('HANDOFF_INVALID');
+  expect((await redeem(agentOf(), second)).status).toBe(204);
+});
+
+it('a new password voids unspent links', async () => {
+  const { agent } = await guestBuyer();
+  const { token } = (await issue(agent)).body;
+  const set = await agent
+    .post('/api/v1/auth/password')
+    .set('Origin', SITE)
+    .send({ password: 'new-password-1' });
+  expect(set.status).toBe(204);
+  expect((await redeem(agentOf(), token)).body.code).toBe('HANDOFF_INVALID');
+});
+
+it('logging out voids unspent links', async () => {
+  const { agent } = await guestBuyer();
+  const { token } = (await issue(agent)).body;
+  expect((await agent.post('/api/v1/auth/logout').set('Origin', SITE).send({})).status).toBe(204);
+  expect((await redeem(agentOf(), token)).body.code).toBe('HANDOFF_INVALID');
 });
 
 it('only a buyer gets a link, at most ten in ten minutes', async () => {

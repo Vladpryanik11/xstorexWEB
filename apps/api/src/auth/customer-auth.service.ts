@@ -112,8 +112,8 @@ export class CustomerAuthService {
   }
 
   /**
-   * Sets the buyer's password (8–128 characters) and signs out their other sessions. Recovery is
-   * a code login followed by this.
+   * Sets the buyer's password (8–128 characters), signs out their other sessions and voids their
+   * unspent sign-in links. Recovery is a code login followed by this.
    */
   async setPassword(userId: string, password: string, currentSessionId: string): Promise<void> {
     if (!isAcceptablePassword(password)) throw new DomainError(ErrorCode.WEAK_PASSWORD, 400);
@@ -122,6 +122,11 @@ export class CustomerAuthService {
       this.prisma.client.user.update({ where: { id: userId }, data: { passwordHash } }),
       this.prisma.client.session.deleteMany({
         where: { userId, id: { not: currentSessionId } },
+      }),
+      // Spec v2 §4 step 2a: an unspent sign-in link is a way in like a session.
+      this.prisma.client.loginHandoff.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
       }),
     ]);
   }

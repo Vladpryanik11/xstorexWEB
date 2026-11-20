@@ -37,13 +37,14 @@ describe('OpenInSafari', () => {
     ).toBeVisible();
     expect(screen.getByRole('link', { name: 'Открыть в Safari' })).toHaveAttribute(
       'href',
-      `x-safari-${ORIGIN}/get/iphone?h=${TOKEN}`,
+      `x-safari-${ORIGIN}/get/iphone/continue#h=${TOKEN}`,
     );
     expect(
       screen.getByText('Не открылось? Нажмите ⋯ вверху справа → «Открыть в Safari».'),
     ).toBeVisible();
     // «⋯ → Открыть в Safari» opens the address of this page: the sign-in goes with it.
-    expect(window.location.search).toBe(`?h=${TOKEN}`);
+    expect(window.location.pathname).toBe('/get/iphone/continue');
+    expect(window.location.hash).toBe(`#h=${TOKEN}`);
   });
 
   it('Chrome: copy the link, then a note where to paste it', async () => {
@@ -63,7 +64,7 @@ describe('OpenInSafari', () => {
     ).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Скопировать ссылку' }));
     await settle();
-    expect(writeText).toHaveBeenCalledWith(`${ORIGIN}/get/iphone?h=${TOKEN}`);
+    expect(writeText).toHaveBeenCalledWith(`${ORIGIN}/get/iphone/continue#h=${TOKEN}`);
     expect(
       screen.getByText('Ссылка скопирована. Откройте Safari и вставьте её в адресную строку.'),
     ).toBeVisible();
@@ -80,7 +81,7 @@ describe('OpenInSafari', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Скопировать ссылку' }));
     await settle();
     expect(screen.getByRole('textbox', { name: 'Ссылка' })).toHaveValue(
-      `${ORIGIN}/get/iphone?h=${TOKEN}`,
+      `${ORIGIN}/get/iphone/continue#h=${TOKEN}`,
     );
   });
 
@@ -95,9 +96,9 @@ describe('OpenInSafari', () => {
     expect(issue).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('link', { name: 'Открыть в Safari' })).toHaveAttribute(
       'href',
-      `x-safari-${ORIGIN}/get/iphone?h=${'B'.repeat(43)}`,
+      `x-safari-${ORIGIN}/get/iphone/continue#h=${'B'.repeat(43)}`,
     );
-    expect(window.location.search).toBe(`?h=${'B'.repeat(43)}`);
+    expect(window.location.hash).toBe(`#h=${'B'.repeat(43)}`);
   });
 
   it('without a link the button still opens Safari, where the buyer signs in by code', async () => {
@@ -111,6 +112,6 @@ describe('OpenInSafari', () => {
       'href',
       `x-safari-${ORIGIN}/get/iphone`,
     );
-    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('');
   });
 });

@@ -34,22 +34,24 @@ test('Chrome on iPhone → «Осталось открыть в Safari» → Saf
     ).toBeVisible();
 
     // The address of the page carries the link, for «⋯ → Открыть в Safari».
-    await expect(page).toHaveURL(/\/get\/iphone\?h=[A-Za-z0-9_-]{43}$/);
+    await expect(page).toHaveURL(/\/get\/iphone\/continue#h=[A-Za-z0-9_-]{43}$/);
     const href = await page.getByRole('link', { name: 'Открыть в Safari' }).getAttribute('href');
-    expect(href).toMatch(/^x-safari-http:\/\/localhost:\d+\/get\/iphone\?h=[A-Za-z0-9_-]{43}$/);
+    expect(href).toMatch(
+      /^x-safari-http:\/\/localhost:\d+\/get\/iphone\/continue#h=[A-Za-z0-9_-]{43}$/,
+    );
     const link = new URL((href ?? '').replace(/^x-safari-/, ''));
-    expect(link.search).toBe(new URL(page.url()).search);
+    expect(link.hash).toBe(new URL(page.url()).hash);
 
     // Safari: signed in by the link, on the usual step, the token gone from the address.
     const phone = await safari.newPage();
-    await phone.goto(`${link.pathname}${link.search}`);
+    await phone.goto(`${link.pathname}${link.hash}`);
     await expect(phone).toHaveURL(/\/get\/iphone$/);
     await expect(phone.getByRole('heading', { level: 1, name: 'Подключить iPhone' })).toBeVisible();
     await expect(phone.getByText('Работает только в Safari')).toBeVisible();
 
     // A second browser with the same link: sign in by code instead.
     const other = await late.newPage();
-    await other.goto(`${link.pathname}${link.search}`);
+    await other.goto(`${link.pathname}${link.hash}`);
     await expect(other).toHaveURL(/\/signin\?next=(%2F|\/)get(%2F|\/)iphone&handoff=expired$/);
     await expect(
       other.getByText('Ссылка для входа устарела. Войдите по коду из письма'),

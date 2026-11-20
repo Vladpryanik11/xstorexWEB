@@ -1,5 +1,10 @@
 'use client';
-import { ApiClientError, type HandoffRedeem as Body, ErrorCode } from '@xstore/shared';
+import {
+  ApiClientError,
+  type HandoffRedeem as Body,
+  ErrorCode,
+  HANDOFF_PARAM,
+} from '@xstore/shared';
 import { useEffect, useRef } from 'react';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
@@ -7,7 +12,8 @@ import styles from './checkout.module.css';
 export const HANDOFF_EXPIRED_SIGNIN = '/signin?next=/get/iphone&handoff=expired';
 
 type Props = {
-  token: string;
+  /** Read from the fragment (`#h=…`) when left out. */
+  token?: string;
   redeem?: (body: Body) => Promise<void>;
   /** Replaces the page, so the token leaves the address and the history. */
   navigate?: (url: string) => void;
@@ -16,9 +22,15 @@ type Props = {
 const defaultRedeem = (body: Body) => browserApi().redeemHandoff(body);
 const defaultNavigate = (url: string) => window.location.replace(url);
 
+/** `#h=<token>`; a token never travels in the query, so it stays out of server logs. */
+export function tokenFromHash(hash: string): string | null {
+  const value = new URLSearchParams(hash.replace(/^#/, '')).get(HANDOFF_PARAM);
+  return value && /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null;
+}
+
 /**
- * Spec v2 §4 step 2a: `/get/iphone?h=<token>` signs this browser in by the one-time link (a POST
- * from here, so link previews never spend it) and opens the step without the token.
+ * Spec v2 §4 step 2a: `/get/iphone/continue#h=<token>` signs this browser in by the one-time link
+ * (a POST from here, so link previews never spend it) and opens the step without the token.
  */
 export function HandoffRedeem({
   token,
@@ -30,7 +42,12 @@ export function HandoffRedeem({
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    redeem({ token })
+    const value = token ?? tokenFromHash(window.location.hash);
+    if (!value) {
+      navigate('/get/iphone');
+      return;
+    }
+    redeem({ token: value })
       .then(() => navigate('/get/iphone'))
       .catch((err: unknown) => {
         const expired = err instanceof ApiClientError && err.code === ErrorCode.HANDOFF_INVALID;

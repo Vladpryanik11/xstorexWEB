@@ -8,10 +8,18 @@ import own from './connect.module.css';
 import { familyName } from './connect-step';
 import { type BrowserApp, safariHint, safariOpenUrl } from './in-app-browser';
 
-/** The page the link opens; the wizard step 2. */
-const PATH = '/get/iphone';
-/** A new link is asked for this long before the old one ends. */
+/**
+ * The page the link opens. The token rides in the fragment, which browsers never send to the
+ * server, so it stays out of server and proxy logs.
+ */
+export const HANDOFF_PATH = '/get/iphone/continue';
+/** A new link is asked for this long before the old one ends, while the page is in view. */
 const RENEW_BEFORE_MS = 30_000;
+/** Renewals stop after about an hour; the copied link then falls back to sign-in by code. */
+const MAX_RENEWALS = 5;
+
+const linkPath = (token: string | null) =>
+  token ? `${HANDOFF_PATH}#${HANDOFF_PARAM}=${token}` : '/get/iphone';
 
 export type OpenInSafariProps = {
   app: Exclude<BrowserApp, 'safari'>;
@@ -26,7 +34,7 @@ const defaultIssue = () => browserApi().issueHandoff();
 /**
  * Spec v2 §4 step 2a: the site is open outside Safari, where the iPhone cannot be connected.
  * The one-time sign-in link goes into the button, into the copied link and into the address of
- * this page, so «⋯ → Открыть в Safari» carries the sign-in too.
+ * this page (`/get/iphone/continue#h=…`), so «⋯ → Открыть в Safari» carries the sign-in too.
  */
 export function OpenInSafari({ app, family, origin, issue = defaultIssue }: OpenInSafariProps) {
   const [token, setToken] = useState<string | null>(null);
@@ -35,32 +43,42 @@ export function OpenInSafari({ app, family, origin, issue = defaultIssue }: Open
 
   useEffect(() => {
     let stopped = false;
+    let asked = 0;
+    let due = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const ask = async () => {
+      due = false;
+      asked += 1;
       try {
         const link = await issue();
         if (stopped) return;
         setToken(link.token);
-        window.history.replaceState(
-          window.history.state,
-          '',
-          `${PATH}?${HANDOFF_PARAM}=${link.token}`,
-        );
+        // «⋯ → Открыть в Safari» opens the address of this page: the sign-in goes with it.
+        window.history.replaceState(window.history.state, '', linkPath(link.token));
+        if (asked > MAX_RENEWALS) return;
         const renewIn = Math.max(0, link.expiresAt.getTime() - Date.now() - RENEW_BEFORE_MS);
-        timer = setTimeout(ask, renewIn);
+        timer = setTimeout(() => {
+          if (document.visibilityState === 'hidden') due = true;
+          else void ask();
+        }, renewIn);
       } catch {
         // No link: Safari opens the page anyway and asks to sign in by code.
       }
     };
+    const onVisible = () => {
+      if (due && document.visibilityState === 'visible') void ask();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     void ask();
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [issue]);
 
   const base = origin ?? (typeof window === 'undefined' ? '' : window.location.origin);
-  const url = token ? `${base}${PATH}?${HANDOFF_PARAM}=${token}` : `${base}${PATH}`;
+  const url = `${base}${linkPath(token)}`;
 
   async function copy() {
     try {
