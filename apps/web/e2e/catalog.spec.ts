@@ -211,7 +211,7 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   await page.goto('/');
   const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
-  await page.locator('#home-find').scrollIntoViewIfNeeded();
+  await page.getByRole('heading', { name: 'Популярное' }).scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(1);
@@ -237,4 +237,11 @@ test('on a phone the offer points turn by themselves as a mini banner', async ({
   await expect
     .poll(() => list.evaluate((el) => el.scrollLeft), { timeout: 3000 })
     .toBeGreaterThan(0);
+});
+
+test('the benefits panel is for wide screens only', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const panel = page.getByRole('region', { name: 'Преимущества Xstorex' });
+  if (isMobile) await expect(panel).toBeHidden();
+  else await expect(panel.getByRole('listitem')).toHaveCount(4);
 });

@@ -124,3 +124,10 @@
     margin-top: 0.25rem;
   }
 }
+
+/* No benefits panel on phones (owner 2026-11-20): the hero mini banner already says it. */
+@media (max-width: 47.99em) {
+  .panel {
+    display: none;
+  }
+}
