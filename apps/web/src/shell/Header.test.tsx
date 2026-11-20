@@ -7,7 +7,8 @@ const nav = vi.hoisted(() => ({ pathname: '/faq/abc' }));
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }));
 
 const getAccess = vi.hoisted(() => vi.fn());
-vi.mock('../checkout/browser-api', () => ({ browserApi: () => ({ getAccess }) }));
+const section = vi.hoisted(() => vi.fn());
+vi.mock('../checkout/browser-api', () => ({ browserApi: () => ({ getAccess, section }) }));
 
 const SUB = { signedIn: true, hasAccess: true };
 const GUEST = { signedIn: false, hasAccess: false };
@@ -26,12 +27,23 @@ beforeEach(() => {
   nav.pathname = '/faq/abc';
   getAccess.mockReset();
   getAccess.mockResolvedValue({ state: { kind: 'none' } });
+  section.mockReset();
+  section.mockImplementation(async (slug: string) => ({
+    items: [1, 2, 3, 4].map((n) => ({
+      slug: `${slug}-${n}`,
+      name: `${slug} ${n}`,
+      iconUrl: `https://cdn.test/${slug}-${n}.png`,
+    })),
+  }));
   viewport.wide = false;
   viewport.listeners.clear();
   vi.stubGlobal('matchMedia', (query: string) => ({
     media: query,
     get matches() {
-      return query === '(min-width: 48em)' && viewport.wide;
+      return (
+        (query === '(min-width: 48em)' || query === '(hover: hover) and (pointer: fine)') &&
+        viewport.wide
+      );
     },
     addEventListener: (_type: 'change', listener: () => void) => viewport.listeners.add(listener),
     removeEventListener: (_type: 'change', listener: () => void) =>
@@ -277,5 +289,142 @@ describe('MobileMenu', () => {
     fireEvent.click(burger);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(burger).toHaveFocus();
+  });
+});
+
+describe('CatalogMenu', () => {
+  const button = () => screen.getByRole('button', { name: 'Каталог' });
+  const panel = () => document.getElementById(button().getAttribute('aria-controls') ?? '');
+
+  it('«Каталог» leads the menu row, before the help pages', () => {
+    render(<Header nav={GUEST} />);
+    const row = screen.getByRole('navigation', { name: 'Основное меню' });
+    const names = within(row)
+      .getAllByRole('listitem')
+      .map((li) => li.firstElementChild?.textContent);
+    expect(names.slice(0, 4)).toEqual(['Каталог', 'Блог', 'Вопросы', 'Поддержка']);
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+    expect(panel()).toBeNull();
+  });
+
+  it('a click opens the panel: three sections, the whole catalog, search and pricing', () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.click(button());
+    expect(button()).toHaveAttribute('aria-expanded', 'true');
+    const box = panel() as HTMLElement;
+    expect(box).not.toBeNull();
+    const links = within(box)
+      .getAllByRole('link')
+      .map((a) => [
+        a.querySelector('[data-title]')?.textContent ?? a.textContent,
+        a.getAttribute('href'),
+      ]);
+    expect(links).toEqual([
+      ['Удалённые из App Store', '/removed'],
+      ['Premium доступы', '/premium'],
+      ['Популярные', '/popular'],
+      ['Весь каталог', '/catalog'],
+      ['Поиск', '/search'],
+      ['Смотреть тарифы', '/pricing'],
+    ]);
+    fireEvent.click(button());
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('a subscriber is led to «Мой доступ» from the blue card', () => {
+    render(<Header nav={SUB} />);
+    fireEvent.click(button());
+    expect(
+      within(panel() as HTMLElement).getByRole('link', { name: 'Мой доступ' }),
+    ).toHaveAttribute('href', '/access');
+  });
+
+  it('Escape closes the panel and returns focus to «Каталог»', () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.click(button());
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+    expect(panel()).toBeNull();
+    expect(button()).toHaveFocus();
+  });
+
+  it('a click outside the panel closes it', () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.click(button());
+    fireEvent.pointerDown(document.body);
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('with a mouse it opens on hover and closes shortly after the pointer leaves', () => {
+    vi.useFakeTimers();
+    try {
+      viewport.wide = true;
+      render(<Header nav={GUEST} />);
+      fireEvent.mouseEnter(button());
+      expect(button()).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.mouseLeave(
+        screen.getByRole('navigation', { name: 'Основное меню' }).parentElement as HTMLElement,
+      );
+      expect(button()).toHaveAttribute('aria-expanded', 'true');
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(button()).toHaveAttribute('aria-expanded', 'false');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('hovering another menu item closes the panel', () => {
+    viewport.wide = true;
+    render(<Header nav={GUEST} />);
+    fireEvent.mouseEnter(button());
+    fireEvent.mouseEnter(screen.getByRole('link', { name: 'Блог' }));
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('without a mouse hover does not open it, a tap does', () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.mouseEnter(button());
+    expect(button()).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button());
+    expect(button()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('shows three app icons per section, loaded once', async () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.click(button());
+    const removed = within(panel() as HTMLElement).getByRole('link', { name: /Удалённые/ });
+    await waitFor(() => expect(removed.querySelectorAll('img')).toHaveLength(3));
+    expect(removed.querySelector('img')).toHaveAttribute('src', 'https://cdn.test/removed-1.png');
+    fireEvent.click(button());
+    fireEvent.click(button());
+    expect(section).toHaveBeenCalledTimes(3);
+    expect(section.mock.calls.map((c) => c[0])).toEqual(['removed', 'premium', 'popular']);
+  });
+
+  it('keeps the line icon when the section cannot be loaded', async () => {
+    section.mockRejectedValue(new Error('offline'));
+    render(<Header nav={GUEST} />);
+    fireEvent.click(button());
+    await waitFor(() => expect(section).toHaveBeenCalledTimes(3));
+    const removed = within(panel() as HTMLElement).getByRole('link', { name: /Удалённые/ });
+    expect(removed.querySelector('img')).toBeNull();
+    expect(removed.querySelector('svg')).not.toBeNull();
+  });
+
+  it('marks «Каталог» current on the catalog, its sections and search', () => {
+    for (const path of ['/catalog', '/removed', '/search']) {
+      const { unmount } = render(<Header nav={GUEST} forcedPath={path} />);
+      expect(button()).toHaveAttribute('data-current', 'true');
+      expect(
+        screen
+          .getByRole('navigation', { name: 'Основное меню' })
+          .querySelectorAll('[data-nav-highlight]'),
+      ).toHaveLength(1);
+      unmount();
+    }
+    render(<Header nav={GUEST} forcedPath="/faq" />);
+    expect(button()).not.toHaveAttribute('data-current');
   });
 });

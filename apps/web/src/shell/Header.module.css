@@ -117,6 +117,50 @@
   position: relative;
 }
 
+/* «Каталог»: a button styled as a menu link, with a caret that turns when the panel is open. */
+.catalog {
+  gap: 0.25rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.catalog[data-current="true"],
+.catalog[aria-expanded="true"] {
+  color: var(--x-quiet-fg);
+}
+
+.caret {
+  position: relative;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-end: -0.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.6;
+  transition: transform 0.24s var(--x-ease);
+}
+
+.catalog[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
+}
+
+/* The page dims and blurs under the open «Каталог» panel. */
+.scrim {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background: rgba(242, 248, 253, 0.55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+  animation: backdrop-in 0.24s var(--x-ease) both;
+}
+
 .link:focus-visible,
 .entry:focus-visible,
 .quiet:focus-visible,
@@ -393,7 +437,10 @@
     padding-inline: 0.5rem 0.75rem;
   }
 
-  .menu {
+  /* The «Каталог» panel is placed against the pill, not the menu row. */
+  .menu,
+  .catalogItem {
+    position: static;
     order: 0;
   }
 
@@ -433,8 +480,13 @@
   .entry,
   .burger,
   .bars span,
-  .link {
+  .link,
+  .caret {
     transition: none;
+  }
+
+  .scrim {
+    animation: none;
   }
 
   .entry:active,

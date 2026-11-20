@@ -131,3 +131,51 @@ test('iPhone status bar matches the ice page', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
 });
+
+test('«Каталог» panel opens under the pill on hover and closes on Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/dev/ui?path=/faq');
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  const button = nav.getByRole('button', { name: 'Каталог' });
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+
+  await button.hover();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  const panel = page.locator(`#${await button.getAttribute('aria-controls')}`);
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole('link', { name: /Удалённые из App Store/ })).toHaveAttribute(
+    'href',
+    '/removed',
+  );
+  await expect(panel.getByRole('link', { name: 'Смотреть тарифы' })).toHaveAttribute(
+    'href',
+    '/pricing',
+  );
+  const pillBox = await pill(page).boundingBox();
+  const box = await panel.boundingBox();
+  if (!pillBox || !box) throw new Error('no box');
+  expect(box.y).toBeGreaterThan(pillBox.y + pillBox.height);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(1280);
+  expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  // Moving over the gap into the panel keeps it open.
+  await panel.getByRole('link', { name: /Популярные/ }).hover();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.click(5, 700);
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('«Каталог» is not in the phone pill', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/dev/ui?path=/faq');
+  await expect(page.getByRole('button', { name: 'Каталог' })).toBeHidden();
+});
