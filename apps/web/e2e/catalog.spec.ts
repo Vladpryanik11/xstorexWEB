@@ -212,3 +212,23 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(1);
 });
+
+test('on a phone the offer points turn by themselves as a mini banner', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'phone only');
+  await page.goto('/');
+  const list = page.getByRole('list', { name: 'Что входит в подписку' });
+  await expect(list.getByRole('listitem')).toHaveCount(3);
+  const on = page.locator('[data-home-hero] [data-dot][data-on="true"]');
+  await expect(on).toHaveCount(1);
+  const first = await on.evaluate((d) => [...(d.parentElement?.children ?? [])].indexOf(d));
+  expect(first).toBe(0);
+  await expect
+    .poll(() => on.evaluate((d) => [...(d.parentElement?.children ?? [])].indexOf(d)), { timeout: 6000 })
+    .toBe(1);
+  await expect
+    .poll(() => list.evaluate((el) => el.scrollLeft), { timeout: 3000 })
+    .toBeGreaterThan(0);
+});

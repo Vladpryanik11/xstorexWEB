@@ -1,0 +1,39 @@
+.slider {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Dots only on phones, where the list is a mini banner. */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-200);
+  transition:
+    width 0.3s var(--x-ease),
+    background 0.3s ease;
+}
+
+.dot[data-on="true"] {
+  width: 1.25rem;
+  background: var(--x-blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    transition: none;
+  }
+}
+
+@media (min-width: 48em) {
+  .dots {
+    display: none;
+  }
+}

@@ -1,7 +1,7 @@
 import type { CollectionView } from '@xstore/shared';
-import { useId } from 'react';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
+import { OfferSlider } from './OfferSlider';
 
 const BENEFITS = [
   {
@@ -26,7 +26,6 @@ const AUDIENCE = '10 000+';
 
 /** Home hero that sells the subscription (spec v2 §3.1, owner 2026-11-20). */
 export function HomeHero({ collections }: { collections: CollectionView[] }) {
-  const listId = useId();
   return (
     <section className={styles.hero} data-home-hero>
       <div className={styles.inner}>
@@ -35,10 +34,7 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
             <span className={styles.accent}>200+</span> приложений{' '}
             <span className={styles.wide}>с&nbsp;Premium‑доступом</span> на&nbsp;вашем&nbsp;iPhone
           </h1>
-          <span id={listId} hidden>
-            Что входит в подписку
-          </span>
-          <ul className={styles.benefits} aria-labelledby={listId}>
+          <OfferSlider label="Что входит в подписку" className={styles.benefits}>
             {BENEFITS.map((b) => (
               <li key={b.title} className={styles.benefit}>
                 <span className={styles.icon} aria-hidden="true">
@@ -52,7 +48,7 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
                 </span>
               </li>
             ))}
-          </ul>
+          </OfferSlider>
           <a className={styles.cta} href="/get" data-hero-cta>
             Подключить iPhone
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

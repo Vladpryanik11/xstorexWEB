@@ -261,26 +261,6 @@
 /* Phone and tablet (owner 2026-11-20): the offer reads as one object — the three benefits sit
    in a white card with hairlines, the button and audience line right under it, all in the
    first screen; the phone follows without the empty band around it. */
-@media (max-width: 47.99em) {
-  /* Phone headline: «200+ приложений на вашем iPhone» (owner 2026-11-20); Premium is the next line. */
-  .wide {
-    display: none;
-  }
-
-  .copy {
-    padding-inline: 0.75rem;
-  }
-
-  .title {
-    font: var(--x-type-h1);
-  }
-
-  .benefitTitle {
-    font: var(--x-type-body);
-    font-weight: 600;
-  }
-}
-
 @media (max-width: 63.99em) {
   .hero {
     padding: calc(var(--hero-under-pill) + 1.5rem) 0 1rem;
@@ -347,5 +327,86 @@
   .rings {
     width: 18rem;
     height: 18rem;
+  }
+}
+
+/* Phone (owner 2026-11-20: «больше воздуха, уменьши», «мини баннер под названием с листалкой»):
+   centred headline, the offer points turn as a mini banner with dots, a calmer button. */
+@media (max-width: 47.99em) {
+  .hero {
+    padding-top: calc(var(--hero-under-pill) + 2.25rem);
+  }
+
+  .copy {
+    align-items: center;
+    padding-inline: 0.5rem;
+    text-align: center;
+  }
+
+  /* «200+ приложений на вашем iPhone»: Premium is the second slide. */
+  .wide {
+    display: none;
+  }
+
+  .title {
+    font: var(--x-type-h1);
+  }
+
+  .benefits {
+    display: flex;
+    overflow-x: auto;
+    margin-top: 1.75rem;
+    padding: 0;
+    border-radius: var(--x-radius-card);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .benefits::-webkit-scrollbar {
+    display: none;
+  }
+
+  .benefit {
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    scroll-snap-align: center;
+    text-align: left;
+  }
+
+  .benefit + .benefit {
+    border-top: 0;
+  }
+
+  .benefitTitle {
+    font: var(--x-type-body);
+    font-weight: 600;
+  }
+
+  .cta {
+    min-height: 3.25rem;
+    margin-top: 1.75rem;
+    font: var(--x-type-body);
+    font-weight: 600;
+    letter-spacing: var(--x-track-body);
+  }
+
+  .audience {
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .avatars > span {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: -0.4375rem;
+  }
+
+  .audienceNum,
+  .audienceText {
+    font: var(--x-type-cap);
+    letter-spacing: var(--x-track-small);
   }
 }
