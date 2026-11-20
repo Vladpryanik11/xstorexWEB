@@ -226,7 +226,9 @@ test('on a phone the offer points turn by themselves as a mini banner', async ({
   const first = await on.evaluate((d) => [...(d.parentElement?.children ?? [])].indexOf(d));
   expect(first).toBe(0);
   await expect
-    .poll(() => on.evaluate((d) => [...(d.parentElement?.children ?? [])].indexOf(d)), { timeout: 6000 })
+    .poll(() => on.evaluate((d) => [...(d.parentElement?.children ?? [])].indexOf(d)), {
+      timeout: 6000,
+    })
     .toBe(1);
   await expect
     .poll(() => list.evaluate((el) => el.scrollLeft), { timeout: 3000 })
