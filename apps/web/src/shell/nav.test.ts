@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { isActive, menuCards, navFor, navItems, navStateFrom } from './nav';
+import {
+  catalogMenu,
+  isActive,
+  isCatalogPath,
+  menuCards,
+  navFor,
+  navItems,
+  navStateFrom,
+} from './nav';
 
 const GUEST = { signedIn: false, hasAccess: false };
 const SUBSCRIBER = { signedIn: true, hasAccess: true };
@@ -81,5 +89,62 @@ describe('isActive', () => {
     expect(isActive('/access/x', '/access')).toBe(true);
     expect(isActive('/access-old', '/access')).toBe(false);
     expect(isActive('/', '/access')).toBe(false);
+  });
+});
+
+describe('catalogMenu', () => {
+  it('sections with their apps first, then the whole catalog and search', () => {
+    const { items } = catalogMenu(GUEST);
+    expect(items.map((i) => [i.label, i.href, i.section])).toEqual([
+      ['Удалённые из App Store', '/removed', 'removed'],
+      ['Premium доступы', '/premium', 'premium'],
+      ['Популярные', '/popular', 'popular'],
+      ['Весь каталог', '/catalog', undefined],
+      ['Поиск', '/search', undefined],
+    ]);
+    for (const item of items) {
+      expect(item.lead.length).toBeGreaterThan(0);
+      expect(item.icon.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('the blue card leads a guest and a buyer without access to pricing', () => {
+    for (const state of [GUEST, SIGNED_IN_NO_ACCESS]) {
+      expect(catalogMenu(state).promo).toMatchObject({
+        href: '/pricing',
+        label: 'Смотреть тарифы',
+      });
+    }
+  });
+
+  it('the blue card leads a subscriber to «Мой доступ»', () => {
+    expect(catalogMenu(SUBSCRIBER).promo).toMatchObject({ href: '/access', label: 'Мой доступ' });
+  });
+
+  it('never says «аккаунт»', () => {
+    for (const state of [GUEST, SUBSCRIBER, SIGNED_IN_NO_ACCESS]) {
+      expect(JSON.stringify(catalogMenu(state)).toLowerCase()).not.toContain('аккаунт');
+    }
+  });
+});
+
+describe('isCatalogPath', () => {
+  it('catalog, its sections and search', () => {
+    for (const path of [
+      '/catalog',
+      '/catalog/games',
+      '/removed',
+      '/premium',
+      '/popular',
+      '/search',
+    ]) {
+      expect(isCatalogPath(path)).toBe(true);
+    }
+  });
+
+  it('not the help pages or the home page', () => {
+    for (const path of ['/', '/faq', '/blog', '/pricing', '/app/telegram', '/popularity']) {
+      expect(isCatalogPath(path)).toBe(false);
+    }
   });
 });

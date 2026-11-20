@@ -1,0 +1,209 @@
+/* Desktop «Каталог» panel — spec 2026-11-17-premium-ui-design.md §5 (owner 2026-11-20).
+   After Aceternity UI «Navbar Menu» (https://ui.aceternity.com/components/navbar-menu),
+   ported to CSS Modules and Xstore tokens. */
+
+.panel {
+  position: absolute;
+  top: calc(100% + 0.625rem);
+  left: 50%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: 0.625rem;
+  width: min(62rem, calc(100vw - 2 * var(--x-gutter)));
+  padding: 0.75rem;
+  border-radius: var(--x-radius-panel);
+  background: var(--x-white);
+  box-shadow:
+    0 28px 64px -32px rgba(26, 110, 234, 0.55),
+    var(--x-shadow);
+  color: var(--x-text);
+  text-align: start;
+  pointer-events: auto;
+  translate: -50% 0;
+  transform-origin: top center;
+  animation: panel-in 0.32s var(--x-ease) both;
+}
+
+/* Keeps the hover alive across the gap between the pill and the panel. */
+.panel::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 0.75rem;
+}
+
+.list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 4.25rem;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  border-radius: var(--x-radius-card);
+  color: var(--x-text);
+  text-decoration: none;
+  transition: background-color 0.16s;
+}
+
+.item:focus-visible,
+.promoLink:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.stack {
+  display: flex;
+  flex: none;
+  width: 5.25rem;
+}
+
+.app {
+  display: block;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-inline-start: -0.875rem;
+  border-radius: 22.5%;
+  object-fit: cover;
+  background: var(--x-sky-50);
+  box-shadow:
+    0 0 0 2px var(--x-white),
+    var(--x-shadow-sm);
+}
+
+.app:first-child {
+  margin-inline-start: 0;
+}
+
+.glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 22.5%;
+  background: var(--x-sky-50);
+  color: var(--x-blue);
+}
+
+.glyph svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.title {
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+}
+
+.lead {
+  color: var(--x-text-2);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
+}
+
+.promo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: var(--x-radius-card);
+  background: linear-gradient(160deg, var(--x-blue), var(--x-blue-deep));
+  color: var(--x-white);
+}
+
+.kicker {
+  font: var(--x-type-cap);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+}
+
+.promoTitle {
+  font: var(--x-type-h2);
+  letter-spacing: var(--x-track-head);
+}
+
+.promoLink {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 2.5rem;
+  margin-top: auto;
+  padding: 0 1.125rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-white);
+  color: var(--x-blue);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+  text-decoration: none;
+  transition: transform 0.16s var(--x-ease);
+}
+
+.promoLink:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: var(--x-ice);
+  }
+
+  .promoLink:hover {
+    background: var(--x-sky-50);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+
+  .item,
+  .promoLink {
+    transition: none;
+  }
+
+  .promoLink:active {
+    transform: none;
+  }
+}
+
+/* Tablet widths: a narrower blue card leaves room for the section names. */
+@media (max-width: 63.9375em) {
+  .panel {
+    grid-template-columns: minmax(0, 1fr) 13rem;
+  }
+}

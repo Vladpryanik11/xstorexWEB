@@ -42,7 +42,8 @@ test('desktop pill hugs its links and stays centred, not full width', async ({ p
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const box = await pill(page).boundingBox();
     if (!box) throw new Error('no pill');
-    expect(box.width).toBeLessThanOrEqual(720);
+    // Word «Xstorex» + «Каталог» + help pages + end slot (owner 2026-11-20).
+    expect(box.width).toBeLessThanOrEqual(760);
     expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   }
 });
@@ -130,4 +131,92 @@ test('focus ring stays visible in the open card menu', async ({ page }) => {
 test('iPhone status bar matches the ice page', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
+});
+
+test('«Каталог» panel opens under the pill on hover and closes on Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/dev/ui?path=/faq');
+  const nav = page.getByRole('navigation', { name: 'Основное меню' });
+  const button = nav.getByRole('button', { name: 'Каталог' });
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+
+  // A mouse opens it on hover; a touch screen (the iPhone project) by a tap.
+  const mouse = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
+  if (mouse) await button.hover();
+  else await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  const panel = page.locator(`#${await button.getAttribute('aria-controls')}`);
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole('link', { name: /Удалённые из App Store/ })).toHaveAttribute(
+    'href',
+    '/removed',
+  );
+  await expect(panel.getByRole('link', { name: 'Смотреть тарифы' })).toHaveAttribute(
+    'href',
+    '/pricing',
+  );
+  const pillBox = await pill(page).boundingBox();
+  const box = await panel.boundingBox();
+  if (!pillBox || !box) throw new Error('no box');
+  expect(box.y).toBeGreaterThan(pillBox.y + pillBox.height);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(1280);
+  expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  if (mouse) {
+    // Moving over the gap into the panel keeps it open.
+    await panel.getByRole('link', { name: /Популярные/ }).hover();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+  }
+
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.click(5, 700);
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('«Каталог» is not in the phone pill', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/dev/ui?path=/faq');
+  await expect(page.getByRole('button', { name: 'Каталог' })).toBeHidden();
+});
+
+test('the word «Xstorex» leads home on a phone and a computer', async ({ page }) => {
+  for (const width of [390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/dev/ui?path=/faq');
+    const word = page.locator('header').first().getByRole('link', { name: 'Xstorex, на главную' });
+    await expect(word).toBeVisible();
+    await expect(word).toHaveAttribute('href', '/');
+    const pillBox = await pill(page).boundingBox();
+    const box = await word.boundingBox();
+    if (!pillBox || !box) throw new Error('no box');
+    expect(box.x - pillBox.x).toBeLessThanOrEqual(24);
+    expect(await noHorizontalScroll(page)).toBe(true);
+  }
+});
+
+test('on a phone the pill holds only the word and the menu button', async ({ page }) => {
+  for (const auth of ['', 'auth=1&']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/dev/ui?${auth}path=/faq`);
+    const header = page.locator('header').first();
+    await expect(header.getByRole('link', { name: 'Xstorex, на главную' })).toBeVisible();
+    await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Тарифы' })).toBeHidden();
+    await expect(header.getByRole('link', { name: 'Мой доступ' })).toBeHidden();
+    const pillBox = await pill(page).boundingBox();
+    const burger = await header.getByRole('button', { name: 'Меню' }).boundingBox();
+    if (!pillBox || !burger) throw new Error('no box');
+    expect(pillBox.x + pillBox.width - (burger.x + burger.width)).toBeLessThanOrEqual(12);
+    // Pricing and «Мой доступ» stay one tap away, in the menu.
+    await header.getByRole('button', { name: 'Меню' }).click();
+    const name = auth ? 'Мой доступ' : 'Тарифы';
+    await expect(page.getByRole('dialog').getByRole('link', { name })).toBeVisible();
+  }
 });

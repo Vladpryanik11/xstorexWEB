@@ -1,5 +1,5 @@
 import type { AccessResponse } from '@xstore/shared';
-import { SECTIONS } from '../catalog/sections';
+import { SECTIONS, type Section } from '../catalog/sections';
 
 export type NavItem = { href: string; label: string };
 
@@ -62,6 +62,7 @@ export function menuCards(state: NavState): MenuCard[] {
     {
       title: 'Каталог',
       items: [
+        { href: '/', label: 'Главная' },
         { href: '/catalog', label: 'Весь каталог' },
         ...SECTIONS.filter((s) => s.slug !== 'all').map((s) => ({ href: s.href, label: s.title })),
         { href: '/search', label: 'Поиск' },
@@ -75,4 +76,61 @@ export function menuCards(state: NavState): MenuCard[] {
     },
     { title: 'Помощь', items: [...siteItems] },
   ];
+}
+
+/** Paths where «Каталог» is the current header item: the catalog, its sections and search. */
+const catalogPaths = ['/catalog', ...SECTIONS.map((s) => s.href), '/search'];
+
+export function isCatalogPath(path: string): boolean {
+  return catalogPaths.some((href) => isActive(path, href));
+}
+
+export type CatalogMenuItem = NavItem & {
+  lead: string;
+  /** 24px line icon path. */
+  icon: string;
+  /** A section whose first apps are shown as icons. */
+  section?: Section['slug'];
+};
+
+export type CatalogPromo = { kicker: string; title: string; href: string; label: string };
+
+const SEARCH_ICON = 'M10.75 16.75a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM15.25 15.25l4 4';
+
+/**
+ * The desktop «Каталог» panel (spec 2026-11-17 §5, owner 2026-11-20): three sections with their
+ * apps, the whole catalog and search, and a blue card that follows the session.
+ */
+export function catalogMenu(state: NavState): { items: CatalogMenuItem[]; promo: CatalogPromo } {
+  const all = SECTIONS.find((s) => s.slug === 'all');
+  const items: CatalogMenuItem[] = [
+    ...SECTIONS.filter((s) => s.slug !== 'all').map((s) => ({
+      href: s.href,
+      label: s.title,
+      lead: s.lead,
+      icon: s.icon,
+      section: s.slug,
+    })),
+    {
+      href: '/catalog',
+      label: 'Весь каталог',
+      lead: all?.lead ?? 'Все приложения по категориям',
+      icon: all?.icon ?? SEARCH_ICON,
+    },
+    { href: '/search', label: 'Поиск', lead: 'Найти приложение по названию', icon: SEARCH_ICON },
+  ];
+  const promo: CatalogPromo = state.hasAccess
+    ? {
+        kicker: 'Подписка активна',
+        title: 'Весь каталог уже ваш',
+        href: '/access',
+        label: 'Мой доступ',
+      }
+    : {
+        kicker: 'Подписка',
+        title: 'Весь каталог на месяц по одной цене',
+        href: '/pricing',
+        label: 'Смотреть тарифы',
+      };
+  return { items, promo };
 }

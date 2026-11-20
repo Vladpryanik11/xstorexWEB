@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { SECTIONS } from '../catalog/sections';
 import styles from './Header.module.css';
 import { isActive, menuCards, type NavState } from './nav';
 
@@ -63,6 +64,11 @@ const strokes: Record<string, ReactNode> = {
     </>
   ),
 };
+
+// Catalog sections draw the same icons as their tiles on the home page.
+for (const section of SECTIONS) {
+  strokes[section.href] = <path d={section.icon} />;
+}
 
 function Icon({ href }: { href: string }) {
   return (
