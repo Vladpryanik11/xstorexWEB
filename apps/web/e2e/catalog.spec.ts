@@ -60,7 +60,11 @@ test('home renders every collection layout and the category chips', async ({ pag
   // The seeded icons come from object storage.
   const icon = page.locator('img[src*="/icons/"]:visible').first();
   await expect(icon).toBeVisible();
-  expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  // Shelf icons load lazily; bring one on screen before checking it decoded.
+  await icon.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
 });
 
 test('search finds by Cyrillic prefix', async ({ page }) => {
