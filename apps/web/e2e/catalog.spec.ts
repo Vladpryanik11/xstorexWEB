@@ -197,3 +197,16 @@ test('category chips do not widen the catalog and category pages', async ({ page
     );
   }
 });
+
+test('on a phone the offer button follows the visitor once the hero scrolls away', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
+  await expect(buttons).toHaveCount(1);
+  await page.locator('#home-find').scrollIntoViewIfNeeded();
+  await expect(buttons).toHaveCount(isMobile ? 2 : 1);
+  await page.locator('footer').scrollIntoViewIfNeeded();
+  await expect(buttons).toHaveCount(1);
+});

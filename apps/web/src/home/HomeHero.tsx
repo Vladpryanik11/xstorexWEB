@@ -53,7 +53,7 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
               </li>
             ))}
           </ul>
-          <a className={styles.cta} href="/get">
+          <a className={styles.cta} href="/get" data-hero-cta>
             Подключить iPhone
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M5 12h14M13 6l6 6-6 6" />

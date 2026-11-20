@@ -11,6 +11,7 @@ import { HowItWorks } from '../../src/catalog/HowItWorks';
 import { SectionTiles } from '../../src/catalog/SectionTiles';
 import { HomeBenefits } from '../../src/home/HomeBenefits';
 import { HomeHero } from '../../src/home/HomeHero';
+import { HomeStickyCta } from '../../src/home/HomeStickyCta';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default async function HomePage({ searchParams }: Props) {
         {home.collections.length < CHIPS_AFTER ? chips : null}
         <HowItWorks />
       </div>
+      <HomeStickyCta />
       {shared ? (
         <AppPreview
           key={shared.slug}

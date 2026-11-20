@@ -1,8 +1,8 @@
 /* The screen is drawn at a real phone width (24rem) and scaled to the frame, so labels keep
    the type scale while looking miniature. --k = screen width / 24rem for each frame width. */
 .phone {
-  --phone-w: 13.5rem;
-  --k: 0.508;
+  --phone-w: 15rem;
+  --k: 0.564;
   position: relative;
   width: var(--phone-w);
 }

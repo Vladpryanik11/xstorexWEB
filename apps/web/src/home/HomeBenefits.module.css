@@ -84,3 +84,43 @@
     border-left: 1px solid var(--x-hair);
   }
 }
+
+/* Phone and tablet: a compact 2×2 grid, left aligned, instead of a tall centred column. */
+@media (max-width: 56.24em) {
+  .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+  }
+
+  .item {
+    align-items: flex-start;
+    padding: 1.25rem 1.125rem;
+    text-align: left;
+  }
+
+  .item + .item {
+    border-top: 0;
+  }
+
+  .item:nth-child(even) {
+    border-left: 1px solid var(--x-hair);
+  }
+
+  .item:nth-child(n + 3) {
+    border-top: 1px solid var(--x-hair);
+  }
+
+  .icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .title {
+    margin-top: 0.75rem;
+    white-space: normal;
+  }
+
+  .text {
+    margin-top: 0.25rem;
+  }
+}
