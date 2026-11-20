@@ -42,7 +42,8 @@ test('desktop pill hugs its links and stays centred, not full width', async ({ p
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const box = await pill(page).boundingBox();
     if (!box) throw new Error('no pill');
-    expect(box.width).toBeLessThanOrEqual(720);
+    // Word «Xstorex» + «Каталог» + help pages + end slot (owner 2026-11-20).
+    expect(box.width).toBeLessThanOrEqual(760);
     expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   }
 });
@@ -183,4 +184,19 @@ test('«Каталог» is not in the phone pill', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/dev/ui?path=/faq');
   await expect(page.getByRole('button', { name: 'Каталог' })).toBeHidden();
+});
+
+test('the word «Xstorex» leads home on a phone and a computer', async ({ page }) => {
+  for (const width of [390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/dev/ui?path=/faq');
+    const word = page.locator('header').first().getByRole('link', { name: 'Xstorex, на главную' });
+    await expect(word).toBeVisible();
+    await expect(word).toHaveAttribute('href', '/');
+    const pillBox = await pill(page).boundingBox();
+    const box = await word.boundingBox();
+    if (!pillBox || !box) throw new Error('no box');
+    expect(box.x - pillBox.x).toBeLessThanOrEqual(24);
+    expect(await noHorizontalScroll(page)).toBe(true);
+  }
 });

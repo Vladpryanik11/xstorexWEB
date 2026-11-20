@@ -62,6 +62,7 @@ export function menuCards(state: NavState): MenuCard[] {
     {
       title: 'Каталог',
       items: [
+        { href: '/', label: 'Главная' },
         { href: '/catalog', label: 'Весь каталог' },
         ...SECTIONS.filter((s) => s.slug !== 'all').map((s) => ({ href: s.href, label: s.title })),
         { href: '/search', label: 'Поиск' },

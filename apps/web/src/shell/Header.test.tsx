@@ -119,10 +119,14 @@ describe('Header', () => {
     expect(pills[0]?.closest('a')).toHaveTextContent('Вопросы');
   });
 
-  it('has no logo: no image and no «на главную» link in the pill', () => {
+  it('has no logo image; the word «Xstorex» leads home', () => {
     const { container } = render(<Header nav={GUEST} />);
     expect(container.querySelector('header img')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Xstore, на главную' })).toBeNull();
+    const home = screen.getByRole('link', { name: 'Xstorex, на главную' });
+    expect(home).toHaveAttribute('href', '/');
+    expect(home).toHaveTextContent('Xstorex');
+    const pill = screen.getByRole('navigation', { name: 'Основное меню' }).parentElement;
+    expect(pill?.firstElementChild).toBe(home);
   });
 
   it('forcedPath overrides the current path', () => {
@@ -155,6 +159,7 @@ describe('MobileMenu', () => {
         .getAllByRole('link')
         .map((link) => link.textContent);
     expect(labels(cards[0] as HTMLElement)).toEqual([
+      'Главная',
       'Весь каталог',
       'Удалённые из App Store',
       'Premium доступы',
@@ -167,6 +172,16 @@ describe('MobileMenu', () => {
       'aria-current',
       'page',
     );
+  });
+
+  it('every menu row has its line icon', () => {
+    render(<Header nav={GUEST} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
+    for (const link of within(screen.getByRole('dialog')).getAllByRole('link')) {
+      const icon = link.querySelector('svg');
+      expect(icon, link.textContent ?? '').not.toBeNull();
+      expect(icon?.childElementCount, link.textContent ?? '').toBeGreaterThan(0);
+    }
   });
 
   it('guest access card offers pricing and login', () => {
