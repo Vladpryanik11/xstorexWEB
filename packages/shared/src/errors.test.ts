@@ -22,6 +22,9 @@ it('has a Russian message for every code', () => {
   }
   expect(errorMessages.INVALID_CREDENTIALS).toBe('Неверная почта или пароль');
   expect(errorMessages.CODE_INVALID).toBe('Неверный или устаревший код');
+  expect(errorMessages.HANDOFF_INVALID).toBe(
+    'Ссылка для входа устарела. Войдите по коду из письма',
+  );
   expect(errorMessages.CONFLICT).toBe('Конфликт данных');
   expect(errorMessages.PLAN_PRICE_REQUIRED).toBe('Укажите цену, чтобы создать тариф');
   expect(errorMessages.CHECKOUT_SETTLED).toBe('Эта оплата уже завершена. Начните новую');

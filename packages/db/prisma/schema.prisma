@@ -57,6 +57,7 @@ model User {
   subscriptions              Subscription[]
   orders                     Order[]
   uploadedDeviceCertificates DeviceCertificate[]
+  loginHandoffs              LoginHandoff[]
 
   @@index([isProvisional, checkoutEmail])
 }
@@ -446,6 +447,20 @@ model PaymentEvent {
   result      String?
   processedAt DateTime?
   createdAt   DateTime  @default(now())
+}
+
+/// Spec v2 §4 step 2a: a one-time link that carries a buyer's sign-in into Safari.
+model LoginHandoff {
+  id        String    @id @default(cuid())
+  /// sha256 hex of the token; the token itself is never stored.
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model EmailCode {

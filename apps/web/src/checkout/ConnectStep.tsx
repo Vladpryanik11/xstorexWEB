@@ -23,6 +23,8 @@ import {
   connectStep,
   familyName,
 } from './connect-step';
+import type { BrowserApp } from './in-app-browser';
+import { OpenInSafari } from './OpenInSafari';
 import { StepBar } from './StepBar';
 import { useBrowserDevice } from './use-browser-device';
 
@@ -33,6 +35,8 @@ export type ConnectStepProps = {
   /** Detected in the browser when left out (tests pass it). */
   device?: DeviceKind;
   family?: DeviceFamily;
+  /** The browser or app the site is open in; detected when left out (spec v2 §4 step 2a). */
+  app?: BrowserApp;
   getAccess?: () => Promise<AccessResponse>;
   /** The connection file; a plain link, so Safari hands it to Settings. */
   profileUrl?: string;
@@ -112,6 +116,8 @@ function statusText(step: ConnectStepState, name: string, error: string, updatin
       return 'Нужна помощь поддержки';
     case 'open_on_phone':
       return 'Откройте сайт на iPhone, чтобы подключить его';
+    case 'open_in_safari':
+      return 'Осталось открыть в Safari';
     case 'error':
       return error;
     default:
@@ -128,6 +134,7 @@ export function ConnectStep({
   result,
   device: deviceProp,
   family: familyProp,
+  app: appProp,
   getAccess = defaultGetAccess,
   profileUrl = browserApi().enrollmentProfileUrl(),
   navigate = defaultNavigate,
@@ -137,6 +144,7 @@ export function ConnectStep({
   const now = useNow(fixedNow);
   const detected = useBrowserDevice();
   const device = deviceProp ?? detected?.kind ?? null;
+  const app = appProp ?? detected?.app ?? (deviceProp ? 'safari' : null);
   const [access, setAccess] = useState(initialAccess);
   const [waitingSince, setWaitingSince] = useState<number | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -152,10 +160,12 @@ export function ConnectStep({
     access,
     result,
     waiting: waitingSince !== null,
+    inSafari: app === null || app === 'safari',
   });
   // Until the browser is known, the device-dependent screens wait (no notice flashing on iPad).
   const deviceUnknown =
-    device === null && (step === 'guide' || step === 'waiting' || step === 'open_on_phone');
+    (device === null || app === null) &&
+    (step === 'guide' || step === 'waiting' || step === 'open_on_phone');
   const error = step === 'error' && result ? connectErrorText(result) : '';
 
   // A reload or a discarded Safari tab while iOS installs keeps waiting.
@@ -266,7 +276,10 @@ export function ConnectStep({
           ) : null}
           <ConnectGuide family={family} />
           {connectLink(`Подключить ${name}`)}
+          <p className={own.safariOnly}>Работает только в Safari</p>
         </section>
+      ) : step === 'open_in_safari' && app !== null && app !== 'safari' ? (
+        <OpenInSafari app={app} family={family} />
       ) : step === 'waiting' ? (
         <section className={styles.panel} aria-busy="true">
           <span className={styles.spinner} aria-hidden="true" />
