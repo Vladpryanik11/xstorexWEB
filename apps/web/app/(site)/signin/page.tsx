@@ -1,9 +1,10 @@
-import { safeNext } from '@xstore/shared';
+import { errorMessages, safeNext } from '@xstore/shared';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { serverApi } from '../../../src/api/server';
 import { SigninForm } from '../../../src/auth/SigninForm';
 import styles from '../../../src/checkout/checkout.module.css';
+import connect from '../../../src/checkout/connect.module.css';
 
 export const metadata: Metadata = {
   title: 'Вход',
@@ -31,7 +32,9 @@ export default async function SigninPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const next = one((await searchParams).next);
+  const params = await searchParams;
+  const next = one(params.next);
+  const handoffExpired = one(params.handoff) === 'expired';
   // Outside the try in `signedIn`: `redirect` works by throwing.
   if (await signedIn()) redirect(safeNext(next, '/access'));
   return (
@@ -40,6 +43,11 @@ export default async function SigninPage({
         <h1 id="signin-title" className={styles.title}>
           Вход
         </h1>
+        {handoffExpired ? (
+          <p className={connect.notice} role="status">
+            {errorMessages.HANDOFF_INVALID}
+          </p>
+        ) : null}
         <p className={styles.lead}>
           По почте, которую вы указали при оплате. Нет пароля — войдите по коду из письма.
         </p>

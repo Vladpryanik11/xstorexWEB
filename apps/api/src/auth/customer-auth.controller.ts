@@ -7,6 +7,8 @@ import {
   ErrorCode,
   emailCodeRequestSchema,
   emailCodeVerifySchema,
+  type HandoffRedeem,
+  handoffRedeemSchema,
   type SetPassword,
   setPasswordSchema,
 } from '@xstore/shared';
@@ -18,6 +20,7 @@ import { APP_CONFIG } from '../config/tokens.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { RateLimiter } from '../rate-limit/rate-limiter.js';
 import { CustomerAuthService } from './customer-auth.service.js';
+import { HandoffService } from './handoff.service.js';
 import { RequireUser } from './roles.decorator.js';
 import { SessionService } from './session.service.js';
 import { sessionCookie } from './session-cookie.js';
@@ -32,6 +35,7 @@ export class CustomerAuthController {
     private readonly auth: CustomerAuthService,
     private readonly sessions: SessionService,
     private readonly limiter: RateLimiter,
+    private readonly handoffs: HandoffService,
   ) {
     this.secureCookie = config.siteUrl.startsWith('https:');
   }
@@ -105,6 +109,34 @@ export class CustomerAuthController {
   ): Promise<void> {
     const session = await this.auth.verifyCode(body, meta(req));
     await this.replaceSession(req, res, session);
+  }
+
+  /** Spec v2 §4 step 2a: a one-time link that signs this buyer in from Safari. */
+  @Post('handoff')
+  @HttpCode(200)
+  @RequireUser()
+  @RateLimit({ name: 'handoff-issue', limit: 10, windowSec: 10 * 60, by: 'user' })
+  async issueHandoff(@Req() req: HttpReq): Promise<{ token: string; expiresAt: string }> {
+    // biome-ignore lint/style/noNonNullAssertion: @RequireUser guarantees a session
+    const { token, expiresAt } = await this.handoffs.issue(req.auth!.userId);
+    return { token, expiresAt: expiresAt.toISOString() };
+  }
+
+  /**
+   * A POST from the page, not a GET of the link, so link previews in messengers never spend it.
+   * Already signed in as the link's buyer: nothing changes and the link stays valid.
+   */
+  @Post('handoff/redeem')
+  @HttpCode(204)
+  @RateLimit({ name: 'handoff-redeem', limit: 30, windowSec: 10 * 60, by: 'ip' })
+  async redeemHandoff(
+    @Body(zodBody(handoffRedeemSchema)) body: HandoffRedeem,
+    @Req() req: HttpReq,
+    @Res({ passthrough: true }) res: HttpRes,
+  ): Promise<void> {
+    const current = req.auth?.kind === 'user' ? req.auth.userId : null;
+    const session = await this.handoffs.redeem(body.token, current, meta(req));
+    if (session) await this.replaceSession(req, res, session);
   }
 
   /** Signs out the buyer session this browser had, then sets the new one. */

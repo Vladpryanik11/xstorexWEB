@@ -7,6 +7,7 @@ import { AuthGuard } from './auth.guard.js';
 import { CustomerAuthController } from './customer-auth.controller.js';
 import { CustomerAuthService } from './customer-auth.service.js';
 import { EmailCodeService } from './email-code.service.js';
+import { HandoffService } from './handoff.service.js';
 import { OriginMiddleware } from './origin.middleware.js';
 import { SessionService } from './session.service.js';
 import { StaffAuthService } from './staff-auth.service.js';
@@ -19,6 +20,7 @@ import { StaffAuthService } from './staff-auth.service.js';
     StaffAuthService,
     CustomerAuthService,
     EmailCodeService,
+    HandoffService,
     // Order matters: the session is resolved before rate limits keyed by user.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },

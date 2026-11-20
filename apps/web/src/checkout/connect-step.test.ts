@@ -45,6 +45,20 @@ describe('connectStep', () => {
     expect(connectStep({ ...base, device: 'desktop' })).toBe('open_on_phone');
   });
 
+  it('iPhone outside Safari without a device → open_in_safari (spec v2 §4 step 2a)', () => {
+    expect(connectStep({ ...base, inSafari: false })).toBe('open_in_safari');
+    expect(connectStep({ ...base, inSafari: false, waiting: true })).toBe('open_in_safari');
+  });
+
+  it('outside Safari, a connected device and results still show', () => {
+    expect(connectStep({ ...base, inSafari: false, access: active({ ready: true }) })).toBe(
+      'ready',
+    );
+    expect(connectStep({ ...base, inSafari: false, result: 'connected' })).toBe('connected');
+    expect(connectStep({ ...base, inSafari: false, result: 'DEVICE_OWNED' })).toBe('error');
+    expect(connectStep({ ...base, inSafari: false, device: 'desktop' })).toBe('open_on_phone');
+  });
+
   it('after «Подключить iPhone» → waiting', () => {
     expect(connectStep({ ...base, waiting: true })).toBe('waiting');
   });

@@ -20,6 +20,18 @@ export const customerLoginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1).max(256),
 });
+/**
+ * Spec v2 §4 step 2a: a one-time link that carries the sign-in into Safari. The token is 32
+ * random bytes in base64url, like a session token.
+ */
+export const HANDOFF_PARAM = 'h';
+export const handoffRedeemSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) });
+export const handoffResponseSchema = z.object({
+  token: z.string(),
+  expiresAt: z.iso.datetime({ offset: true }).transform((value) => new Date(value)),
+});
+export type HandoffRedeem = z.infer<typeof handoffRedeemSchema>;
+export type HandoffResponse = z.infer<typeof handoffResponseSchema>;
 export type SetPassword = z.infer<typeof setPasswordSchema>;
 export type CustomerLogin = z.infer<typeof customerLoginSchema>;
 export type EmailCodeRequest = z.infer<typeof emailCodeRequestSchema>;

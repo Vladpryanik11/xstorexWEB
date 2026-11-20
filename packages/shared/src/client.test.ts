@@ -209,6 +209,12 @@ describe('buyer sign-in', () => {
       { password: 'secret12' },
     ],
     [
+      'redeemHandoff',
+      (api: ReturnType<typeof createApiClient>) => api.redeemHandoff({ token: 't'.repeat(43) }),
+      '/api/v1/auth/handoff/redeem',
+      { token: 't'.repeat(43) },
+    ],
+    [
       'logout',
       (api: ReturnType<typeof createApiClient>) => api.logout(),
       '/api/v1/auth/logout',
@@ -221,6 +227,18 @@ describe('buyer sign-in', () => {
     expect(String(url)).toBe(`http://api${path}`);
     expect(init?.method).toBe('POST');
     expect(JSON.parse(String(init?.body))).toEqual(body);
+  });
+
+  it('issueHandoff asks for a one-time sign-in link', async () => {
+    const fetch = fakeFetch(200, { token: 'k'.repeat(43), expiresAt: '2026-11-20T16:10:00.000Z' });
+    const link = await createApiClient({ baseUrl: 'http://api', fetch }).issueHandoff();
+    expect(link).toEqual({
+      token: 'k'.repeat(43),
+      expiresAt: new Date('2026-11-20T16:10:00.000Z'),
+    });
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(String(url)).toBe('http://api/api/v1/auth/handoff');
+    expect(init?.method).toBe('POST');
   });
 
   it('surfaces sign-in errors', async () => {

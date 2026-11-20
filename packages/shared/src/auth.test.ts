@@ -3,6 +3,8 @@ import {
   customerLoginSchema,
   emailCodeRequestSchema,
   emailCodeVerifySchema,
+  handoffRedeemSchema,
+  handoffResponseSchema,
   isAcceptablePassword,
   setPasswordSchema,
   staffLoginSchema,
@@ -46,4 +48,19 @@ it('a buyer password is 8 to 128 characters', () => {
   // The length check is the server's, so a short password reaches it (WEAK_PASSWORD).
   expect(setPasswordSchema.safeParse({ password: 'short' }).success).toBe(true);
   expect(setPasswordSchema.safeParse({}).success).toBe(false);
+});
+
+it('a sign-in link token is 43 base64url characters', () => {
+  const token = `${'a'.repeat(42)}_`;
+  expect(handoffRedeemSchema.parse({ token })).toEqual({ token });
+  expect(handoffRedeemSchema.safeParse({ token: 'short' }).success).toBe(false);
+  expect(handoffRedeemSchema.safeParse({ token: `${'a'.repeat(42)}=` }).success).toBe(false);
+});
+
+it('a sign-in link comes with its end', () => {
+  const parsed = handoffResponseSchema.parse({
+    token: 'b'.repeat(43),
+    expiresAt: '2026-11-20T16:10:00.000Z',
+  });
+  expect(parsed.expiresAt).toEqual(new Date('2026-11-20T16:10:00.000Z'));
 });

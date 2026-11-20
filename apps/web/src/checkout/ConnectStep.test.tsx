@@ -54,6 +54,27 @@ describe('ConnectStep', () => {
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('iPhone');
   });
 
+  it('under the connect link: «Работает только в Safari»', () => {
+    render(<ConnectStep access={noDevice} result={null} device="ios" getAccess={vi.fn()} />);
+    expect(screen.getByText('Работает только в Safari')).toBeVisible();
+  });
+
+  it('Telegram: «Осталось открыть в Safari» instead of the connect link (spec v2 §4 step 2a)', () => {
+    render(
+      <ConnectStep
+        access={noDevice}
+        result={null}
+        device="ios"
+        app="telegram"
+        getAccess={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Осталось открыть в Safari' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Подключить iPhone' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Открыть в Safari' })).toBeVisible();
+    expect(screen.getByTestId('connect-status')).toHaveTextContent('Осталось открыть в Safari');
+  });
+
   it('on iPad says «iPad»', () => {
     render(
       <ConnectStep

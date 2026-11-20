@@ -11,6 +11,7 @@ export type ConnectStepState =
   | 'help'
   | 'ready'
   | 'open_on_phone'
+  | 'open_in_safari'
   | 'error';
 
 /** «Ждём подключения…»: ask the API every 3 seconds, for as long as the downloaded file lives. */
@@ -48,8 +49,10 @@ export function connectStep(input: {
   waiting: boolean;
   /** False without a buyer session; the page redirects to sign-in before rendering. */
   signedIn?: boolean;
+  /** False in another browser or an app's browser on iPhone/iPad (spec v2 §4 step 2a). */
+  inSafari?: boolean;
 }): ConnectStepState {
-  const { device, access, result, waiting, signedIn = true } = input;
+  const { device, access, result, waiting, signedIn = true, inSafari = true } = input;
   if (!signedIn) return 'signin';
   if (access.kind !== 'active') return 'no_access';
   // A device on the access is the truth: a stale `?r=<error>` (history, bookmark) is ignored.
@@ -60,6 +63,8 @@ export function connectStep(input: {
   if (isConnectError(result)) return 'error';
   if (result === 'connected') return 'connected';
   if (device === 'desktop') return 'open_on_phone';
+  // Only Safari downloads the connection file.
+  if (!inSafari) return 'open_in_safari';
   return waiting ? 'waiting' : 'guide';
 }
 
