@@ -58,7 +58,7 @@ test('home renders every collection layout and the category chips', async ({ pag
   const chips = page.getByRole('navigation', { name: 'Категории' });
   await expect(chips.getByRole('link', { name: 'Игры' })).toHaveAttribute('href', '/category/igry');
   // The seeded icons come from object storage.
-  const icon = page.locator('img[src*="/icons/"]').first();
+  const icon = page.locator('img[src*="/icons/"]:visible').first();
   await expect(icon).toBeVisible();
   expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 });
@@ -130,7 +130,7 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home hero is light, sits under the pill and shows the catalog in an iPhone', async ({
+test('home hero is light, sits under the pill; the iPhone with the catalog is for wide screens', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -140,15 +140,19 @@ test('home hero is light, sits under the pill and shows the catalog in an iPhone
   expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
     /rgb\(227, 237, 253\).*rgb\(242, 248, 253\)/,
   );
+  // Owner 2026-11-20: no iPhone picture in the phone layout.
   const phone = hero.locator('[data-hero-phone]');
-  await expect(phone).toBeVisible();
-  expect(await phone.locator('[data-app] img').count()).toBeGreaterThan(0);
+  await expect(phone).toBeHidden();
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(14, 26, 51)');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(phone).toBeVisible();
+  expect(await phone.locator('[data-app] img').count()).toBeGreaterThan(0);
 });
 
 test('an app morphs into its sheet; Escape closes it and returns focus', async ({ page }) => {

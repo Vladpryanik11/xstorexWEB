@@ -343,6 +343,11 @@
     text-align: center;
   }
 
+  /* No iPhone picture on phones (owner 2026-11-20). */
+  .visual {
+    display: none;
+  }
+
   /* «200+ приложений на вашем iPhone»: Premium is the second slide. */
   .wide {
     display: none;
