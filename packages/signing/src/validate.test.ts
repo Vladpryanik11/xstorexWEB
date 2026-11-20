@@ -11,12 +11,18 @@ import { checkKit, SigningError } from './validate.js';
 
 const DAY = 24 * 3600_000;
 
-async function check(kit: ReturnType<typeof makeKit>, udid = TEST_UDID, now = new Date()) {
+async function check(
+  kit: ReturnType<typeof makeKit>,
+  udid = TEST_UDID,
+  now = new Date(),
+  strict = true,
+) {
   return checkKit({
     p12: await parseP12(kit.p12, kit.password),
     profile: readProfile(kit.profileXml),
     udid,
     now,
+    strict,
   });
 }
 
@@ -69,6 +75,19 @@ describe('checkKit', () => {
     for (const appId of [`${TEST_TEAM_ID}.ru.app`, `${TEST_TEAM_ID}.ru.*`]) {
       const facts = await check(makeKit({ appId }));
       expect(facts.appIdPattern).toBe(appId);
+    }
+  });
+
+  it('without strict checks accepts any kit that opens', async () => {
+    const kits = [
+      makeKit({ udids: ['00008110-FFFFFFFFFFFFFFFF'] }),
+      makeKit({ otherCert: true }),
+      makeKit({ notAfter: new Date(Date.now() - DAY) }),
+      makeKit({ allDevices: true }),
+    ];
+    for (const kit of kits) {
+      const facts = await check(kit, TEST_UDID, new Date(), false);
+      expect(facts.teamId).toBe(TEST_TEAM_ID);
     }
   });
 
