@@ -36,3 +36,10 @@ it('keeps the phone picture away from screen readers', () => {
   expect(phone).not.toBeNull();
   expect(phone?.closest('[aria-hidden="true"]')).not.toBeNull();
 });
+
+it('on a phone leads with the guarantee and a one-line promise (variant A)', () => {
+  const { container } = render(<HomeHero collections={collections} />);
+  expect(screen.getByText('Гарантия на весь срок подписки')).toBeVisible();
+  expect(screen.getByText('Даже те, что удалили из App Store. Premium уже включён.')).toBeVisible();
+  expect(container.querySelector('[data-hero-icons]')).not.toBeNull();
+});

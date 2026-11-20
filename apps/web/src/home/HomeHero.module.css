@@ -330,11 +330,20 @@
   }
 }
 
-/* Phone (owner 2026-11-20: «больше воздуха, уменьши», «мини баннер под названием с листалкой»):
-   centred headline, the offer points turn as a mini banner with dots, a calmer button. */
+/* Variant A pieces: phone only. */
+.trust,
+.sub,
+.inline,
+.stage {
+  display: none;
+}
+
+/* Phone, variant A (owner 2026-11-20, mockup https://claude.ai/artifact/HXKevH2yhDBx95LFPsfjYU):
+   guarantee pill, headline with three real icons, one-line promise, the button, then real catalog
+   icons on a ring. The benefits list and the iPhone picture stay for wider screens. */
 @media (max-width: 47.99em) {
   .hero {
-    padding-top: calc(var(--hero-under-pill) + 2.25rem);
+    padding-top: calc(var(--hero-under-pill) + 1.5rem);
   }
 
   .copy {
@@ -343,12 +352,39 @@
     text-align: center;
   }
 
-  /* No iPhone picture on phones (owner 2026-11-20). */
-  .visual {
-    display: none;
+  .trust {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0.375rem 0.875rem 0.375rem 0.375rem;
+    border-radius: var(--x-radius-pill);
+    background: var(--x-white);
+    box-shadow: var(--x-shadow-sm);
+    font: var(--x-type-cap);
+    letter-spacing: var(--x-track-small);
   }
 
-  /* «200+ приложений на вашем iPhone»: Premium is the second slide. */
+  .check {
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--x-sky-400), var(--x-blue));
+    color: var(--x-white);
+  }
+
+  .check svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .wide {
     display: none;
   }
@@ -357,50 +393,55 @@
     font: var(--x-type-h1);
   }
 
+  .inline {
+    display: inline-flex;
+    margin-right: 0.375rem;
+    vertical-align: -0.3125rem;
+  }
+
+  .inline img {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: -0.5rem;
+    border: 2px solid var(--x-white);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px -4px rgba(14, 26, 51, 0.4);
+    object-fit: cover;
+  }
+
+  .inline img:first-child {
+    margin-left: 0;
+  }
+
+  .sub {
+    display: block;
+    max-width: 19rem;
+    margin: 0.75rem 0 0;
+    color: var(--x-text-2);
+    font: var(--x-type-ui);
+    letter-spacing: var(--x-track-small);
+  }
+
   .benefits {
-    display: flex;
-    overflow-x: auto;
-    margin-top: 1.75rem;
-    padding: 0;
-    border-radius: var(--x-radius-card);
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
-  }
-
-  .benefits::-webkit-scrollbar {
     display: none;
-  }
-
-  .benefit {
-    box-sizing: border-box;
-    flex: 0 0 100%;
-    gap: 0.875rem;
-    padding: 0.875rem 1rem;
-    scroll-snap-align: center;
-    text-align: left;
-  }
-
-  .benefit + .benefit {
-    border-top: 0;
-  }
-
-  .benefitTitle {
-    font: var(--x-type-body);
-    font-weight: 600;
   }
 
   .cta {
     min-height: 3.25rem;
-    margin-top: 1.75rem;
+    margin-top: 1.25rem;
     font: var(--x-type-body);
     font-weight: 600;
     letter-spacing: var(--x-track-body);
   }
 
+  .stage {
+    display: block;
+    width: 100%;
+  }
+
   .audience {
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 
   .avatars > span {
@@ -413,5 +454,10 @@
   .audienceText {
     font: var(--x-type-cap);
     letter-spacing: var(--x-track-small);
+  }
+
+  /* No iPhone picture on phones (owner 2026-11-20). */
+  .visual {
+    display: none;
   }
 }
