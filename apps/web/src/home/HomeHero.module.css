@@ -261,6 +261,21 @@
 /* Phone and tablet (owner 2026-11-20): the offer reads as one object — the three benefits sit
    in a white card with hairlines, the button and audience line right under it, all in the
    first screen; the phone follows without the empty band around it. */
+@media (max-width: 47.99em) {
+  .copy {
+    padding-inline: 0.75rem;
+  }
+
+  .title {
+    font: var(--x-type-h1);
+  }
+
+  .benefitTitle {
+    font: var(--x-type-body);
+    font-weight: 600;
+  }
+}
+
 @media (max-width: 63.99em) {
   .hero {
     padding: calc(var(--hero-under-pill) + 1.5rem) 0 1rem;
@@ -310,6 +325,13 @@
   .audience > span:last-child {
     display: flex;
     gap: 0.3em;
+    white-space: nowrap;
+  }
+
+  .avatars > span {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: -0.5rem;
   }
 
   .visual {
