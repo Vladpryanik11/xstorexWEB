@@ -25,10 +25,6 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
   return (
     <HeaderFrame className={overHero ? `${styles.header} ${styles.over}` : styles.header}>
       <div className={styles.pill}>
-        <Link className={styles.mark} href="/" aria-label="Xstore, на главную">
-          {/* biome-ignore lint/performance/noImgElement: a 36px static logo needs no optimisation */}
-          <img src="/brand/mark.png" alt="" width={36} height={36} />
-        </Link>
         <nav className={styles.menu} aria-label="Основное меню">
           <NavLinks items={items} forcedPath={forcedPath} />
           <MobileMenu nav={state} forcedPath={forcedPath} />

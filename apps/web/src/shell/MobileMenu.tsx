@@ -107,7 +107,7 @@ export function MobileMenu({ nav, forcedPath }: MobileMenuProps) {
     burger.current?.focus();
   }, []);
 
-  // Any real navigation closes the sheet: the logo and the entry pill stay clickable above it,
+  // Any real navigation closes the sheet: the entry pill stays clickable above it,
   // and back/forward change the route too. Keyed on the real path, never on forcedPath.
   const shownPath = useRef(pathname);
   useEffect(() => {

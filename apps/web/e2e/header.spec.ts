@@ -36,6 +36,17 @@ test('floating white glass pill (desktop)', async ({ page }) => {
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
+test('desktop pill hugs its links and stays centred, not full width', async ({ page }) => {
+  for (const auth of ['', 'auth=1&']) {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`/dev/ui?${auth}path=/faq`);
+    const box = await pill(page).boundingBox();
+    if (!box) throw new Error('no pill');
+    expect(box.width).toBeLessThanOrEqual(720);
+    expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
+  }
+});
+
 test('highlight follows the hovered item and returns to the active one', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/dev/ui?auth=1&path=/faq');
