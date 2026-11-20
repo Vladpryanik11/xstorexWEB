@@ -5,13 +5,16 @@ import { expect, test } from '@playwright/test';
 test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone и iPad' }),
+    page.getByRole('heading', {
+      level: 1,
+      name: /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
+    }),
   ).toBeVisible();
-  await expect(
-    page.getByText(
-      'Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не нужна.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+    'href',
+    '/get',
+  );
+  await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
     .getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ })
@@ -125,7 +128,9 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home hero is light, sits under the pill and carries the XSTORE word', async ({ page }) => {
+test('home hero is light, sits under the pill and shows the catalog in an iPhone', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
@@ -133,9 +138,9 @@ test('home hero is light, sits under the pill and carries the XSTORE word', asyn
   expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
     /rgb\(227, 237, 253\).*rgb\(242, 248, 253\)/,
   );
-  const word = hero.locator('[aria-hidden="true"]', { hasText: 'XSTORE' });
-  await expect(word).toHaveCount(1);
-  await expect(word).toHaveCSS('color', 'rgb(255, 255, 255)');
+  const phone = hero.locator('[data-hero-phone]');
+  await expect(phone).toBeVisible();
+  expect(await phone.locator('[data-app] img').count()).toBeGreaterThan(0);
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(14, 26, 51)');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();

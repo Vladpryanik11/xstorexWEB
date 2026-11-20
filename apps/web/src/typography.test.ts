@@ -10,8 +10,6 @@ const files = roots.flatMap((root) =>
     .map((f) => join(root, f)),
 );
 const name = (f: string) => relative(join(__dirname, '../../..'), f);
-// The decorative XSTORE word behind the home hero is the one size outside the scale.
-const strip = (css: string) => css.replace(/\.word\s*\{[^}]*\}/, '');
 
 describe('typography follows the scale', () => {
   it('finds the stylesheets', () => {
@@ -19,7 +17,7 @@ describe('typography follows the scale', () => {
   });
 
   it.each(files.map(name))('%s', (f) => {
-    const css = strip(readFileSync(join(__dirname, '../../..', f), 'utf8'));
+    const css = readFileSync(join(__dirname, '../../..', f), 'utf8');
     expect(css).not.toMatch(/--x-system|helvetica/i);
     expect(css).not.toMatch(/(^|[\s;{])font-size\s*:/);
     for (const [, value] of css.matchAll(/(?:^|[\s;{])font\s*:\s*([^;]+);/g)) {

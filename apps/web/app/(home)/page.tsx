@@ -9,12 +9,14 @@ import { CollectionSection } from '../../src/catalog/CollectionSection';
 import { HeroCarousel } from '../../src/catalog/HeroCarousel';
 import { HowItWorks } from '../../src/catalog/HowItWorks';
 import { SectionTiles } from '../../src/catalog/SectionTiles';
+import { HomeBenefits } from '../../src/home/HomeBenefits';
+import { HomeHero } from '../../src/home/HomeHero';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: { absolute: 'Xstore — приложения для iPhone и iPad' },
   description:
-    'Каталог приложений для iPhone и iPad. Оплата без регистрации, установка прямо с сайта.',
+    '200+ приложений с Premium‑доступом на вашем iPhone, в том числе удалённые из App Store. Установка прямо из Safari.',
   openGraph: { title: 'Xstore — приложения для iPhone и iPad', type: 'website' },
 };
 
@@ -36,19 +38,19 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <>
-      <section className={styles.hero} data-home-hero>
-        <span className={styles.word} aria-hidden="true">
-          XSTORE
-        </span>
-        <div className={styles.heroInner}>
-          <h1 className={styles.title}>Приложения для iPhone и iPad</h1>
-          <p className={styles.lead}>
-            Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не
-            нужна.
-          </p>
-          <SearchField action="/search" />
-        </div>
-      </section>
+      <HomeHero collections={home.collections} />
+      <div className={styles.top}>
+        <HomeBenefits />
+        <section className={styles.find} aria-labelledby="home-find">
+          <h2 id="home-find" className={styles.findTitle}>
+            Ищете конкретное приложение?
+          </h2>
+          <p className={styles.findLead}>Проверьте, есть ли оно в каталоге.</p>
+          <div className={styles.findField}>
+            <SearchField action="/search" />
+          </div>
+        </section>
+      </div>
       <div className={styles.shelves}>
         <SectionTiles />
         <HeroCarousel banners={home.banners} />
