@@ -71,6 +71,13 @@ const emailOf = (row: DeviceRow): string => row.user.email ?? row.user.checkoutE
  * Supplier certificates: the admin list «Ждут сертификата», upload with checks, removal. The only
  * place in the API that holds a `.p12` in the clear (during the checks of an upload).
  */
+/**
+ * Owner's decision 2026-11-20: until supplier kits are understood, an upload is only read (the
+ * password opens the .p12, the profile is signed by Apple). The device, certificate match, dates
+ * and OCSP are not checked; the worker still marks expired and revoked kits.
+ */
+const STRICT_KIT_CHECKS = false;
+
 @Injectable()
 export class DeviceCertificatesService {
   private readonly logger = new Logger(DeviceCertificatesService.name);
@@ -267,8 +274,14 @@ export class DeviceCertificatesService {
     }
     try {
       const parsed = await parseP12(p12, password);
-      const facts = checkKit({ p12: parsed, profile: readProfile(content), udid, now: new Date() });
-      const issuer = findIssuer(parsed.certificate, parsed.chain);
+      const facts = checkKit({
+        p12: parsed,
+        profile: readProfile(content),
+        udid,
+        now: new Date(),
+        strict: STRICT_KIT_CHECKS,
+      });
+      const issuer = STRICT_KIT_CHECKS ? findIssuer(parsed.certificate, parsed.chain) : null;
       if (issuer) {
         const state = await checkRevocation(parsed.certificate, issuer, this.ocsp);
         if (state === 'revoked') throw new SigningError('CERT_REVOKED');

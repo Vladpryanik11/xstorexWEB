@@ -4,7 +4,6 @@ export type SigningErrorCode =
   | 'UDID_NOT_IN_PROFILE'
   | 'CERT_NOT_IN_PROFILE'
   | 'KIT_EXPIRED'
-  | 'NOT_WILDCARD'
   | 'ALL_DEVICES_PROFILE'
   | 'CERT_REVOKED';
 

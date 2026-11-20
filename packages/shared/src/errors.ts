@@ -44,7 +44,6 @@ export const ErrorCode = {
   UDID_NOT_IN_PROFILE: 'UDID_NOT_IN_PROFILE',
   CERT_NOT_IN_PROFILE: 'CERT_NOT_IN_PROFILE',
   KIT_EXPIRED: 'KIT_EXPIRED',
-  NOT_WILDCARD: 'NOT_WILDCARD',
   ALL_DEVICES_PROFILE: 'ALL_DEVICES_PROFILE',
   CERT_REVOKED: 'CERT_REVOKED',
   SIGNING_UNAVAILABLE: 'SIGNING_UNAVAILABLE',
@@ -99,8 +98,6 @@ export const errorMessages: Record<ErrorCode, string> = {
     'В профиле нет этого iPhone. Проверьте, что поставщику отправлен UDID этого устройства',
   CERT_NOT_IN_PROFILE: 'Сертификат и профиль от разных заказов',
   KIT_EXPIRED: 'Срок сертификата или профиля уже закончился',
-  NOT_WILDCARD:
-    'Профиль подходит только для одного приложения, попросите у поставщика профиль для всех приложений',
   ALL_DEVICES_PROFILE: 'Этот профиль не для конкретного iPhone',
   CERT_REVOKED: 'Сертификат уже отозван',
   SIGNING_UNAVAILABLE: 'Загрузка сертификатов недоступна: не задан мастер-ключ',

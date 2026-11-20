@@ -235,15 +235,24 @@ describe('upload', () => {
     expect(mail?.subject).toBe('iPad готов, можно ставить');
   });
 
-  it('refused upload leaves device pending', async () => {
-    const { email, device } = await boundDevice();
+  it('accepts a kit for another iPhone while strict checks are off', async () => {
+    const { device } = await boundDevice();
     const res = await admin().post(
       `/admin/devices/${device.id}/certificate`,
       upload(makeKit({ udids: ['00008110-FFFFFFFFFFFFFFFF'] })),
     );
+    expect(res.status).toBe(201);
+    expect((await db.device.findUniqueOrThrow({ where: { id: device.id } })).status).toBe('active');
+  });
+
+  it('refused upload leaves device pending', async () => {
+    const { email, device } = await boundDevice();
+    const res = await admin().post(
+      `/admin/devices/${device.id}/certificate`,
+      upload(makeKit(), 'wrong'),
+    );
     expect(res.status).toBe(422);
-    expect(res.body.code).toBe('UDID_NOT_IN_PROFILE');
-    expect(res.body.message).toContain('В профиле нет этого iPhone');
+    expect(res.body.code).toBe('P12_INVALID');
     expect(await db.deviceCertificate.count()).toBe(0);
     expect((await db.device.findUniqueOrThrow({ where: { id: device.id } })).status).toBe(
       'pending',
@@ -281,13 +290,12 @@ describe('upload', () => {
     expect(letters[1]?.subject).toBe('Переустановите приложения');
   });
 
-  it('revoked at upload is refused', async () => {
+  it('upload does not ask OCSP while strict checks are off', async () => {
     const { device } = await boundDevice();
     const kit = makeKit();
     ocspBody = await makeOcspResponse(kit, 'revoked');
     const res = await admin().post(`/admin/devices/${device.id}/certificate`, upload(kit));
-    expect(res.status).toBe(422);
-    expect(res.body.code).toBe('CERT_REVOKED');
+    expect(res.status).toBe(201);
   });
 
   it('an unanswered OCSP check does not block the upload', async () => {
