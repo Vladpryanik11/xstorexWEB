@@ -49,7 +49,6 @@ export function checkKit(input: {
   ) {
     throw new SigningError('KIT_EXPIRED');
   }
-  if (profile.appIdPattern !== `${profile.teamId}.*`) throw new SigningError('NOT_WILDCARD');
   return {
     teamId: profile.teamId,
     profileUuid: profile.uuid,

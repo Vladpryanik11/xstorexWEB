@@ -83,9 +83,7 @@ export function CertificateUpload({ deviceId }: { deviceId: string }) {
           />
         </FormField>
       </div>
-      <p className={s.muted}>
-        Файлы проверяются сразу: пароль, этот iPhone в профиле, сроки и профиль для всех приложений.
-      </p>
+      <p className={s.muted}>Файлы проверяются сразу: пароль, этот iPhone в профиле и сроки.</p>
       <div>
         <button type="submit" disabled={busy || !p12 || !profile}>
           Загрузить

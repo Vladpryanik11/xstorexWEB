@@ -65,13 +65,11 @@ describe('checkKit', () => {
     ).toBe('KIT_EXPIRED');
   });
 
-  it('explicit app id', async () => {
-    expect(await codeOf(() => check(makeKit({ appId: `${TEST_TEAM_ID}.ru.app` })))).toBe(
-      'NOT_WILDCARD',
-    );
-    expect(await codeOf(() => check(makeKit({ appId: `${TEST_TEAM_ID}.ru.*` })))).toBe(
-      'NOT_WILDCARD',
-    );
+  it('accepts a profile for one app and keeps its app id', async () => {
+    for (const appId of [`${TEST_TEAM_ID}.ru.app`, `${TEST_TEAM_ID}.ru.*`]) {
+      const facts = await check(makeKit({ appId }));
+      expect(facts.appIdPattern).toBe(appId);
+    }
   });
 
   it('ProvisionsAllDevices', async () => {
