@@ -200,3 +200,23 @@ test('the word «Xstorex» leads home on a phone and a computer', async ({ page 
     expect(await noHorizontalScroll(page)).toBe(true);
   }
 });
+
+test('on a phone the pill holds only the word and the menu button', async ({ page }) => {
+  for (const auth of ['', 'auth=1&']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/dev/ui?${auth}path=/faq`);
+    const header = page.locator('header').first();
+    await expect(header.getByRole('link', { name: 'Xstorex, на главную' })).toBeVisible();
+    await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Тарифы' })).toBeHidden();
+    await expect(header.getByRole('link', { name: 'Мой доступ' })).toBeHidden();
+    const pillBox = await pill(page).boundingBox();
+    const burger = await header.getByRole('button', { name: 'Меню' }).boundingBox();
+    if (!pillBox || !burger) throw new Error('no box');
+    expect(pillBox.x + pillBox.width - (burger.x + burger.width)).toBeLessThanOrEqual(12);
+    // Pricing and «Мой доступ» stay one tap away, in the menu.
+    await header.getByRole('button', { name: 'Меню' }).click();
+    const name = auth ? 'Мой доступ' : 'Тарифы';
+    await expect(page.getByRole('dialog').getByRole('link', { name })).toBeVisible();
+  }
+});
