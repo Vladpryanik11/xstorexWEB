@@ -105,3 +105,17 @@ export async function parseP12(p12: Buffer, password: string): Promise<ParsedP12
     chain: opened.certs.filter((c) => c !== leaf),
   };
 }
+
+/**
+ * Packs a parsed `.p12` again under a one-time `password` (AES-256) for zsign: zsign takes the
+ * Apple WWDR chain only from a `.p12`, and the supplier's own password never has to reach
+ * zsign's command line. The result lives only in a signing job's private temp dir.
+ */
+export function packP12(parsed: ParsedP12, password: string): Buffer {
+  const key = forge.pki.privateKeyFromPem(parsed.privateKeyPem);
+  const certs = [parsed.certificate, ...parsed.chain].map((c) =>
+    forge.pki.certificateFromPem(c.toString()),
+  );
+  const asn1 = forge.pkcs12.toPkcs12Asn1(key, certs, password, { algorithm: 'aes256' });
+  return Buffer.from(forge.asn1.toDer(asn1).getBytes(), 'binary');
+}

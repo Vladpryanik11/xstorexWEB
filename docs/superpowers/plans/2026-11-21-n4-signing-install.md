@@ -14,7 +14,7 @@
 
 - Все ограничения Н1–Н3 действуют (ответы `{ code, message }`, тексты ошибок в `packages/shared/src/errors.ts`, Origin-проверка, аудит, без Tailwind, вёрстка по скиллу `xstore-design`, покупателю не показываются слова «сертификат», «профиль», «UDID», «поставщик» — кроме строки этапа «Подписываем сертификатом вашего iPhone», согласованной владельцем 21.11).
 - `decryptSecret` по-прежнему только в `apps/api/src/apple/**` и `apps/worker/src/**`. В модуле `install` API расшифровки нет.
-- zsign получает пути к PEM-файлам (`-k key.pem -c cert.pem`), пароль в argv и env не попадает. PEM-файлы `0600` во временной папке задачи; папка удаляется в `finally`.
+- zsign получает одноразовую перепаковку `.p12` (`packP12`, AES-256, случайный пароль) — пароль поставщика в argv и env не попадает. Файлы `0600` во временной папке задачи (`-t` zsign тоже в ней); папка удаляется в `finally`.
 - Лимиты (env воркера): `SIGNING_TIMEOUT_MS=600000`, `SIGNING_MEMORY_MB=2048`, `SIGNING_CPU_SEC=900`, `ZSIGN_BIN=/usr/local/bin/zsign`. Свободное место перед скачиванием ≥ 2,5 × `sizeBytes`.
 - Ключ кэша и id задачи очереди: `sign-<appVersionId>-<deviceCertificateId>` (в id задач BullMQ нельзя `:`).
 - `Bundle ID` при подписи: `appIdPattern` вида `<TEAM>.*` → не меняется; иначе → `appIdPattern` без префикса `<TEAM>.`.

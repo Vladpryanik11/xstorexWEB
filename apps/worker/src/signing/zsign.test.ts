@@ -1,6 +1,8 @@
 import { chmod, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { parseP12 } from '@xstore/signing';
+import { makeKit } from '@xstore/signing/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DiskFullError, ensureFreeSpace } from './disk.js';
 import { writeIdentityFiles } from './identity-files.js';
@@ -34,9 +36,10 @@ const opts = (zsignBin: string) => ({
   zsignBin,
   input: join(dir, 'in.ipa'),
   output: join(dir, 'out.ipa'),
-  keyPath: join(dir, 'key.pem'),
-  certPath: join(dir, 'cert.pem'),
+  p12Path: join(dir, 'identity.p12'),
+  p12Password: 'one-time',
   profilePath: join(dir, 'embedded.mobileprovision'),
+  workDir: dir,
   timeoutMs: 5000,
   memoryMb: 512,
   cpuSec: 30,
@@ -47,7 +50,7 @@ describe('runZsign', () => {
     await writeFile(join(dir, 'in.ipa'), 'ipa');
   });
 
-  it('passes PEM files and never a password', async () => {
+  it('passes the one-time p12, the profile and the work dir', async () => {
     const bin = await script('zsign', RECORDER);
     await runZsign(opts(bin));
     const args = (await readFile(join(dir, 'args.txt'), 'utf8')).trim().split('\n');
@@ -55,16 +58,17 @@ describe('runZsign', () => {
     expect(args).toEqual(
       expect.arrayContaining([
         '-k',
-        o.keyPath,
-        '-c',
-        o.certPath,
+        o.p12Path,
+        '-p',
+        'one-time',
+        '-t',
+        o.workDir,
         '-m',
         o.profilePath,
         '-o',
         o.output,
       ]),
     );
-    expect(args).not.toContain('-p');
     expect(args.at(-1)).toBe(o.input);
     expect(await readFile(o.output, 'utf8')).toBe('ipa');
   });
@@ -100,17 +104,21 @@ describe('runZsign', () => {
 });
 
 describe('writeIdentityFiles', () => {
-  it('writes key, certificate and profile readable by the owner only', async () => {
-    const files = await writeIdentityFiles(dir, {
-      privateKeyPem: 'KEY',
-      certificatePem: 'CERT',
-      profile: Buffer.from('PROFILE'),
-    });
-    for (const path of [files.keyPath, files.certPath, files.profilePath]) {
+  it('repacks the p12 under a fresh password, readable by the owner only', async () => {
+    const kit = makeKit();
+    const parsed = await parseP12(kit.p12, kit.password);
+    const files = await writeIdentityFiles(dir, { parsed, profile: Buffer.from('PROFILE') });
+    for (const path of [files.p12Path, files.profilePath]) {
       expect((await stat(path)).mode & 0o777).toBe(0o600);
     }
-    expect(await readFile(files.keyPath, 'utf8')).toBe('KEY');
+    expect(files.p12Password).not.toBe(kit.password);
+    expect(files.p12Password.length).toBeGreaterThanOrEqual(24);
+    const again = await parseP12(await readFile(files.p12Path), files.p12Password);
+    expect(again.certificate.fingerprint256).toBe(parsed.certificate.fingerprint256);
+    expect(again.chain).toHaveLength(parsed.chain.length);
     expect(await readFile(files.profilePath, 'utf8')).toBe('PROFILE');
+    const other = await writeIdentityFiles(dir, { parsed, profile: Buffer.from('PROFILE') });
+    expect(other.p12Password).not.toBe(files.p12Password);
   });
 });
 

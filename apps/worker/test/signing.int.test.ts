@@ -111,10 +111,10 @@ it('signs, stores the build and completes every waiting request', async () => {
     new GetObjectCommand({ Bucket: deps.s3.bucket('signed'), Key: build.key }),
   );
   expect(Buffer.from(await obj.Body!.transformToByteArray())).toEqual(seed.ipa);
-  // The supplier password never reaches zsign; PEM files do.
+  // The supplier password never reaches zsign; a one-time repack does.
   const args = await readFile(join(zsign.dir, (await argsFiles())[0]!), 'utf8');
   expect(args).not.toContain(seed.kit.password);
-  expect(args).toContain('key.pem');
+  expect(args).toContain('identity.p12');
   expect(args).not.toContain('-b\n');
   // The temp dir is gone.
   expect(await readdir(tmp)).toEqual([]);

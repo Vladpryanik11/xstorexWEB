@@ -1,4 +1,4 @@
-import { stat } from 'node:fs/promises';
+import { mkdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PrismaClient, SigningStage } from '@xstore/db';
 import { decryptSecret } from '@xstore/secrets/decrypt';
@@ -47,7 +47,7 @@ export async function finishRequests(
 /**
  * `signing:sign`: signs one app version with one device's supplier files (spec Н4 §5). A build
  * that already exists is reused. The original is downloaded to a private temp dir, the `.p12`
- * becomes PEM files there, zsign signs under limits, and the result streams up to `signed` in
+ * is packed again there under a one-time password, zsign signs under limits, and the result streams up to `signed` in
  * parts. Every request sharing the queue job finishes with the build. Infrastructure errors
  * throw, so BullMQ retries; the caller marks the requests failed after the last attempt.
  */
@@ -107,21 +107,20 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
     let files: Awaited<ReturnType<typeof writeIdentityFiles>>;
     try {
       const parsed = await parseP12(p12, password.toString('utf8'));
-      files = await writeIdentityFiles(dir, {
-        privateKeyPem: parsed.privateKeyPem,
-        certificatePem: parsed.certificate.toString(),
-        profile: Buffer.from(cert.profile),
-      });
+      files = await writeIdentityFiles(dir, { parsed, profile: Buffer.from(cert.profile) });
     } finally {
       p12.fill(0);
       password.fill(0);
     }
     const output = join(dir, 'signed.ipa');
+    const workDir = join(dir, 'work');
+    await mkdir(workDir);
     await runZsign({
       zsignBin: config.signing.zsignBin,
       input,
       output,
       ...files,
+      workDir,
       ...(bundleId !== version.bundleId ? { bundleId } : {}),
       timeoutMs: config.signing.timeoutMs,
       memoryMb: config.signing.memoryMb,

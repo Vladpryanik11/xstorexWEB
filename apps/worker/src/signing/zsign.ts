@@ -17,9 +17,12 @@ export type ZsignOptions = {
   zsignBin: string;
   input: string;
   output: string;
-  keyPath: string;
-  certPath: string;
+  /** A `.p12` packed for this run only, and its one-time password (`writeIdentityFiles`). */
+  p12Path: string;
+  p12Password: string;
   profilePath: string;
+  /** zsign unpacks here (inside the job's temp dir, so the disk check and cleanup cover it). */
+  workDir: string;
   /** Set only when the profile needs another bundle id (single-app profile). */
   bundleId?: string;
   timeoutMs: number;
@@ -30,8 +33,8 @@ export type ZsignOptions = {
 const STDERR_TAIL = 2048;
 
 /**
- * Signs `input` into `output` with PEM key and certificate files: no password ever reaches argv
- * or env. Runs under `prlimit` (address space, CPU time) in its own process group, which is
+ * Signs `input` into `output`. The `.p12` is a one-time repack whose random password is the only
+ * secret on zsign's command line; the supplier's password never gets there. Runs under `prlimit` (address space, CPU time) in its own process group, which is
  * killed with SIGKILL at `timeoutMs`. The argv is never logged.
  */
 export async function runZsign(o: ZsignOptions): Promise<void> {
@@ -41,15 +44,18 @@ export async function runZsign(o: ZsignOptions): Promise<void> {
     '--',
     o.zsignBin,
     '-k',
-    o.keyPath,
-    '-c',
-    o.certPath,
+    o.p12Path,
+    '-p',
+    o.p12Password,
     '-m',
     o.profilePath,
     '-o',
     o.output,
     '-z',
     '1',
+    '-t',
+    o.workDir,
+    '-q',
     ...(o.bundleId ? ['-b', o.bundleId] : []),
     o.input,
   ];
