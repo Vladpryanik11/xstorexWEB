@@ -28,6 +28,10 @@ describe('PayStep', () => {
     expect(screen.getByText('для одного iPhone')).toBeInTheDocument();
     expect(screen.getByText('Подписка начнётся сразу после оплаты')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'условиями' })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: 'обработкой персональных данных' })).toHaveAttribute(
+      'href',
+      '/consent',
+    );
   });
 
   it('button is disabled without email and the checkbox', () => {

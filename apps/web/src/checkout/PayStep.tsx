@@ -201,6 +201,10 @@ export function PayStep({
               Согласен с{' '}
               <a href="/terms" className={styles.link}>
                 условиями
+              </a>{' '}
+              и{' '}
+              <a href="/consent" className={styles.link}>
+                обработкой персональных данных
               </a>
             </span>
           </label>

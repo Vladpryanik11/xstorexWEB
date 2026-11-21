@@ -1,0 +1,80 @@
+/* Legal pages: one readable column of text on a white panel. */
+
+.page {
+  box-sizing: border-box;
+  display: grid;
+  gap: 1rem;
+  width: min(44rem, 100% - 2 * var(--x-gutter));
+  margin: 1.5rem auto 3rem;
+  padding: 1.75rem 1.5rem;
+  border-radius: var(--x-radius-panel);
+  background: var(--x-card);
+  box-shadow: var(--x-shadow);
+}
+
+.head {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.title {
+  margin: 0;
+  font: var(--x-type-h1);
+  letter-spacing: var(--x-track-head);
+}
+
+.updated {
+  margin: 0;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.section {
+  display: grid;
+  gap: 0.625rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--x-hair);
+}
+
+.heading {
+  margin: 0;
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
+}
+
+.text {
+  margin: 0;
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
+}
+
+.list {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  font: var(--x-type-body);
+  letter-spacing: var(--x-track-body);
+}
+
+.link {
+  color: var(--x-blue);
+  text-underline-offset: 0.15em;
+}
+
+.link:hover {
+  color: var(--x-blue-deep);
+}
+
+.link:focus-visible {
+  outline: none;
+  border-radius: 0.25rem;
+  box-shadow: 0 0 0 3px var(--x-sky-200);
+}
+
+@media (min-width: 48em) {
+  .page {
+    padding: 2.5rem 3rem;
+  }
+}
