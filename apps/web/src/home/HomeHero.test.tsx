@@ -46,3 +46,11 @@ it('on a phone leads with the guarantee and a two-line promise (variant A)', () 
   ).toHaveTextContent(/^Удалённые из App Store Premium‑доступы к приложениям уже в подписке$/);
   expect(container.querySelector('[data-hero-icons]')).not.toBeNull();
 });
+
+it('puts the button right above the audience line, under the icon showcase (owner 2026-11-21)', () => {
+  const { container } = render(<HomeHero collections={collections} />);
+  const cta = screen.getByRole('link', { name: /Подключить iPhone/ });
+  const showcase = container.querySelector('[data-hero-icons]') as Element;
+  expect(showcase.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(cta.nextElementSibling).toHaveTextContent(/10 000\+\s*пользователей в месяц/);
+});

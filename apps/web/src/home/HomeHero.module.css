@@ -339,8 +339,8 @@
 }
 
 /* Phone, variant A (owner 2026-11-20, mockup https://claude.ai/artifact/HXKevH2yhDBx95LFPsfjYU):
-   guarantee pill, headline with three real icons, one-line promise, the button, then real catalog
-   icons on a ring. The benefits list and the iPhone picture stay for wider screens. */
+   guarantee pill, headline with three real icons, two-line promise, real catalog icons on a ring,
+   then the button right above the audience line (owner 2026-11-21). The benefits list and the iPhone picture stay for wider screens. */
 @media (max-width: 47.99em) {
   .hero {
     padding-top: calc(var(--hero-under-pill) + 1.5rem);
@@ -430,7 +430,7 @@
 
   .cta {
     min-height: 3.25rem;
-    margin-top: 1.25rem;
+    margin-top: 0.5rem;
     font: var(--x-type-body);
     font-weight: 600;
     letter-spacing: var(--x-track-body);
@@ -443,7 +443,7 @@
 
   .audience {
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 1rem;
   }
 
   .avatars > span {
