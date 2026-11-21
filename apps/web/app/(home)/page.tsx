@@ -1,4 +1,4 @@
-import type { AppDetail } from '@xstore/shared';
+import { ApiClientError, type AppDetail } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { Fragment } from 'react';
@@ -9,12 +9,16 @@ import { CollectionSection } from '../../src/catalog/CollectionSection';
 import { HeroCarousel } from '../../src/catalog/HeroCarousel';
 import { HowItWorks } from '../../src/catalog/HowItWorks';
 import { SectionTiles } from '../../src/catalog/SectionTiles';
+import { HomeBenefits } from '../../src/home/HomeBenefits';
+import { HomeHero } from '../../src/home/HomeHero';
+import { HomeFaq, HomeFinal, HomePlan, HomeStats, HomeWhy } from '../../src/home/HomeSell';
+import { HomeStickyCta } from '../../src/home/HomeStickyCta';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: { absolute: 'Xstore — приложения для iPhone и iPad' },
   description:
-    'Каталог приложений для iPhone и iPad. Оплата без регистрации, установка прямо с сайта.',
+    '200+ приложений с Premium‑доступом на вашем iPhone, в том числе удалённые из App Store. Установка прямо из Safari.',
   openGraph: { title: 'Xstore — приложения для iPhone и iPad', type: 'website' },
 };
 
@@ -29,38 +33,62 @@ async function sharedApp(api: Awaited<ReturnType<typeof serverApi>>, slug: unkno
   return api.app(slug).catch((): AppDetail | null => null);
 }
 
+/** The plan price for the selling blocks; without a plan they still render, just without a price. */
+async function planPrice(api: Awaited<ReturnType<typeof serverApi>>): Promise<number | null> {
+  try {
+    return (await api.getPlan()).priceRub;
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status < 500) return null;
+    throw err;
+  }
+}
+
 export default async function HomePage({ searchParams }: Props) {
   const api = await serverApi();
-  const [home, shared] = await Promise.all([api.home(), sharedApp(api, (await searchParams).app)]);
+  const [home, shared, priceRub] = await Promise.all([
+    api.home(),
+    sharedApp(api, (await searchParams).app),
+    planPrice(api),
+  ]);
   const chips = <CategoryChips categories={home.categories} />;
 
   return (
     <>
-      <section className={styles.hero} data-home-hero>
-        <span className={styles.word} aria-hidden="true">
-          XSTORE
-        </span>
-        <div className={styles.heroInner}>
-          <h1 className={styles.title}>Приложения для iPhone и iPad</h1>
-          <p className={styles.lead}>
-            Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не
-            нужна.
-          </p>
-          <SearchField action="/search" />
+      <HomeHero collections={home.collections} />
+      {/* Order «Проверь и купи» (owner 2026-11-21, spec v2 §3.1): check, figures, how, why, plan,
+          catalog, questions, last call. */}
+      <div className={styles.flow}>
+        <HomeBenefits />
+        <div className={styles.check}>
+          <section className={styles.find} aria-labelledby="home-find">
+            <h2 id="home-find" className={styles.findTitle}>
+              Ищете конкретное приложение?
+            </h2>
+            <p className={styles.findLead}>Проверьте, есть ли оно в каталоге.</p>
+            <div className={styles.findField}>
+              <SearchField action="/search" />
+            </div>
+          </section>
+          <SectionTiles />
         </div>
-      </section>
-      <div className={styles.shelves}>
-        <SectionTiles />
-        <HeroCarousel banners={home.banners} />
-        {home.collections.map((c, i) => (
-          <Fragment key={c.slug}>
-            <CollectionSection collection={c} />
-            {i === CHIPS_AFTER - 1 ? chips : null}
-          </Fragment>
-        ))}
-        {home.collections.length < CHIPS_AFTER ? chips : null}
+        <HomeStats />
         <HowItWorks />
+        <HomeWhy />
+        <HomePlan priceRub={priceRub} />
+        <div className={styles.catalog}>
+          <HeroCarousel banners={home.banners} />
+          {home.collections.map((c, i) => (
+            <Fragment key={c.slug}>
+              <CollectionSection collection={c} />
+              {i === CHIPS_AFTER - 1 ? chips : null}
+            </Fragment>
+          ))}
+          {home.collections.length < CHIPS_AFTER ? chips : null}
+        </div>
+        <HomeFaq />
+        <HomeFinal priceRub={priceRub} />
       </div>
+      <HomeStickyCta />
       {shared ? (
         <AppPreview
           key={shared.slug}

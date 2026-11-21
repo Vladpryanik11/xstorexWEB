@@ -5,13 +5,18 @@ import { expect, test } from '@playwright/test';
 test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Приложения для iPhone и iPad' }),
+    page.getByRole('heading', {
+      level: 1,
+      name: isMobile
+        ? /^200\+ приложений на\sвашем\siPhone$/
+        : /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
+    }),
   ).toBeVisible();
-  await expect(
-    page.getByText(
-      'Найдите нужное приложение, оплатите и установите его прямо с сайта. Регистрация не нужна.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+    'href',
+    '/get',
+  );
+  await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
     .getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ })
@@ -34,7 +39,7 @@ test('home shows collections and an app opens its install sheet', async ({ page,
 test('home explains how it works and has no install banner', async ({ page }) => {
   await page.goto('/');
   const how = page.getByRole('region', { name: 'Как это работает' });
-  for (const step of ['Найдите приложение', 'Оплатите', 'Установите']) {
+  for (const step of ['Оплатите', 'Подключите iPhone', 'Установите']) {
     await expect(how.getByRole('heading', { name: step })).toBeVisible();
   }
   await expect(
@@ -53,9 +58,13 @@ test('home renders every collection layout and the category chips', async ({ pag
   const chips = page.getByRole('navigation', { name: 'Категории' });
   await expect(chips.getByRole('link', { name: 'Игры' })).toHaveAttribute('href', '/category/igry');
   // The seeded icons come from object storage.
-  const icon = page.locator('img[src*="/icons/"]').first();
+  const icon = page.locator('img[src*="/icons/"]:visible').first();
   await expect(icon).toBeVisible();
-  expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  // Shelf icons load lazily; bring one on screen before checking it decoded.
+  await icon.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
 });
 
 test('search finds by Cyrillic prefix', async ({ page }) => {
@@ -125,7 +134,9 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home hero is light, sits under the pill and carries the XSTORE word', async ({ page }) => {
+test('home hero is light, sits under the pill; the iPhone with the catalog is for wide screens', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
@@ -133,15 +144,19 @@ test('home hero is light, sits under the pill and carries the XSTORE word', asyn
   expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
     /rgb\(227, 237, 253\).*rgb\(242, 248, 253\)/,
   );
-  const word = hero.locator('[aria-hidden="true"]', { hasText: 'XSTORE' });
-  await expect(word).toHaveCount(1);
-  await expect(word).toHaveCSS('color', 'rgb(255, 255, 255)');
+  // Owner 2026-11-20: no iPhone picture in the phone layout.
+  const phone = hero.locator('[data-hero-phone]');
+  await expect(phone).toBeHidden();
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(14, 26, 51)');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(phone).toBeVisible();
+  expect(await phone.locator('[data-app] img').count()).toBeGreaterThan(0);
 });
 
 test('an app morphs into its sheet; Escape closes it and returns focus', async ({ page }) => {
@@ -190,5 +205,103 @@ test('category chips do not widen the catalog and category pages', async ({ page
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
+  }
+});
+
+test('on a phone the offer button follows the visitor once the hero scrolls away', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
+  await expect(buttons).toHaveCount(1);
+  await page.getByRole('heading', { name: 'Как это работает' }).scrollIntoViewIfNeeded();
+  await expect(buttons).toHaveCount(isMobile ? 2 : 1);
+  await page.locator('footer').scrollIntoViewIfNeeded();
+  await expect(buttons).toHaveCount(1);
+});
+
+test('on a phone the hero: promise, icon row, button, then the guarantee and 10 000+', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  const trust = hero.getByText('Гарантия на весь срок подписки');
+  const icons = hero.locator('[data-hero-icons]');
+  const cta = hero.locator('[data-hero-cta]');
+  const list = page.getByRole('list', { name: 'Что входит в подписку' });
+  if (isMobile) {
+    await expect(hero.getByText('Даже удалённые из App Store.')).toBeVisible();
+    await expect(icons.locator('[data-icon]')).toHaveCount(5);
+    await expect(list).toBeHidden();
+    // Owner 2026-11-21: icons, then the button that fits its label, then the guarantee.
+    const [i, c, t] = await Promise.all([icons, cta, trust].map((l) => l.boundingBox()));
+    expect(c?.width).toBeLessThan(300);
+    expect(c?.height).toBeGreaterThanOrEqual(52);
+    expect((i?.y ?? 0) < (c?.y ?? 0) && (c?.y ?? 0) < (t?.y ?? 0)).toBe(true);
+    // The whole first screen fits a 390 × 844 phone.
+    const proof = hero.getByText('пользователей в месяц');
+    expect(((await proof.boundingBox())?.y ?? 9999) + 24).toBeLessThan(844);
+  } else {
+    await expect(trust).toBeHidden();
+    await expect(icons).toBeHidden();
+    await expect(list.getByRole('listitem')).toHaveCount(3);
+  }
+});
+
+test('home blocks follow the «Проверь и купи» order', async ({ page }) => {
+  await page.goto('/');
+  const names = [
+    'Ищете конкретное приложение?',
+    'Как это работает',
+    'Почему Xstorex',
+    'Весь каталог на 1 месяц',
+    'Популярное',
+    'Частые вопросы',
+    'Ваши приложения уже ждут',
+  ];
+  const ys: number[] = [];
+  for (const name of names) {
+    const box = await page.getByRole('heading', { name, exact: true }).first().boundingBox();
+    ys.push(box?.y ?? -1);
+  }
+  expect(ys).toEqual([...ys].sort((a, b) => a - b));
+  await expect(
+    page.getByRole('list', { name: 'Xstorex в цифрах' }).getByRole('listitem'),
+  ).toHaveCount(3);
+});
+
+test('the benefits panel is for wide screens only', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const panel = page.getByRole('region', { name: 'Преимущества Xstorex' });
+  if (isMobile) await expect(panel).toBeHidden();
+  else await expect(panel.getByRole('listitem')).toHaveCount(4);
+});
+
+test('home sells the plan: price card, reasons, questions and a last call', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const plan = page.getByRole('region', { name: 'Весь каталог на 1 месяц' });
+  await expect(plan.getByText(/₽\s*в месяц/)).toBeVisible();
+  const buy = plan.getByRole('link', { name: /^Получить доступ за\s.+₽$/ });
+  await expect(buy).toHaveAttribute('href', '/get');
+  await expect(
+    page.getByRole('region', { name: 'Почему Xstorex' }).getByRole('heading', { level: 3 }),
+  ).toHaveCount(4);
+  await expect(page.getByRole('region', { name: 'Частые вопросы' }).locator('summary')).toHaveCount(
+    4,
+  );
+  const last = page.getByRole('region', { name: 'Ваши приложения уже ждут' });
+  await expect(last.getByRole('link', { name: /^Получить доступ за/ })).toHaveAttribute(
+    'href',
+    '/get',
+  );
+  if (isMobile) {
+    // The sticky button never doubles the plan button: only the hero one stays in the page.
+    await buy.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveCount(1);
   }
 });

@@ -1,0 +1,452 @@
+/* Selling hero (spec v2 §3.1). The header floats over it (overHero), so the hero starts at the
+   top of the page and pads itself below the pill: 3.5rem pill + .75rem offset. */
+.hero {
+  --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
+  position: relative;
+  overflow: clip;
+  padding: calc(var(--hero-under-pill) + 2rem) 0 2.5rem;
+  background: linear-gradient(180deg, var(--x-sky-50) 0%, var(--x-ice) 100%);
+  color: var(--x-text);
+}
+
+.inner {
+  box-sizing: content-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+  max-width: var(--x-page-max);
+  margin-inline: auto;
+  padding-inline: var(--x-gutter);
+}
+
+.copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.title {
+  max-width: 34rem;
+  margin: 0;
+  font: var(--x-type-display);
+  letter-spacing: var(--x-track-head);
+  text-wrap: balance;
+}
+
+.accent {
+  color: var(--x-blue);
+}
+
+.benefits {
+  display: grid;
+  gap: 1rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 22.5%;
+  background: linear-gradient(140deg, var(--x-sky-400), var(--x-blue) 60%, var(--x-blue-deep));
+  box-shadow:
+    0 10px 20px -10px rgba(26, 110, 234, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: var(--x-white);
+}
+
+.icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.benefitTitle {
+  display: block;
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
+}
+
+.benefitText {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3.5rem;
+  margin-top: 2rem;
+  padding: 0 1.75rem;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-blue);
+  box-shadow: 0 6px 14px -6px var(--x-blue);
+  color: var(--x-white);
+  font: var(--x-type-h3);
+  letter-spacing: var(--x-track-body);
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    transform 0.15s var(--x-ease);
+}
+
+.cta svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cta:hover {
+  background: var(--x-blue-deep);
+}
+
+.cta:active {
+  transform: scale(0.97);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 3px;
+}
+
+.audience {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.avatars {
+  display: flex;
+}
+
+.avatars > span {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-left: -0.625rem;
+  border: 2px solid var(--x-white);
+  border-radius: 50%;
+  color: var(--x-white);
+  font: var(--x-type-cap);
+}
+
+.avatars > span:first-child {
+  margin-left: 0;
+  background: #ffb86b;
+}
+
+.avatars > span:nth-child(2) {
+  background: var(--x-sky-400);
+}
+
+.avatars > span:nth-child(3) {
+  background: #2bd27a;
+}
+
+.avatars > span:last-child {
+  background: var(--x-text);
+}
+
+.audienceNum {
+  display: block;
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.audienceText {
+  display: block;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 30rem;
+}
+
+/* Soft blue rings behind the phone instead of the old XSTORE word. */
+.rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20rem;
+  height: 20rem;
+  translate: -50% -50%;
+  border: 1px solid var(--x-hair);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3rem rgba(227, 237, 253, 0.55),
+    0 0 0 6rem rgba(227, 237, 253, 0.3);
+  pointer-events: none;
+}
+
+@media (min-width: 48em) {
+  .cta {
+    width: auto;
+  }
+}
+
+@media (min-width: 64em) {
+  .hero {
+    padding: calc(var(--hero-under-pill) + 3rem) 0 3.5rem;
+  }
+
+  .inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .benefits {
+    gap: 1.25rem;
+    margin-top: 2.25rem;
+  }
+
+  .icon {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .cta {
+    margin-top: 3rem;
+  }
+
+  .audience {
+    margin-top: 2rem;
+  }
+
+  .visual {
+    min-height: 36rem;
+  }
+
+  .rings {
+    width: 28rem;
+    height: 28rem;
+  }
+}
+
+/* Phone and tablet (owner 2026-11-20): the offer reads as one object — the three benefits sit
+   in a white card with hairlines, the button and audience line right under it, all in the
+   first screen; the phone follows without the empty band around it. */
+@media (max-width: 63.99em) {
+  .hero {
+    padding: calc(var(--hero-under-pill) + 1.5rem) 0 1rem;
+  }
+
+  .inner {
+    gap: 0.5rem;
+  }
+
+  .benefits {
+    box-sizing: border-box;
+    width: 100%;
+    gap: 0;
+    margin-top: 1.5rem;
+    padding: 0.25rem 1rem;
+    border-radius: var(--x-radius-panel);
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow:
+      var(--x-shadow-sm),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+
+  .benefit {
+    gap: 0.875rem;
+    padding: 0.875rem 0;
+  }
+
+  .benefit + .benefit {
+    border-top: 1px solid var(--x-hair);
+  }
+
+  .icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .cta {
+    margin-top: 1.25rem;
+  }
+
+  .audience {
+    align-self: center;
+    gap: 0.625rem;
+    margin-top: 1rem;
+  }
+
+  .audience > span:last-child {
+    display: flex;
+    gap: 0.3em;
+    white-space: nowrap;
+  }
+
+  .avatars > span {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: -0.5rem;
+  }
+
+  .visual {
+    min-height: 0;
+    padding-block: 2.5rem 1.5rem;
+  }
+
+  .rings {
+    width: 18rem;
+    height: 18rem;
+  }
+}
+
+/* Phone-only pieces. */
+.trust,
+.sub,
+.stage {
+  display: none;
+}
+
+/* Phone, «Проверь и купи» (owner 2026-11-21, mockup https://claude.ai/artifact/KTT2YNZgLBaoF76GdxKMtN):
+   centred promise, a row of real icons, the button with the guarantee and the audience right
+   under it. Three groups with more air between them than inside. No iPhone picture, no list. */
+@media (max-width: 47.99em) {
+  .hero {
+    padding-top: calc(var(--hero-under-pill) + 1.75rem);
+  }
+
+  .copy {
+    align-items: center;
+    padding-inline: 0.5rem;
+    text-align: center;
+  }
+
+  .wide {
+    display: none;
+  }
+
+  .title {
+    font: var(--x-type-h1);
+  }
+
+  .sub {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0.625rem 0 0;
+    color: var(--x-text-2);
+    font: var(--x-type-body);
+    letter-spacing: var(--x-track-body);
+  }
+
+  .subLead {
+    color: var(--x-text);
+    font-weight: 500;
+  }
+
+  .benefits {
+    display: none;
+  }
+
+  .stage {
+    display: block;
+    margin-top: 1.75rem;
+  }
+
+  /* Owner 2026-11-21: the button fits its label, plain blue, no arrow. */
+  .cta {
+    width: auto;
+    align-self: center;
+    min-height: 3.25rem;
+    margin-top: 1.75rem;
+    padding: 0 1.75rem;
+    font: var(--x-type-body);
+    font-weight: 600;
+    letter-spacing: var(--x-track-body);
+  }
+
+  .cta svg {
+    display: none;
+  }
+
+  .trust {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0.875rem 0 0;
+    color: var(--x-quiet-fg);
+    font: var(--x-type-cap);
+    letter-spacing: var(--x-track-small);
+  }
+
+  .check {
+    display: grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--x-blue);
+    color: var(--x-white);
+  }
+
+  .check svg {
+    width: 0.6875rem;
+    height: 0.6875rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .audience {
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .avatars > span {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: -0.4375rem;
+  }
+
+  .audienceNum,
+  .audienceText {
+    font: var(--x-type-cap);
+    letter-spacing: var(--x-track-small);
+  }
+
+  /* No iPhone picture on phones (owner 2026-11-20). */
+  .visual {
+    display: none;
+  }
+}
