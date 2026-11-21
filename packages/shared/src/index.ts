@@ -9,6 +9,7 @@ export * from './client.js';
 export * from './devices.js';
 export * from './errors.js';
 export * from './health.js';
+export * from './install.js';
 export * from './navigation.js';
 export * from './queues.js';
 export * from './slug.js';

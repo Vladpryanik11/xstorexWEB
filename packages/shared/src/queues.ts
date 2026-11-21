@@ -5,6 +5,8 @@ export const QueueName = {
   ipa: 'ipa',
   billing: 'billing',
   certificates: 'certificates',
+  signing: 'signing',
+  maintenance: 'maintenance',
 } as const;
 export type QueueName = (typeof QueueName)[keyof typeof QueueName];
 
@@ -13,6 +15,10 @@ export type SystemPingResult = { pong: true; at: string };
 /** Payload of `ipa:inspect`. */
 export const ipaInspectJob = z.object({ uploadId: z.string().min(1) });
 export type IpaInspectJob = z.infer<typeof ipaInspectJob>;
+
+/** Payload of `signing:sign`: one of the `SigningJob` rows sharing the queue job. */
+export const signingJob = z.object({ signingJobId: z.string().min(1) });
+export type SigningJobData = z.infer<typeof signingJob>;
 
 /** Defaults for every job (M1 plan, Global Constraints); structurally a BullMQ `JobsOptions`. */
 export const defaultJobOptions = {
