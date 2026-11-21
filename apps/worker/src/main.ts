@@ -5,6 +5,7 @@ import { closeWorkerDeps, createWorkerDeps } from './deps.js';
 import { createBillingWorker, scheduleBillingJobs } from './queues/billing.js';
 import { createCertificatesWorker, scheduleCertificateJobs } from './queues/certificates.js';
 import { createIpaWorker } from './queues/ipa.js';
+import { createSigningWorker } from './queues/signing.js';
 import { createSystemWorker } from './queues/system.js';
 
 const config = loadWorkerConfig(process.env);
@@ -20,6 +21,7 @@ const workers = [
   createIpaWorker(deps),
   createBillingWorker(deps),
   createCertificatesWorker(deps),
+  createSigningWorker(deps),
 ];
 for (const worker of workers) {
   worker.on('failed', (job, err) =>
