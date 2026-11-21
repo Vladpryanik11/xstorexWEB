@@ -54,6 +54,7 @@ export const ErrorCode = {
   SIGNING_FAILED: 'SIGNING_FAILED',
   INSTALL_LINK_USED: 'INSTALL_LINK_USED',
   INSTALL_LINK_EXPIRED: 'INSTALL_LINK_EXPIRED',
+  REPLACES_APP: 'REPLACES_APP',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -115,6 +116,7 @@ export const errorMessages: Record<ErrorCode, string> = {
   SIGNING_FAILED: 'Не получилось подготовить приложение. Попробуйте ещё раз',
   INSTALL_LINK_USED: 'Ссылка установки уже использована. Нажмите «Установить» ещё раз',
   INSTALL_LINK_EXPIRED: 'Ссылка установки устарела. Нажмите «Установить» ещё раз',
+  REPLACES_APP: 'Это приложение заменит на iPhone предыдущее',
 };
 
 /** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */

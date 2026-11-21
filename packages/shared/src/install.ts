@@ -131,3 +131,17 @@ export function buildManifest(m: {
 export function itmsUrl(manifestUrl: string): string {
   return `itms-services://?action=download-manifest&url=${encodeURIComponent(manifestUrl)}`;
 }
+
+/** `POST /install/apps/:slug` body: `confirmReplace` after the «заменит „…“» question. */
+export type InstallRequest = { confirmReplace?: boolean };
+
+/** Answer of `POST /install/apps/:slug` and `GET /install/jobs/:id`. */
+export type InstallJobView = {
+  jobId: string;
+  stage: InstallStage;
+  /** Set when `stage` is `failed`. */
+  errorCode?: string;
+};
+
+/** Answer of `POST /install/jobs/:id/token`. */
+export type InstallLink = { itmsUrl: string; expiresAt: string };
