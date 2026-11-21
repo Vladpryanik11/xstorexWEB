@@ -30,6 +30,12 @@ const envSchema = z.object({
     .regex(/^smtps?:\/\/[^\s]+$/)
     .optional(),
   MAIL_FROM: z.string().min(3).optional(),
+  /** Н4 signing: the zsign binary and its limits (spec Н4 §5). */
+  ZSIGN_BIN: z.string().min(1).default('/usr/local/bin/zsign'),
+  SIGNING_TIMEOUT_MS: z.coerce.number().int().min(1000).default(600_000),
+  SIGNING_MEMORY_MB: z.coerce.number().int().min(128).default(2048),
+  SIGNING_CPU_SEC: z.coerce.number().int().min(10).default(900),
+  SIGNING_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(1),
 });
 
 /** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
@@ -57,6 +63,14 @@ export type WorkerMailConfig = {
   from: string;
 };
 
+export type WorkerSigningConfig = {
+  zsignBin: string;
+  timeoutMs: number;
+  memoryMb: number;
+  cpuSec: number;
+  concurrency: number;
+};
+
 export type WorkerConfig = {
   redisUrl: string;
   databaseUrl: string;
@@ -66,6 +80,7 @@ export type WorkerConfig = {
   s3: WorkerS3Config;
   payment: WorkerPaymentConfig;
   mail: WorkerMailConfig;
+  signing: WorkerSigningConfig;
   /** Decrypts supplier certificates; `null` outside production when no master key is set. */
   keyring: Keyring | null;
 };
@@ -120,5 +135,12 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
       siteUrl: new URL(e.SITE_URL).origin,
     },
     mail: { smtpUrl: e.SMTP_URL ?? DEV_SMTP_URL, from: e.MAIL_FROM ?? DEV_MAIL_FROM },
+    signing: {
+      zsignBin: e.ZSIGN_BIN,
+      timeoutMs: e.SIGNING_TIMEOUT_MS,
+      memoryMb: e.SIGNING_MEMORY_MB,
+      cpuSec: e.SIGNING_CPU_SEC,
+      concurrency: e.SIGNING_CONCURRENCY,
+    },
   };
 }

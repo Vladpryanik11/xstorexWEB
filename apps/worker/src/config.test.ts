@@ -51,6 +51,13 @@ describe('loadWorkerConfig', () => {
         siteUrl: 'http://localhost:3000',
       },
       mail: { smtpUrl: 'smtp://127.0.0.1:1025', from: 'Xstore <noreply@xstorex.ru>' },
+      signing: {
+        zsignBin: '/usr/local/bin/zsign',
+        timeoutMs: 600_000,
+        memoryMb: 2048,
+        cpuSec: 900,
+        concurrency: 1,
+      },
     });
   });
 
