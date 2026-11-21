@@ -183,7 +183,7 @@ describe('install sheet', () => {
     render(<IconGrid apps={[app]} label="Раздел" />);
     const trigger = screen.getByRole('button', { name: /Тестовое приложение 1/ });
     fireEvent.click(trigger);
-    await screen.findByText('Скоро можно будет установить');
+    await screen.findByText(/Доступ активен до/);
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     api.getAccess.mockReturnValue(new Promise(() => {}));
@@ -197,7 +197,7 @@ describe('install sheet', () => {
     api.getAccess.mockResolvedValue(ACTIVE);
     render(<AppCardRow app={app} />);
     fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
-    await screen.findByText('Скоро можно будет установить');
+    await screen.findByText(/Доступ активен до/);
     seen.kinds = [];
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -225,16 +225,25 @@ describe('install sheet', () => {
     expect(dialog).toHaveTextContent('Оплата ещё не завершена.');
   });
 
-  it('a subscriber sees an inactive «Скоро можно будет установить»', async () => {
+  it('a subscriber with a ready iPhone gets a working «Установить»', async () => {
     api.getAccess.mockResolvedValue(ACTIVE);
     const dialog = openOnIphone();
-    expect(
-      await within(dialog).findByRole('button', { name: 'Скоро можно будет установить' }),
-    ).toBeDisabled();
+    const button = await within(dialog).findByRole('button', { name: 'Установить' });
+    expect(button).toBeEnabled();
     expect(within(dialog).queryByRole('link')).toBeNull();
-    expect(dialog.querySelector('[aria-disabled]')).toBeNull();
     expect(within(dialog).queryByText(/Регистрация не нужна/)).toBeNull();
     expect(dialog).toHaveTextContent('Доступ активен до 18 декабря 2026');
+  });
+
+  it('a subscriber on a computer is pointed to the phone', async () => {
+    api.getAccess.mockResolvedValue(ACTIVE);
+    ua(WINDOWS);
+    render(<IconGrid apps={[app]} label="Раздел" />);
+    fireEvent.click(screen.getByRole('button', { name: /Тестовое приложение 1/ }));
+    const dialog = await screen.findByRole('dialog');
+    expect(
+      await within(dialog).findByRole('button', { name: 'Установить можно с iPhone или iPad' }),
+    ).toBeDisabled();
   });
 
   it('a subscriber without a device: «Подключить iPhone» to the connect step', async () => {

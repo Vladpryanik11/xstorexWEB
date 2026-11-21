@@ -10,6 +10,7 @@ import {
   ErrorCode,
   EVICT_SIGNED_JOB,
   maskUdid,
+  profileKind,
   QueueName,
   type WaitingDevice,
 } from '@xstore/shared';
@@ -58,6 +59,7 @@ const DEVICE_SELECT = {
       status: true,
       teamId: true,
       certSerial: true,
+      appIdPattern: true,
       certNotAfter: true,
       profileExpiresAt: true,
       createdAt: true,
@@ -145,6 +147,7 @@ export class DeviceCertificatesService {
           status: c.status,
           teamId: c.teamId,
           certSerial: c.certSerial,
+          profileKind: profileKind(c.appIdPattern),
           certNotAfter: c.certNotAfter.toISOString(),
           profileExpiresAt: c.profileExpiresAt.toISOString(),
           createdAt: c.createdAt.toISOString(),

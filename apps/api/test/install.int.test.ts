@@ -330,3 +330,51 @@ describe('manifest', () => {
     expect([res.status, res.body.code]).toEqual([409, 'DEVICE_NOT_READY']);
   });
 });
+
+describe('admin signing jobs', () => {
+  async function staff(role: 'admin' | 'support') {
+    const u = await db.user.create({
+      data: { email: `${role}-${randomBytes(3).toString('hex')}@x.test`, role },
+    });
+    const { token } = await app.get(SessionService).create(u.id, 'staff', {});
+    return as(`xs_session=${token}`);
+  }
+
+  it('support sees signing jobs, a buyer does not', async () => {
+    const b = await buyer();
+    const { app: a } = await publishedApp('Список');
+    await b.http.post(`/install/apps/${a.slug}`);
+    const res = await (await staff('support')).get('/admin/signing-jobs');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      expect.objectContaining({
+        app: 'Список',
+        version: '2.1',
+        stage: 'queued',
+        email: expect.any(String),
+      }),
+    ]);
+    expect((await b.http.get('/admin/signing-jobs')).status).toBe(403);
+  });
+
+  it('only admin retries a failed job', async () => {
+    const b = await buyer();
+    const { app: a } = await publishedApp();
+    const { body } = await b.http.post(`/install/apps/${a.slug}`);
+    await signingQueue().obliterate({ force: true });
+    const support = await staff('support');
+    const admin = await staff('admin');
+    expect((await admin.post(`/admin/signing-jobs/${body.jobId}/retry`)).status).toBe(409);
+    await db.signingJob.update({
+      where: { id: body.jobId },
+      data: { stage: 'failed', errorCode: 'SIGNING_FAILED' },
+    });
+    expect((await support.post(`/admin/signing-jobs/${body.jobId}/retry`)).status).toBe(403);
+    expect((await admin.post(`/admin/signing-jobs/${body.jobId}/retry`)).status).toBe(200);
+    expect((await db.signingJob.findUniqueOrThrow({ where: { id: body.jobId } })).stage).toBe(
+      'queued',
+    );
+    expect(await signingQueue().count()).toBe(1);
+    expect(await db.auditLog.count({ where: { action: 'signing.retry' } })).toBe(1);
+  });
+});

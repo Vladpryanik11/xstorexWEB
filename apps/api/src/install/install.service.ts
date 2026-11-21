@@ -28,7 +28,7 @@ import {
 
 export const SIGN_JOB_NAME = 'signing:sign';
 /** zsign failures are rarely transient: one retry, soon, so the buyer does not wait long. */
-const SIGN_JOB_OPTIONS = {
+export const SIGN_JOB_OPTIONS = {
   attempts: 2,
   backoff: { type: 'fixed' as const, delay: 5000 },
   removeOnComplete: true,

@@ -75,8 +75,9 @@ async function connectIphone(page: Page, ios: APIRequestContext, udid: string): 
 
 /**
  * The app window and `/get/iphone` follow the device: «Готовим ваш iPhone…» until the owner uploads
- * the supplier files, then «Скоро…» (installs: Н4); once the files end (the worker found them
- * revoked), «Обновляем доступ…».
+ * the supplier files, then «Установить» signs the app for this iPhone (Н4: the ring, then the
+ * one-time `itms-services://` link and a valid manifest); once the files end (the worker found
+ * them revoked), «Обновляем доступ…».
  */
 async function windowFollowsDevice(
   page: Page,
@@ -90,7 +91,28 @@ async function windowFollowsDevice(
 
   await uploadSupplierKit(playwright, udid);
   await page.reload();
-  await expect(button('Скоро можно будет установить')).toBeDisabled();
+  await button('Установить').click();
+  const dialog = page.getByRole('dialog', { name: APP });
+  await expect(dialog.getByText('Нажмите «Установить» в окне iPhone')).toBeVisible({
+    timeout: 20_000,
+  });
+  const again = dialog.getByRole('link', { name: 'Нажмите ещё раз' });
+  const itms = (await again.getAttribute('href')) ?? '';
+  expect(itms).toMatch(/^itms-services:\/\/\?action=download-manifest&url=/);
+  const manifestUrl = decodeURIComponent(itms.split('&url=')[1] ?? '');
+  const manifest = await playwright.request.newContext();
+  try {
+    const res = await manifest.get(manifestUrl);
+    expect(res.status()).toBe(200);
+    const xml = await res.text();
+    expect(xml).toContain('<string>ru.xstorex.e2e.app1</string>');
+    expect(xml).toContain('<string>software-package</string>');
+    // The signed copy behind the short link is there.
+    const ipa = /<key>url<\/key><string>([^<]+)<\/string>/.exec(xml)?.[1]?.replaceAll('&amp;', '&');
+    expect((await manifest.get(ipa ?? '')).status()).toBe(200);
+  } finally {
+    await manifest.dispose();
+  }
   await page.goto('/get/iphone');
   await expect(page.getByRole('heading', { level: 1, name: 'iPhone готов' })).toBeVisible();
 

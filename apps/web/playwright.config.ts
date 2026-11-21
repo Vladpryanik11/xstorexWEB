@@ -120,7 +120,11 @@ export default defineConfig({
     {
       command: 'node dist/main.js',
       cwd: '../worker',
-      env: { ...e2eApiEnv(), LOG_LEVEL: 'info' },
+      env: {
+        ...e2eApiEnv(),
+        LOG_LEVEL: 'info',
+        ZSIGN_BIN: fileURLToPath(new URL('./e2e/fixtures/fake-zsign.sh', import.meta.url)),
+      },
       wait: { stdout: /"msg":"worker started"/ },
       stdout: 'pipe',
       gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },

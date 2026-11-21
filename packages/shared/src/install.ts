@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { deviceFamily } from './devices.js';
 
 /**
@@ -145,3 +146,34 @@ export type InstallJobView = {
 
 /** Answer of `POST /install/jobs/:id/token`. */
 export type InstallLink = { itmsUrl: string; expiresAt: string };
+
+export const installJobViewSchema = z.object({
+  jobId: z.string().min(1),
+  stage: z.enum(['queued', 'downloading', 'signing', 'uploading', 'ready', 'failed']),
+  errorCode: z.string().optional(),
+});
+export const installLinkSchema = z.object({
+  itmsUrl: z.string().startsWith('itms-services://'),
+  expiresAt: z.string(),
+});
+
+/** A row of the admin «Подпись» list (newest first). */
+export type SigningJobAdminView = {
+  id: string;
+  app: string;
+  version: string;
+  email: string | null;
+  stage: InstallStage;
+  errorCode: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+export const stageLabel: Record<InstallStage, string> = {
+  queued: 'В очереди',
+  downloading: 'Скачивает',
+  signing: 'Подписывает',
+  uploading: 'Загружает',
+  ready: 'Готово',
+  failed: 'Ошибка',
+};

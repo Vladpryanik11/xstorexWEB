@@ -29,6 +29,7 @@ if (!new URL(databaseUrl).pathname.endsWith('_test')) {
 }
 
 const mediaBucket = `${process.env.S3_BUCKET_PREFIX ?? 'xstore-'}media`;
+const originalsBucket = `${process.env.S3_BUCKET_PREFIX ?? 'xstore-'}originals`;
 const s3 = new S3Client({
   endpoint: env('S3_ENDPOINT'),
   region: process.env.S3_REGION ?? 'us-east-1',
@@ -84,13 +85,14 @@ function hsl(h: number, s: number, l: number): [number, number, number] {
   return [f(0), f(8), f(4)].map((v) => Math.round(v * 255)) as [number, number, number];
 }
 
-async function ensureMediaBucket(): Promise<void> {
+async function ensureBucket(Bucket: string): Promise<void> {
   try {
-    await s3.send(new HeadBucketCommand({ Bucket: mediaBucket }));
+    await s3.send(new HeadBucketCommand({ Bucket }));
   } catch {
     // The API also creates it (and its public-read policy) on start; whoever comes first wins.
-    await s3.send(new CreateBucketCommand({ Bucket: mediaBucket })).catch((err: unknown) => {
-      if ((err as { name?: string }).name !== 'BucketAlreadyOwnedByYou') throw err;
+    await s3.send(new CreateBucketCommand({ Bucket })).catch((err: unknown) => {
+      const name = (err as { name?: string }).name;
+      if (name !== 'BucketAlreadyOwnedByYou' && name !== 'BucketAlreadyExists') throw err;
     });
   }
 }
@@ -111,7 +113,18 @@ const BASE = Date.UTC(2026, 9, 1);
 async function main(): Promise<void> {
   applyMigrations(databaseUrl);
   await resetDatabase(databaseUrl);
-  await ensureMediaBucket();
+  await ensureBucket(mediaBucket);
+  await ensureBucket(originalsBucket);
+  // Н4: the original of «Тестовое приложение 1» 1.1, so e2e can sign and install it (the e2e
+  // worker's zsign is a copying stand-in, `apps/web/e2e/fixtures/fake-zsign.sh`).
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: originalsBucket,
+      Key: 'originals/e2e-1-1.ipa',
+      Body: Buffer.from('e2e original ipa'),
+      ContentType: 'application/octet-stream',
+    }),
+  );
 
   const db = createPrismaClient(databaseUrl);
   try {

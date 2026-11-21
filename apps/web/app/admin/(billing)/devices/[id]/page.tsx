@@ -65,7 +65,7 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
       ) : (
         <DataTable
           caption="Файлы поставщика, новые сверху"
-          headings={['Статус', 'Команда', 'Серийный номер', 'Действует до', 'Загружен']}
+          headings={['Статус', 'Команда', 'Профиль', 'Серийный номер', 'Действует до', 'Загружен']}
           stack
         >
           {device.certificates.map((c) => (
@@ -76,6 +76,15 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
                 </span>
               </td>
               <td data-label="Команда">{c.teamId}</td>
+              <td data-label="Профиль">
+                {c.profileKind === 'all' ? (
+                  'На все приложения'
+                ) : (
+                  <span className={s.badge} data-tone="warn">
+                    На одно приложение
+                  </span>
+                )}
+              </td>
               <td data-label="Серийный номер">
                 <code className={s.udid}>{c.certSerial}</code>
               </td>
