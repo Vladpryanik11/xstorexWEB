@@ -1,4 +1,4 @@
-import type { AppDetail } from '@xstore/shared';
+import { ApiClientError, type AppDetail } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { Fragment } from 'react';
@@ -11,6 +11,7 @@ import { HowItWorks } from '../../src/catalog/HowItWorks';
 import { SectionTiles } from '../../src/catalog/SectionTiles';
 import { HomeBenefits } from '../../src/home/HomeBenefits';
 import { HomeHero } from '../../src/home/HomeHero';
+import { HomeFaq, HomeFinal, HomePlan, HomeWhy } from '../../src/home/HomeSell';
 import { HomeStickyCta } from '../../src/home/HomeStickyCta';
 import styles from './page.module.css';
 
@@ -32,9 +33,23 @@ async function sharedApp(api: Awaited<ReturnType<typeof serverApi>>, slug: unkno
   return api.app(slug).catch((): AppDetail | null => null);
 }
 
+/** The plan price for the selling blocks; without a plan they still render, just without a price. */
+async function planPrice(api: Awaited<ReturnType<typeof serverApi>>): Promise<number | null> {
+  try {
+    return (await api.getPlan()).priceRub;
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status < 500) return null;
+    throw err;
+  }
+}
+
 export default async function HomePage({ searchParams }: Props) {
   const api = await serverApi();
-  const [home, shared] = await Promise.all([api.home(), sharedApp(api, (await searchParams).app)]);
+  const [home, shared, priceRub] = await Promise.all([
+    api.home(),
+    sharedApp(api, (await searchParams).app),
+    planPrice(api),
+  ]);
   const chips = <CategoryChips categories={home.categories} />;
 
   return (
@@ -51,6 +66,7 @@ export default async function HomePage({ searchParams }: Props) {
             <SearchField action="/search" />
           </div>
         </section>
+        <HomePlan priceRub={priceRub} />
       </div>
       <div className={styles.shelves}>
         <SectionTiles />
@@ -63,6 +79,9 @@ export default async function HomePage({ searchParams }: Props) {
         ))}
         {home.collections.length < CHIPS_AFTER ? chips : null}
         <HowItWorks />
+        <HomeWhy />
+        <HomeFaq />
+        <HomeFinal priceRub={priceRub} />
       </div>
       <HomeStickyCta />
       {shared ? (

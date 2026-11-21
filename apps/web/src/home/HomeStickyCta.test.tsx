@@ -16,13 +16,15 @@ beforeEach(() => {
       disconnect() {}
     },
   );
-  document.body.innerHTML = '<a data-hero-cta href="/get">x</a><footer></footer>';
+  document.body.innerHTML =
+    '<a data-hero-cta href="/get">x</a><a data-page-cta href="/get">y</a><footer></footer>';
 });
 
 afterEach(() => vi.unstubAllGlobals());
 
 const heroCta = () => document.querySelector('[data-hero-cta]') as Element;
 const footer = () => document.querySelector('footer') as Element;
+const pageCta = () => document.querySelector('[data-page-cta]') as Element;
 
 it('stays hidden while the hero button is on screen', () => {
   render(<HomeStickyCta />);
@@ -45,4 +47,16 @@ it('does not show the button before the hero (page opened above it)', () => {
   render(<HomeStickyCta />);
   act(() => fire([{ target: heroCta(), isIntersecting: false, boundingClientRect: { top: 900 } }]));
   expect(screen.queryByRole('link', { name: /Подключить iPhone/ })).toBeNull();
+});
+
+it('hides while another offer button on the page is on screen', () => {
+  render(<HomeStickyCta />);
+  act(() => fire([{ target: heroCta(), isIntersecting: false, boundingClientRect: { top: -80 } }]));
+  expect(screen.getByRole('link', { name: /Подключить iPhone/ })).toBeVisible();
+  act(() => fire([{ target: pageCta(), isIntersecting: true, boundingClientRect: { top: 300 } }]));
+  expect(screen.queryByRole('link', { name: /Подключить iPhone/ })).toBeNull();
+  act(() =>
+    fire([{ target: pageCta(), isIntersecting: false, boundingClientRect: { top: -300 } }]),
+  );
+  expect(screen.getByRole('link', { name: /Подключить iPhone/ })).toBeVisible();
 });

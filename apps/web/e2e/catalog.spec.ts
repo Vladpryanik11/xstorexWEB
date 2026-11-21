@@ -248,3 +248,30 @@ test('the benefits panel is for wide screens only', async ({ page, isMobile }) =
   if (isMobile) await expect(panel).toBeHidden();
   else await expect(panel.getByRole('listitem')).toHaveCount(4);
 });
+
+test('home sells the plan: price card, reasons, questions and a last call', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const plan = page.getByRole('region', { name: 'Весь каталог на 1 месяц' });
+  await expect(plan.getByText(/₽\s*в месяц/)).toBeVisible();
+  const buy = plan.getByRole('link', { name: /^Получить доступ за\s.+₽$/ });
+  await expect(buy).toHaveAttribute('href', '/get');
+  await expect(
+    page.getByRole('region', { name: 'Почему Xstorex' }).getByRole('heading', { level: 3 }),
+  ).toHaveCount(4);
+  await expect(page.getByRole('region', { name: 'Частые вопросы' }).locator('summary')).toHaveCount(
+    4,
+  );
+  const last = page.getByRole('region', { name: 'Ваши приложения уже ждут' });
+  await expect(last.getByRole('link', { name: /^Получить доступ за/ })).toHaveAttribute(
+    'href',
+    '/get',
+  );
+  if (isMobile) {
+    // The sticky button never doubles the plan button: only the hero one stays in the page.
+    await buy.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveCount(1);
+  }
+});
