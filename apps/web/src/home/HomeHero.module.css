@@ -414,8 +414,10 @@
   }
 
   .sub {
-    display: block;
-    max-width: 19rem;
+    display: grid;
+    gap: 0.125rem;
+    max-width: 22rem;
+    text-wrap: balance;
     margin: 0.75rem 0 0;
     color: var(--x-text-2);
     font: var(--x-type-ui);

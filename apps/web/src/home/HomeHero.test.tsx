@@ -37,9 +37,12 @@ it('keeps the phone picture away from screen readers', () => {
   expect(phone?.closest('[aria-hidden="true"]')).not.toBeNull();
 });
 
-it('on a phone leads with the guarantee and a one-line promise (variant A)', () => {
+it('on a phone leads with the guarantee and a two-line promise (variant A)', () => {
   const { container } = render(<HomeHero collections={collections} />);
   expect(screen.getByText('Гарантия на весь срок подписки')).toBeVisible();
-  expect(screen.getByText('Даже те, что удалили из App Store. Premium уже включён.')).toBeVisible();
+  // Owner 2026-11-21: two short lines under the headline.
+  expect(
+    screen.getByText('Premium‑доступы к приложениям уже в подписке').parentElement,
+  ).toHaveTextContent(/^Удалённые из App Store Premium‑доступы к приложениям уже в подписке$/);
   expect(container.querySelector('[data-hero-icons]')).not.toBeNull();
 });

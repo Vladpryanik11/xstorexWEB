@@ -52,7 +52,10 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
             </span>
             на&nbsp;вашем&nbsp;iPhone
           </h1>
-          <p className={styles.sub}>Даже те, что удалили из App Store. Premium уже включён.</p>
+          <p className={styles.sub}>
+            <span>Удалённые из App Store</span>{' '}
+            <span>Premium‑доступы к приложениям уже в подписке</span>
+          </p>
           <span id={listId} hidden>
             Что входит в подписку
           </span>
