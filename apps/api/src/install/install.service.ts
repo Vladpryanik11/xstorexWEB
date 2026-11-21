@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   buildManifest,
   canInstall,
@@ -53,8 +53,6 @@ const view = (row: {
  */
 @Injectable()
 export class InstallService {
-  private readonly logger = new Logger(InstallService.name);
-
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(QUEUES) private readonly queues: Queues,

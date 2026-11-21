@@ -88,6 +88,11 @@ async function request(seed: Awaited<ReturnType<typeof seedSigning>>) {
 
 const argsFiles = async () =>
   (await readdir(zsign.dir)).filter((f) => f.startsWith('args-')).sort();
+const firstArgs = async () => {
+  const [name] = await argsFiles();
+  if (!name) throw new Error('zsign did not run');
+  return readFile(join(zsign.dir, name), 'utf8');
+};
 
 it('signs, stores the build and completes every waiting request', async () => {
   await useZsign();
@@ -110,9 +115,9 @@ it('signs, stores the build and completes every waiting request', async () => {
   const obj = await deps.s3.client.send(
     new GetObjectCommand({ Bucket: deps.s3.bucket('signed'), Key: build.key }),
   );
-  expect(Buffer.from(await obj.Body!.transformToByteArray())).toEqual(seed.ipa);
+  expect(Buffer.from((await obj.Body?.transformToByteArray()) ?? [])).toEqual(seed.ipa);
   // The supplier password never reaches zsign; a one-time repack does.
-  const args = await readFile(join(zsign.dir, (await argsFiles())[0]!), 'utf8');
+  const args = await firstArgs();
   expect(args).not.toContain(seed.kit.password);
   expect(args).toContain('identity.p12');
   expect(args).not.toContain('-b\n');
@@ -153,7 +158,7 @@ it('signs a single-app profile with its App ID', async () => {
     appId: 'TEAM123456.ru.supplier.one',
   });
   await signAppVersion(deps, (await request(seed)).id);
-  const args = (await readFile(join(zsign.dir, (await argsFiles())[0]!), 'utf8')).split('\n');
+  const args = (await firstArgs()).split('\n');
   expect(args).toEqual(expect.arrayContaining(['-b', 'ru.supplier.one']));
   expect((await deps.db.signedBuild.findFirstOrThrow()).bundleId).toBe('ru.supplier.one');
 });

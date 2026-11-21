@@ -83,7 +83,11 @@ async function build(
   });
 }
 
-const keyring = () => deps.config.keyring!;
+const keyring = () => {
+  const k = deps.config.keyring;
+  if (!k) throw new Error('no keyring');
+  return k;
+};
 const exists = (key: string) =>
   deps.s3.client
     .send(new HeadObjectCommand({ Bucket: deps.s3.bucket('signed'), Key: key }))
