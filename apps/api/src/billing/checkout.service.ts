@@ -9,6 +9,7 @@ import type { Order } from '@xstore/db';
 import {
   type AccessState,
   accessState,
+  accessUntil,
   type CheckoutRequest,
   ErrorCode,
   type OrderView,
@@ -38,7 +39,13 @@ export type AccessStateJson =
 
 export type AccessJson =
   | { state: { kind: 'none' } }
-  | { state: AccessStateJson; email: string | null; hasPassword: boolean };
+  | {
+      state: AccessStateJson;
+      email: string | null;
+      hasPassword: boolean;
+      provisional: boolean;
+      accessReady: boolean;
+    };
 
 /**
  * Since when a not-ready device waits (spec §4.1): the bind for a device that never had files,
@@ -237,20 +244,50 @@ export class CheckoutService {
       }
     }
     // The buyer's overall access end, the same as `/access`, not only this order's subscription.
-    const until =
-      order.status === 'paid' ? await buyerAccessUntil(this.prisma.client, order.userId) : null;
+    const until = await buyerAccessUntil(this.prisma.client, order.userId);
     return {
       id: order.id,
       status: order.status,
       amountRub: order.amountRub,
       paidAt: order.paidAt?.toISOString() ?? null,
       returnTo: order.returnTo,
-      accessUntil: until?.toISOString() ?? null,
+      accessUntil: order.status === 'paid' ? (until?.toISOString() ?? null) : null,
       // Saved at checkout with the payment (`paymentRedirect`); only the owner gets here, and
       // only an order that can still be paid gets the link back to its payment page.
       paymentUrl:
         order.status === 'pending' && order.expiresAt > new Date() ? order.redirectUrl : null,
+      accessReady: until === null && (await this.accessReady(order.userId, new Date())),
     };
+  }
+
+  /**
+   * Spec v2 §5 «Доступ готов»: a guest without access of their own whose email now has live
+   * access on a verified buyer, granted no earlier than the guest appeared. The guest signs in by
+   * the mailed code; the caller has already checked the guest has no access of their own.
+   */
+  private async accessReady(userId: string, now: Date): Promise<boolean> {
+    const guest = await this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: { isProvisional: true, checkoutEmail: true, blockedAt: true, createdAt: true },
+    });
+    if (!guest?.isProvisional || guest.blockedAt || !guest.checkoutEmail) return false;
+    const right = await this.prisma.client.entitlement.findFirst({
+      where: {
+        revokedAt: null,
+        expiresAt: { gt: now },
+        createdAt: { gte: guest.createdAt },
+        subscription: {
+          user: {
+            email: guest.checkoutEmail,
+            isProvisional: false,
+            role: 'user',
+            blockedAt: null,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    return right !== null;
   }
 
   async access(auth: AuthContext | null | undefined): Promise<AccessJson> {
@@ -263,6 +300,7 @@ export class CheckoutService {
         email: true,
         checkoutEmail: true,
         passwordHash: true,
+        isProvisional: true,
         subscriptions: {
           // A deterministic device when the buyer has several (after a claim): the one bound
           // most recently comes first in `accessState`'s fallback.
@@ -318,6 +356,14 @@ export class CheckoutService {
       // A provisional buyer has no verified email; show the contact they paid with.
       email: user.email ?? user.checkoutEmail,
       hasPassword: user.passwordHash !== null,
+      provisional: user.isProvisional,
+      accessReady:
+        user.isProvisional &&
+        accessUntil(
+          user.subscriptions.flatMap((s) => s.entitlements),
+          now,
+        ) === null &&
+        (await this.accessReady(buyer, now)),
     };
   }
 

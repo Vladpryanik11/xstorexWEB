@@ -4,6 +4,8 @@ import { formatRuDate } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useEffect, useState } from 'react';
 import type { DeviceKind } from '../app-page/device';
+import { AccessReadyForm } from '../auth/AccessReadyForm';
+import { CODE_SIGNIN_URL } from '../auth/SigninLink';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
 import { clearCheckoutKey } from './checkout-key';
@@ -20,6 +22,8 @@ export type WizardProps = {
   /** Detected in the browser when left out (tests pass it). */
   device?: DeviceKind;
   family?: DeviceFamily;
+  /** The buyer's (or the guest's checkout) email, for «Доступ готов!». */
+  email?: string | null;
   getOrder?: (id: string) => Promise<OrderView>;
   setPassword?: (body: SetPassword) => Promise<void>;
 };
@@ -42,6 +46,7 @@ export function Wizard({
   hasDevice = false,
   device: deviceProp,
   family: familyProp,
+  email,
   getOrder = defaultGetOrder,
   setPassword,
 }: WizardProps) {
@@ -53,6 +58,8 @@ export function Wizard({
   const [attempt, setAttempt] = useState(0);
   const step = wizardStep({ order, access: { kind: 'none' } });
   const orderId = order.id;
+  // The access was opened on this email (a manual grant or another payment): sign in by the code.
+  const ready = step === 'checking' && order.accessReady === true && !!email;
   // A buyer who left the payment page can always go back to it while the order is open.
   const backToPayment = payable(order.paymentUrl) ? (
     <Button variant="quiet" href={order.paymentUrl} className={styles.wide}>
@@ -60,9 +67,19 @@ export function Wizard({
     </Button>
   ) : null;
 
+  // Paid earlier or granted by hand on this email: the code from the letter signs in.
+  const codeSignin = (
+    <p className={styles.note}>
+      Уже есть доступ на эту почту?{' '}
+      <a className={styles.link} href={CODE_SIGNIN_URL}>
+        Войти по коду
+      </a>
+    </p>
+  );
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` restarts the two-minute window after «Проверить ещё раз»
   useEffect(() => {
-    if (step !== 'checking' || timedOut) return;
+    if (step !== 'checking' || timedOut || ready) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = Date.now() + POLL_LIMIT_MS;
@@ -78,6 +95,7 @@ export function Wizard({
           if (stopped) return;
           setOrder(next);
           if (wizardStep({ order: next, access: { kind: 'none' } }) !== 'checking') return;
+          if (next.accessReady) return;
         } catch {
           // A failed check is retried on the next tick.
         }
@@ -89,7 +107,7 @@ export function Wizard({
       stopped = true;
       clearTimeout(timer);
     };
-  }, [step, timedOut, attempt, orderId, getOrder]);
+  }, [step, timedOut, ready, attempt, orderId, getOrder]);
 
   useEffect(() => {
     if (step === 'paid' || step === 'failed') clearCheckoutKey();
@@ -102,9 +120,11 @@ export function Wizard({
         : 'Доступ активен'
       : step === 'failed'
         ? settledTitle(order.status)
-        : timedOut
-          ? 'Оплата ещё не подтвердилась'
-          : 'Проверяем оплату…';
+        : ready
+          ? 'Доступ готов! Введите код из письма'
+          : timedOut
+            ? 'Оплата ещё не подтвердилась'
+            : 'Проверяем оплату…';
 
   return (
     <div className={styles.wizard}>
@@ -135,6 +155,10 @@ export function Wizard({
             {order.status === 'refunded' ? 'Оплатить снова' : 'Попробовать ещё раз'}
           </Button>
         </section>
+      ) : ready && email ? (
+        <section className={styles.panel}>
+          <AccessReadyForm email={email} />
+        </section>
       ) : timedOut ? (
         <section className={styles.panel}>
           <h1 className={styles.title}>Оплата ещё не подтвердилась</h1>
@@ -152,6 +176,7 @@ export function Wizard({
             Проверить ещё раз
           </Button>
           {backToPayment}
+          {codeSignin}
         </section>
       ) : (
         <section className={styles.panel} aria-busy="true">
@@ -161,6 +186,7 @@ export function Wizard({
             Обычно это занимает несколько секунд. Не закрывайте страницу.
           </p>
           {backToPayment}
+          {codeSignin}
         </section>
       )}
     </div>

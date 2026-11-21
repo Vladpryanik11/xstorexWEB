@@ -15,6 +15,8 @@ export type SigninFormProps = {
   api?: SigninApi;
   /** Full page load, so the header and the server pages see the new session cookie. */
   go?: (url: string) => void;
+  /** `?mode=code` opens the sign-in by a code from the email. */
+  initialMode?: 'password' | 'code';
 };
 
 const defaultGo = (url: string) => window.location.assign(url);
@@ -27,9 +29,14 @@ const defaultApi: SigninApi = {
 };
 
 /** `/signin`: email and password, or a code from the email (spec v2 §5). */
-export function SigninForm({ next, api = defaultApi, go = defaultGo }: SigninFormProps) {
+export function SigninForm({
+  next,
+  api = defaultApi,
+  go = defaultGo,
+  initialMode = 'password',
+}: SigninFormProps) {
   const id = useId();
-  const [mode, setMode] = useState<'password' | 'code'>('password');
+  const [mode, setMode] = useState<'password' | 'code'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

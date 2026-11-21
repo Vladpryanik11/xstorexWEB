@@ -102,3 +102,26 @@ describe('admin_device_waiting', () => {
     expect(() => renderMail('admin_device_waiting', {}, SITE)).toThrow();
   });
 });
+
+describe('access_ready', () => {
+  const data = { code: '482913', until: new Date('2026-12-18T12:00:00Z'), email: 'a+b@example.ru' };
+  const mail = renderMail('access_ready', data, SITE);
+
+  it('subject says access is open and has no code', () => {
+    expect(mail.subject).toBe('Доступ открыт');
+    expect(mail.subject).not.toContain('482913');
+  });
+
+  it('text has the code, 10 minutes, the end date and the one-time link in the hash', () => {
+    expect(mail.text).toContain('482913');
+    expect(mail.text).toContain('10 минут');
+    expect(mail.text).toContain('18 декабря 2026');
+    expect(mail.text).toContain(`${SITE}/signin/link#e=a%2Bb%40example.ru&c=482913`);
+  });
+
+  it('requires a code, the date and the email', () => {
+    expect(() => renderMail('access_ready', { ...data, code: '1' }, SITE)).toThrow();
+    expect(() => renderMail('access_ready', { code: '482913', email: 'a@b.ru' }, SITE)).toThrow();
+    expect(() => renderMail('access_ready', { code: '482913', until: data.until }, SITE)).toThrow();
+  });
+});

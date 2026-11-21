@@ -126,6 +126,7 @@ it('guest checkout creates provisional user, order and session cookie', async ()
     accessUntil: null,
     // The payment page saved at checkout: the wizard links back to it while the order is open.
     paymentUrl: order.redirectUrl,
+    accessReady: false,
   });
   expect(order.redirectUrl).toMatch(/\/dev\/pay\//);
 

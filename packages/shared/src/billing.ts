@@ -32,6 +32,8 @@ export const orderViewSchema = z.object({
   accessUntil: z.string().nullable(),
   /** The provider's payment page while the order is open (pending, not expired); else null. */
   paymentUrl: z.string().nullable(),
+  /** The guest's email got access on a verified account: sign in by the mailed code (spec v2 §5). */
+  accessReady: z.boolean().optional(),
 });
 export type OrderView = z.infer<typeof orderViewSchema>;
 
@@ -78,5 +80,9 @@ export const accessResponseSchema = z.object({
   state: accessStateSchema,
   email: z.string().nullable().optional(),
   hasPassword: z.boolean().optional(),
+  /** A guest: bought without confirming the email, so `/signin` is still open to them. */
+  provisional: z.boolean().optional(),
+  /** The guest's email got access on a verified account: sign in by the mailed code (spec v2 §5). */
+  accessReady: z.boolean().optional(),
 });
 export type AccessResponse = z.infer<typeof accessResponseSchema>;

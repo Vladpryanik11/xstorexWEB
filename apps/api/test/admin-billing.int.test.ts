@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { createPrismaClient } from '@xstore/db';
 import { resetDatabase } from '@xstore/db/testing';
+import { waitForMail } from '@xstore/mail/testing';
 import { Redis } from 'ioredis';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -399,6 +400,111 @@ describe('grants', () => {
       email: null,
       blockedAt: null,
     });
+  });
+});
+
+describe('access ready for a guest (spec v2 §5)', () => {
+  const rcpt = () => `ready-${crypto.randomUUID()}@example.ru`;
+
+  /** A guest who paid nothing yet: provisional, an open order, a guest session. */
+  async function guest(email: string, createdAt = new Date()) {
+    const user = await db.user.create({
+      data: { isProvisional: true, checkoutEmail: email, createdAt },
+    });
+    const subscription = await db.subscription.create({ data: { userId: user.id } });
+    const plan = await db.plan.findFirstOrThrow();
+    const order = await db.order.create({
+      data: {
+        userId: user.id,
+        subscriptionId: subscription.id,
+        planId: plan.id,
+        planSnapshot: {
+          code: 'month',
+          title: 'Подписка на месяц',
+          durationDays: 30,
+          priceRub: PRICE,
+        },
+        checkoutEmail: email,
+        checkoutKey: crypto.randomUUID(),
+        amountRub: PRICE,
+        status: 'pending',
+        provider: 'fake',
+        expiresAt: new Date(Date.now() + DAY_MS),
+      },
+    });
+    return { user, order, cookie: await cookieFor(user.id, 'user') };
+  }
+
+  it('a grant mails «Доступ открыт» with a code that signs the guest in and merges them', async () => {
+    const email = rcpt();
+    const g = await guest(email);
+    expect((await as(g.cookie).get('/access')).body).toMatchObject({
+      provisional: true,
+      accessReady: false,
+    });
+
+    const res = await admin().post('/admin/billing/grants', { email, days: 30 });
+    expect(res.status).toBe(201);
+    const [mail] = await waitForMail(email);
+    expect(mail?.subject).toBe('Доступ открыт');
+    const code = /signin\/link#e=[^&\s]+&c=(\d{6})/.exec(mail?.text ?? '')?.[1];
+    expect(code).toBeDefined();
+    expect(mail?.subject).not.toContain(code ?? '');
+
+    expect((await as(g.cookie).get('/access')).body).toMatchObject({
+      state: { kind: 'payment_pending' },
+      email,
+      provisional: true,
+      accessReady: true,
+    });
+    expect((await as(g.cookie).get(`/billing/orders/${g.order.id}`)).body.accessReady).toBe(true);
+
+    const verify = await as(g.cookie).post('/auth/code/verify', { email, code });
+    expect(verify.status).toBe(204);
+    const session = /xs_session=[^;]+/.exec(String(verify.headers['set-cookie']))?.[0] ?? '';
+    const after = await as(session).get('/access');
+    expect(after.body).toMatchObject({
+      state: { kind: 'active' },
+      provisional: false,
+      accessReady: false,
+    });
+    expect(
+      (await db.user.findUniqueOrThrow({ where: { id: g.user.id } })).blockedAt,
+    ).not.toBeNull();
+    // The guest session is gone after the merge.
+    expect((await as(g.cookie).get('/access')).body.state.kind).toBe('none');
+  });
+
+  it('a right given before the guest appeared is not shown to them', async () => {
+    const email = rcpt();
+    const { entitlement } = await paidBuyer(email);
+    await db.entitlement.update({
+      where: { id: entitlement.id },
+      data: { createdAt: new Date(Date.now() - DAY_MS) },
+    });
+    const g = await guest(email);
+    expect((await as(g.cookie).get('/access')).body.accessReady).toBe(false);
+    expect((await as(g.cookie).get(`/billing/orders/${g.order.id}`)).body.accessReady).toBe(false);
+  });
+
+  it('a blocked verified buyer or a revoked right does not count', async () => {
+    const email = rcpt();
+    const g = await guest(email, new Date(Date.now() - 60_000));
+    expect((await admin().post('/admin/billing/grants', { email, days: 7 })).status).toBe(201);
+    expect((await as(g.cookie).get('/access')).body.accessReady).toBe(true);
+
+    await db.entitlement.updateMany({
+      where: { subscription: { user: { email } } },
+      data: { revokedAt: new Date() },
+    });
+    expect((await as(g.cookie).get('/access')).body.accessReady).toBe(false);
+
+    await db.entitlement.updateMany({
+      where: { subscription: { user: { email } } },
+      data: { revokedAt: null },
+    });
+    await db.user.update({ where: { email }, data: { blockedAt: new Date() } });
+    expect((await as(g.cookie).get('/access')).body.accessReady).toBe(false);
   });
 });
 

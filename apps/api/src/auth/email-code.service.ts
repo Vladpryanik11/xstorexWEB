@@ -47,6 +47,21 @@ export class EmailCodeService {
     );
     if (!limit.allowed) return { retryAfterSec: limit.retryAfterSec };
 
+    const code = await this.createCode(email);
+    await this.mail.send('login_code', email, { code });
+    return null;
+  }
+
+  /**
+   * A code for the «Доступ открыт» letter after a grant or a payment (spec v2 §5). No cooldown or
+   * limits: only staff and the payment webhook reach it, once per grant. The caller mails the code.
+   */
+  issueForGrant(email: string): Promise<string> {
+    return this.createCode(email);
+  }
+
+  /** Voids the email's earlier codes and stores the hash of a new one. */
+  private async createCode(email: string): Promise<string> {
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const now = new Date();
     await this.prisma.client.$transaction([
@@ -63,8 +78,7 @@ export class EmailCodeService {
         },
       }),
     ]);
-    await this.mail.send('login_code', email, { code });
-    return null;
+    return code;
   }
 
   /**

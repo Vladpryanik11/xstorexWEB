@@ -81,6 +81,8 @@ it('webhook paid grants access visible in GET /access', async () => {
     state: { kind: 'payment_pending', orderId: order.id },
     email: 'buyer@example.ru',
     hasPassword: false,
+    provisional: true,
+    accessReady: false,
   });
 
   const paidAt = new Date(Date.now() - 60_000);
@@ -100,6 +102,8 @@ it('webhook paid grants access visible in GET /access', async () => {
     },
     email: 'buyer@example.ru',
     hasPassword: false,
+    provisional: true,
+    accessReady: false,
   });
   const view = await agent.get(`/api/v1/billing/orders/${order.id}`);
   expect(view.body).toMatchObject({

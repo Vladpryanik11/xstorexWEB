@@ -25,7 +25,7 @@ import { StaffAuthService } from './staff-auth.service.js';
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
-  exports: [SessionService],
+  exports: [SessionService, EmailCodeService],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

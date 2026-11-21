@@ -7,6 +7,7 @@ import {
 } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { useState } from 'react';
+import { AccessReadyForm } from '../auth/AccessReadyForm';
 import { browserApi } from '../checkout/browser-api';
 import styles from '../checkout/checkout.module.css';
 import { familyName } from '../checkout/connect-step';
@@ -128,6 +129,10 @@ function Status({
       </>
     );
   }
+  if (access.accessReady && access.email) {
+    // A guest whose access was opened on their email signs in by the code (spec v2 §5).
+    return <AccessReadyForm email={access.email} />;
+  }
   return (
     <>
       <h2 className={styles.subtitle}>Доступа нет</h2>
@@ -183,7 +188,7 @@ export function AccessCard({
           timeZone={timeZone}
         />
       </section>
-      {access.hasPassword === false ? (
+      {access.hasPassword === false && !access.accessReady ? (
         <section className={styles.panel} aria-label="Пароль">
           <PasswordForm title="Задать пароль" skippable={false} />
         </section>

@@ -6,7 +6,8 @@ export type MailTemplate =
   | 'device_preparing'
   | 'device_ready'
   | 'reinstall_apps'
-  | 'admin_device_waiting';
+  | 'admin_device_waiting'
+  | 'access_ready';
 
 export type MailData = {
   until?: Date;
@@ -15,13 +16,16 @@ export type MailData = {
   family?: DeviceFamily;
   /** The buyer, in the owner's letter about a device waiting for its certificate. */
   buyerEmail?: string;
+  /** The buyer's email, for the one-time sign-in link in the «Доступ открыт» letter. */
+  email?: string;
 };
 
 export type RenderedMail = { subject: string; text: string };
 
 /**
- * Plain-text Russian letters. Pure: no I/O. Nothing here opens access without signing in, so the
- * only link is the site address. The login code goes into the text only, never the subject.
+ * Plain-text Russian letters. Pure: no I/O. The login code goes into the text only, never the
+ * subject. The only sign-in link is in «Доступ открыт»: it carries the code in the URL hash, so it
+ * never reaches the server logs, and still needs a button press on the page.
  */
 export function renderMail(template: MailTemplate, data: MailData, siteUrl: string): RenderedMail {
   const site = new URL(siteUrl).origin;
@@ -96,6 +100,29 @@ export function renderMail(template: MailTemplate, data: MailData, siteUrl: stri
           '',
           `Мы обновили доступ. Откройте сайт в Safari на ${device} и установите приложения заново.`,
           `Адрес сайта: ${site}`,
+          '',
+          'Xstore',
+        ].join('\n'),
+      };
+    }
+    case 'access_ready': {
+      if (!data.code || !/^\d{6}$/.test(data.code))
+        throw new Error('access_ready needs a 6-digit code');
+      if (!data.until || Number.isNaN(data.until.getTime())) {
+        throw new Error('access_ready needs the access end date');
+      }
+      if (!data.email) throw new Error('access_ready needs the email');
+      const link = `${site}/signin/link#e=${encodeURIComponent(data.email)}&c=${data.code}`;
+      return {
+        subject: 'Доступ открыт',
+        text: [
+          'Здравствуйте!',
+          '',
+          `Доступ ко всему каталогу Xstore открыт до ${formatRuDate(data.until)}.`,
+          '',
+          `Чтобы войти и подключить iPhone, откройте ссылку в Safari: ${link}`,
+          `Или введите код ${data.code} на сайте ${site}. Код действует 10 минут.`,
+          'Если код устарел, нажмите «Отправить код ещё раз» на сайте.',
           '',
           'Xstore',
         ].join('\n'),

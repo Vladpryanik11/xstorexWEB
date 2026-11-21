@@ -38,6 +38,27 @@ describe('/signin', () => {
     expect(screen.getByRole('heading', { name: 'Вход' })).toBeInTheDocument();
   });
 
+  it('a provisional guest is not signed in and gets the form (spec v2 §5)', async () => {
+    api.getAccess.mockResolvedValue({
+      state: { kind: 'none' },
+      email: null,
+      hasPassword: false,
+      provisional: true,
+      accessReady: true,
+    } as AccessResponse);
+    const { default: Page } = await import('./page');
+    render(await Page(params('/get/iphone')));
+    expect(screen.getByRole('heading', { name: 'Вход' })).toBeInTheDocument();
+  });
+
+  it('?mode=code opens the sign-in by a code from the email', async () => {
+    api.getAccess.mockResolvedValue({ state: { kind: 'none' } });
+    const { default: Page } = await import('./page');
+    render(await Page({ searchParams: Promise.resolve({ next: '/get/iphone', mode: 'code' }) }));
+    expect(screen.getByRole('button', { name: 'Получить код' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Пароль')).toBeNull();
+  });
+
   it('the form still opens when the API cannot answer', async () => {
     api.getAccess.mockRejectedValue(new Error('down'));
     const { default: Page } = await import('./page');

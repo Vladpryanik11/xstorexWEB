@@ -18,11 +18,13 @@ import {
   type UpdatePlan,
 } from '@xstore/shared';
 import { z } from 'zod';
+import { EmailCodeService } from '../auth/email-code.service.js';
 import { SessionService } from '../auth/session.service.js';
 import { buyerSubscription } from '../billing/buyer-subscription.js';
 import type { Actor } from '../common/actor.js';
 import { DomainError } from '../common/domain-error.js';
 import { PrismaService } from '../infra/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { rechainAfterRefund } from './rechain.js';
 
 export const ADMIN_BILLING_PAGE_SIZE = 50;
@@ -116,6 +118,8 @@ export class AdminBillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sessions: SessionService,
+    private readonly codes: EmailCodeService,
+    private readonly mail: MailService,
   ) {}
 
   private get db() {
@@ -392,6 +396,18 @@ export class AdminBillingService {
       await this.sessions.extendUserSessions(result.userId);
     } catch (err) {
       this.logger.error({ err: (err as Error).message }, 'session extension after grant failed');
+    }
+    // Spec v2 §9 «Доступ открыт»: a code for the guest who waits on the site with this email. The
+    // grant is already saved; a mail failure only goes to the log, never with the code.
+    try {
+      const code = await this.codes.issueForGrant(input.email);
+      await this.mail.send('access_ready', input.email, {
+        code,
+        until: result.expiresAt,
+        email: input.email,
+      });
+    } catch (err) {
+      this.logger.error({ err: (err as Error).message }, 'access mail after grant failed');
     }
     return {
       subscriptionId: result.subscriptionId,

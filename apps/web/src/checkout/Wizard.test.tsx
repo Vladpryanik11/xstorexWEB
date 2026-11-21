@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { OrderView } from '@xstore/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Wizard } from './Wizard';
-import { CHECKOUT_KEY_STORAGE } from './wizard-step';
+import { CHECKOUT_KEY_STORAGE, POLL_INTERVAL_MS } from './wizard-step';
 
 const order = (over: Partial<OrderView> = {}): OrderView => ({
   id: 'ord_1',
@@ -154,5 +154,48 @@ describe('Wizard', () => {
     expect(screen.queryByRole('link', { name: /подключить/ })).toBeNull();
     expect(screen.queryByText(/Откройте сайт на iPhone/)).toBeNull();
     expect(screen.getByRole('link', { name: 'В каталог' })).toBeInTheDocument();
+  });
+});
+
+describe('Wizard: «Доступ готов» for a guest (spec v2 §5)', () => {
+  it('shows the code form once the access is opened on the email, and stops polling', async () => {
+    const ready = order({ accessReady: true });
+    const getOrder = vi.fn().mockResolvedValue(ready);
+    render(
+      <Wizard
+        initialOrder={order()}
+        hasPassword={false}
+        email="buyer@example.com"
+        getOrder={getOrder}
+      />,
+    );
+    await tick(POLL_INTERVAL_MS);
+    expect(screen.getByRole('heading', { name: 'Доступ готов!' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Код из письма')).toBeInTheDocument();
+    const calls = getOrder.mock.calls.length;
+    await tick(POLL_INTERVAL_MS * 5);
+    expect(getOrder.mock.calls.length).toBe(calls);
+  });
+
+  it('an order that is already ready on load shows the code form at once', () => {
+    render(
+      <Wizard
+        initialOrder={order({ accessReady: true })}
+        hasPassword={false}
+        email="buyer@example.com"
+        getOrder={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Доступ готов!' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Проверяем оплату…' })).toBeNull();
+  });
+
+  it('the waiting screen always offers the sign-in by code', () => {
+    render(<Wizard initialOrder={order()} hasPassword={false} getOrder={vi.fn()} />);
+    expect(screen.getByText(/Уже есть доступ на эту почту\?/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Войти по коду' })).toHaveAttribute(
+      'href',
+      '/signin?next=/get/iphone&mode=code',
+    );
   });
 });

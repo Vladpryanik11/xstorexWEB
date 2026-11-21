@@ -19,8 +19,9 @@ const one = (value: string | string[] | undefined) => (Array.isArray(value) ? va
 async function signedIn(): Promise<boolean> {
   try {
     const access = await (await serverApi()).getAccess();
-    // `email` and `hasPassword` come only with a buyer session.
-    return access.hasPassword !== undefined;
+    // `email` and `hasPassword` come only with a buyer session; a provisional guest
+    // (bought without an account) still has to sign in (spec v2 §5).
+    return access.hasPassword !== undefined && access.provisional !== true;
   } catch {
     return false;
   }
@@ -35,6 +36,7 @@ export default async function SigninPage({
   const params = await searchParams;
   const next = one(params.next);
   const handoffExpired = one(params.handoff) === 'expired';
+  const mode = one(params.mode) === 'code' ? 'code' : 'password';
   // Outside the try in `signedIn`: `redirect` works by throwing.
   if (await signedIn()) redirect(safeNext(next, '/access'));
   return (
@@ -51,7 +53,7 @@ export default async function SigninPage({
         <p className={styles.lead}>
           По почте, которую вы указали при оплате. Нет пароля — войдите по коду из письма.
         </p>
-        <SigninForm next={next} />
+        <SigninForm next={next} initialMode={mode} />
       </section>
     </div>
   );

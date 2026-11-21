@@ -214,3 +214,29 @@ describe('AccessCard', () => {
     expect(go).not.toHaveBeenCalled();
   });
 });
+
+describe('AccessCard: «Доступ готов» for a guest (spec v2 §5)', () => {
+  const guest: AccessResponse = {
+    state: { kind: 'none' },
+    email: 'buyer@example.com',
+    hasPassword: false,
+    provisional: true,
+    accessReady: true,
+  };
+
+  it('shows the code form instead of «Доступа нет» and no password panel', () => {
+    render(<AccessCard access={guest} />);
+    expect(screen.getByRole('heading', { name: 'Доступ готов!' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Введите код из письма, которое мы отправили на buyer@example.com'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Доступа нет' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Задать пароль' })).toBeNull();
+  });
+
+  it('a guest without a ready access still sees «Доступа нет»', () => {
+    render(<AccessCard access={{ ...guest, accessReady: false }} />);
+    expect(screen.getByRole('heading', { name: 'Доступа нет' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Доступ готов!' })).toBeNull();
+  });
+});

@@ -21,6 +21,7 @@ export default async function OrderPage({ params }: Props) {
       initialOrder={order}
       hasPassword={access.hasPassword === true}
       hasDevice={access.state.kind === 'active' && access.state.device !== null}
+      email={access.email ?? null}
     />
   );
 }
