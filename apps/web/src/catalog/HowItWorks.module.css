@@ -8,7 +8,7 @@
 .steps {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: 1.125rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -16,20 +16,19 @@
 
 .step {
   display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
   align-content: start;
-  gap: 0.375rem;
-  padding: 1.25rem;
-  border-radius: var(--x-radius-panel);
-  background: var(--x-card);
-  box-shadow: var(--x-shadow-sm);
+  column-gap: 0.875rem;
+  row-gap: 0.125rem;
 }
 
+/* A plain numbered list, no cards (owner 2026-11-21). */
 .number {
+  grid-row: span 2;
   display: grid;
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  margin-bottom: 0.375rem;
   border-radius: var(--x-radius-pill);
   background: var(--x-sky-50);
   color: var(--x-quiet-fg);

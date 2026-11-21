@@ -330,59 +330,25 @@
   }
 }
 
-/* Variant A pieces: phone only. */
+/* Phone-only pieces. */
 .trust,
 .sub,
-.inline,
 .stage {
   display: none;
 }
 
-/* Phone, variant A (owner 2026-11-20, mockup https://claude.ai/artifact/HXKevH2yhDBx95LFPsfjYU):
-   guarantee pill, headline with three real icons, two-line promise, real catalog icons on a ring,
-   then the button right above the audience line (owner 2026-11-21). The benefits list and the iPhone picture stay for wider screens. */
+/* Phone, «Проверь и купи» (owner 2026-11-21, mockup https://claude.ai/artifact/KTT2YNZgLBaoF76GdxKMtN):
+   centred promise, a row of real icons, the button with the guarantee and the audience right
+   under it. Three groups with more air between them than inside. No iPhone picture, no list. */
 @media (max-width: 47.99em) {
   .hero {
-    padding-top: calc(var(--hero-under-pill) + 1.5rem);
+    padding-top: calc(var(--hero-under-pill) + 1.75rem);
   }
 
   .copy {
     align-items: center;
     padding-inline: 0.5rem;
     text-align: center;
-  }
-
-  .trust {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 1rem;
-    padding: 0.375rem 0.875rem 0.375rem 0.375rem;
-    border-radius: var(--x-radius-pill);
-    background: var(--x-white);
-    box-shadow: var(--x-shadow-sm);
-    font: var(--x-type-cap);
-    letter-spacing: var(--x-track-small);
-  }
-
-  .check {
-    display: grid;
-    place-items: center;
-    width: 1.375rem;
-    height: 1.375rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--x-sky-400), var(--x-blue));
-    color: var(--x-white);
-  }
-
-  .check svg {
-    width: 0.875rem;
-    height: 0.875rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .wide {
@@ -393,61 +359,78 @@
     font: var(--x-type-h1);
   }
 
-  .inline {
-    display: inline-flex;
-    margin-right: 0.375rem;
-    vertical-align: -0.3125rem;
-  }
-
-  .inline img {
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-left: -0.5rem;
-    border: 2px solid var(--x-white);
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 8px -4px rgba(14, 26, 51, 0.4);
-    object-fit: cover;
-  }
-
-  .inline img:first-child {
-    margin-left: 0;
-  }
-
   .sub {
     display: grid;
     gap: 0.125rem;
-    max-width: 22rem;
-    text-wrap: balance;
-    margin: 0.75rem 0 0;
+    margin: 0.625rem 0 0;
     color: var(--x-text-2);
-    font: var(--x-type-ui);
-    letter-spacing: var(--x-track-small);
+    font: var(--x-type-body);
+    letter-spacing: var(--x-track-body);
+  }
+
+  .subLead {
+    color: var(--x-text);
+    font-weight: 500;
   }
 
   .benefits {
     display: none;
   }
 
-  /* Owner 2026-11-21: the button fits its label (no full-width bar, no gloss or glow). */
+  .stage {
+    display: block;
+    margin-top: 1.75rem;
+  }
+
+  /* Owner 2026-11-21: the button fits its label, plain blue, no arrow. */
   .cta {
     width: auto;
     align-self: center;
     min-height: 3.25rem;
-    margin-top: 0.5rem;
+    margin-top: 1.75rem;
     padding: 0 1.75rem;
     font: var(--x-type-body);
     font-weight: 600;
     letter-spacing: var(--x-track-body);
   }
 
-  .stage {
-    display: block;
-    width: 100%;
+  .cta svg {
+    display: none;
+  }
+
+  .trust {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0.875rem 0 0;
+    color: var(--x-quiet-fg);
+    font: var(--x-type-cap);
+    letter-spacing: var(--x-track-small);
+  }
+
+  .check {
+    display: grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--x-blue);
+    color: var(--x-white);
+  }
+
+  .check svg {
+    width: 0.6875rem;
+    height: 0.6875rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .audience {
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 
   .avatars > span {

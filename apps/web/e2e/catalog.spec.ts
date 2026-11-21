@@ -39,7 +39,7 @@ test('home shows collections and an app opens its install sheet', async ({ page,
 test('home explains how it works and has no install banner', async ({ page }) => {
   await page.goto('/');
   const how = page.getByRole('region', { name: 'Как это работает' });
-  for (const step of ['Найдите приложение', 'Оплатите', 'Установите']) {
+  for (const step of ['Оплатите', 'Подключите iPhone', 'Установите']) {
     await expect(how.getByRole('heading', { name: step })).toBeVisible();
   }
   await expect(
@@ -215,35 +215,61 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   await page.goto('/');
   const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
-  await page.getByRole('heading', { name: 'Популярное' }).scrollIntoViewIfNeeded();
+  await page.getByRole('heading', { name: 'Как это работает' }).scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(1);
 });
 
-test('on a phone the hero leads with the guarantee and real catalog icons (variant A)', async ({
+test('on a phone the hero: promise, icon row, button, then the guarantee and 10 000+', async ({
   page,
   isMobile,
 }) => {
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
   const trust = hero.getByText('Гарантия на весь срок подписки');
-  const stage = hero.locator('[data-hero-icons]');
+  const icons = hero.locator('[data-hero-icons]');
+  const cta = hero.locator('[data-hero-cta]');
   const list = page.getByRole('list', { name: 'Что входит в подписку' });
   if (isMobile) {
-    await expect(trust).toBeVisible();
-    await expect(stage).toBeVisible();
-    await expect(stage.locator('img')).toHaveCount(6);
+    await expect(hero.getByText('Даже удалённые из App Store.')).toBeVisible();
+    await expect(icons.locator('[data-icon]')).toHaveCount(5);
     await expect(list).toBeHidden();
-    // Owner 2026-11-21: the button fits its label, not the whole screen width.
-    const box = await hero.locator('[data-hero-cta]').boundingBox();
-    expect(box?.width).toBeLessThan(300);
-    expect(box?.height).toBeGreaterThanOrEqual(52);
+    // Owner 2026-11-21: icons, then the button that fits its label, then the guarantee.
+    const [i, c, t] = await Promise.all([icons, cta, trust].map((l) => l.boundingBox()));
+    expect(c?.width).toBeLessThan(300);
+    expect(c?.height).toBeGreaterThanOrEqual(52);
+    expect((i?.y ?? 0) < (c?.y ?? 0) && (c?.y ?? 0) < (t?.y ?? 0)).toBe(true);
+    // The whole first screen fits a 390 × 844 phone.
+    const proof = hero.getByText('пользователей в месяц');
+    expect(((await proof.boundingBox())?.y ?? 9999) + 24).toBeLessThan(844);
   } else {
     await expect(trust).toBeHidden();
-    await expect(stage).toBeHidden();
+    await expect(icons).toBeHidden();
     await expect(list.getByRole('listitem')).toHaveCount(3);
   }
+});
+
+test('home blocks follow the «Проверь и купи» order', async ({ page }) => {
+  await page.goto('/');
+  const names = [
+    'Ищете конкретное приложение?',
+    'Как это работает',
+    'Почему Xstorex',
+    'Весь каталог на 1 месяц',
+    'Популярное',
+    'Частые вопросы',
+    'Ваши приложения уже ждут',
+  ];
+  const ys: number[] = [];
+  for (const name of names) {
+    const box = await page.getByRole('heading', { name, exact: true }).first().boundingBox();
+    ys.push(box?.y ?? -1);
+  }
+  expect(ys).toEqual([...ys].sort((a, b) => a - b));
+  await expect(
+    page.getByRole('list', { name: 'Xstorex в цифрах' }).getByRole('listitem'),
+  ).toHaveCount(3);
 });
 
 test('the benefits panel is for wide screens only', async ({ page, isMobile }) => {

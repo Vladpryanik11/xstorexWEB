@@ -3,12 +3,12 @@ import { useId } from 'react';
 import styles from './HowItWorks.module.css';
 
 const steps = [
-  { title: 'Найдите приложение', text: 'В каталоге есть и те, что пропали из App Store.' },
-  { title: 'Оплатите', text: 'Без регистрации, сразу на сайте.' },
-  { title: 'Установите', text: 'Приложение появится на вашем iPhone.' },
+  { title: 'Оплатите', text: 'Без регистрации, за минуту.' },
+  { title: 'Подключите iPhone', text: 'Один раз, прямо с телефона.' },
+  { title: 'Установите', text: 'Любые приложения каталога.' },
 ];
 
-/** «Как это работает» at the end of the home page (spec 2026-11-17 §6). */
+/** «Как это работает» on the home page, before the reasons and the plan (spec v2 §3.1, owner 2026-11-21). */
 export function HowItWorks() {
   const id = useId();
   return (

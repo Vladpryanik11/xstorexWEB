@@ -21,15 +21,11 @@ it('takes unique app icons from the home collections, skipping apps without one'
   expect(heroIcons(collections, 2)).toEqual(['/i/1.png', '/i/3.png']);
 });
 
-it('draws six squircles and the two captions, hidden from screen readers', () => {
+it('draws a plain row of five icons, no ring or captions, hidden from screen readers', () => {
   const { container } = render(<HeroIcons collections={collections} />);
-  const stage = container.querySelector('[data-hero-icons]');
-  expect(stage?.getAttribute('aria-hidden')).toBe('true');
-  expect(stage?.querySelectorAll('[data-icon]')).toHaveLength(6);
-  expect(stage?.querySelectorAll('img')).toHaveLength(3);
-  expect(stage?.textContent).toContain('Банки');
-  expect(stage?.textContent).toContain('Сервисы');
-  expect(stage?.textContent).toContain('Игры');
-  expect(stage?.textContent).toContain('Premium включён');
-  expect(stage?.textContent).toContain('во всех приложениях');
+  const row = container.querySelector('[data-hero-icons]');
+  expect(row?.getAttribute('aria-hidden')).toBe('true');
+  expect(row?.querySelectorAll('[data-icon]')).toHaveLength(5);
+  expect(row?.querySelectorAll('img')).toHaveLength(3);
+  expect(row?.textContent).toBe('');
 });

@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { formatRub } from '../checkout/wizard-step';
+import { APPS, AUDIENCE } from './figures';
 import styles from './HomeSell.module.css';
 
 /*
@@ -51,8 +52,32 @@ export function HomePlan({ priceRub }: Price) {
           ))}
         </ul>
         <Cta priceRub={priceRub} />
+        <p className={styles.proof}>
+          <b>{AUDIENCE}</b> пользователей в месяц
+        </p>
       </div>
     </section>
+  );
+}
+
+const STATS = [
+  [APPS, 'приложений'],
+  [AUDIENCE, 'пользователей в месяц'],
+  ['0 ₽', 'доплат по гарантии'],
+];
+
+/** Row of figures between the search and «Как это работает» (owner 2026-11-21). */
+export function HomeStats() {
+  return (
+    <div className={styles.statsWrap}>
+      <ul className={styles.stats} aria-label="Xstorex в цифрах">
+        {STATS.map(([n, t]) => (
+          <li key={t} className={styles.stat}>
+            <b>{n}</b> <span>{t}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -138,8 +163,8 @@ export function HomeFinal({ priceRub }: Price) {
           <h2 id={id}>Ваши приложения уже ждут</h2>
           <p>
             {priceRub !== null
-              ? `Весь каталог за ${formatRub(priceRub)} в месяц. Оплата за минуту.`
-              : 'Весь каталог в одной подписке. Оплата за минуту.'}
+              ? `Весь каталог за ${formatRub(priceRub)} в месяц. Гарантия на весь срок подписки.`
+              : 'Весь каталог в одной подписке. Гарантия на весь срок подписки.'}
           </p>
         </div>
         <Cta priceRub={priceRub} light />

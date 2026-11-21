@@ -1,6 +1,7 @@
 /* Selling blocks under the hero (spec v2 §3.1). Same width and gutter as the home shelves. */
 .planWrap,
 .block,
+.statsWrap,
 .finalWrap {
   box-sizing: content-box;
   max-width: var(--x-page-max);
@@ -128,21 +129,68 @@
   outline-offset: 3px;
 }
 
-/* Why Xstorex */
+/* Proof right under the pay button (owner 2026-11-21) */
+.proof {
+  margin: 0.75rem 0 0;
+  color: var(--x-text-2);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
+  text-align: center;
+}
+
+.proof b {
+  color: var(--x-text);
+  font-weight: 600;
+}
+
+/* Figures row between the search and the steps */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border-block: 1px solid var(--x-hair);
+  list-style: none;
+}
+
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem 1rem 0;
+}
+
+.stat + .stat {
+  padding-left: 0.875rem;
+  border-left: 1px solid var(--x-hair);
+}
+
+.stats b {
+  font: var(--x-type-h2);
+  letter-spacing: var(--x-track-head);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats span {
+  color: var(--x-text-2);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
+}
+
+/* Why Xstorex: a list with thin dividers, no cards (owner 2026-11-21) */
 .why {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
+  column-gap: 2.5rem;
   margin: 0;
   padding: 0;
+  border-top: 1px solid var(--x-hair);
   list-style: none;
 }
 
 .why li {
-  padding: 1.25rem;
-  border-radius: var(--x-radius-card);
-  background: var(--x-white);
-  box-shadow: var(--x-shadow-sm);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--x-hair);
 }
 
 .why h3 {
@@ -161,14 +209,12 @@
 /* FAQ */
 .faq {
   display: grid;
-  gap: 0.5rem;
+  border-top: 1px solid var(--x-hair);
 }
 
 .faq details {
-  padding: 1rem 1.25rem;
-  border-radius: var(--x-radius-card);
-  background: var(--x-white);
-  box-shadow: var(--x-shadow-sm);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--x-hair);
 }
 
 .faq summary {
@@ -215,7 +261,7 @@
   gap: 1.25rem;
   padding: 1.75rem 1.5rem;
   border-radius: var(--x-radius-panel);
-  background: linear-gradient(135deg, var(--x-blue), var(--x-blue-deep));
+  background: var(--x-blue);
   color: var(--x-white);
 }
 
@@ -230,6 +276,22 @@
   opacity: 0.85;
   font: var(--x-type-body);
   letter-spacing: var(--x-track-body);
+}
+
+/* Phone: section titles one step (22 px); the last call is centred like the hero. */
+@media (max-width: 47.99em) {
+  .title {
+    font: var(--x-type-h2);
+  }
+
+  .final {
+    align-items: center;
+    text-align: center;
+  }
+
+  .final h2 {
+    font: var(--x-type-h2);
+  }
 }
 
 @media (min-width: 48em) {

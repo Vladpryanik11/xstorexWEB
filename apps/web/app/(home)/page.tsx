@@ -11,7 +11,7 @@ import { HowItWorks } from '../../src/catalog/HowItWorks';
 import { SectionTiles } from '../../src/catalog/SectionTiles';
 import { HomeBenefits } from '../../src/home/HomeBenefits';
 import { HomeHero } from '../../src/home/HomeHero';
-import { HomeFaq, HomeFinal, HomePlan, HomeWhy } from '../../src/home/HomeSell';
+import { HomeFaq, HomeFinal, HomePlan, HomeStats, HomeWhy } from '../../src/home/HomeSell';
 import { HomeStickyCta } from '../../src/home/HomeStickyCta';
 import styles from './page.module.css';
 
@@ -55,31 +55,36 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <>
       <HomeHero collections={home.collections} />
-      <div className={styles.top}>
+      {/* Order «Проверь и купи» (owner 2026-11-21, spec v2 §3.1): check, figures, how, why, plan,
+          catalog, questions, last call. */}
+      <div className={styles.flow}>
         <HomeBenefits />
-        <section className={styles.find} aria-labelledby="home-find">
-          <h2 id="home-find" className={styles.findTitle}>
-            Ищете конкретное приложение?
-          </h2>
-          <p className={styles.findLead}>Проверьте, есть ли оно в каталоге.</p>
-          <div className={styles.findField}>
-            <SearchField action="/search" />
-          </div>
-        </section>
-        <HomePlan priceRub={priceRub} />
-      </div>
-      <div className={styles.shelves}>
-        <SectionTiles />
-        <HeroCarousel banners={home.banners} />
-        {home.collections.map((c, i) => (
-          <Fragment key={c.slug}>
-            <CollectionSection collection={c} />
-            {i === CHIPS_AFTER - 1 ? chips : null}
-          </Fragment>
-        ))}
-        {home.collections.length < CHIPS_AFTER ? chips : null}
+        <div className={styles.check}>
+          <section className={styles.find} aria-labelledby="home-find">
+            <h2 id="home-find" className={styles.findTitle}>
+              Ищете конкретное приложение?
+            </h2>
+            <p className={styles.findLead}>Проверьте, есть ли оно в каталоге.</p>
+            <div className={styles.findField}>
+              <SearchField action="/search" />
+            </div>
+          </section>
+          <SectionTiles />
+        </div>
+        <HomeStats />
         <HowItWorks />
         <HomeWhy />
+        <HomePlan priceRub={priceRub} />
+        <div className={styles.catalog}>
+          <HeroCarousel banners={home.banners} />
+          {home.collections.map((c, i) => (
+            <Fragment key={c.slug}>
+              <CollectionSection collection={c} />
+              {i === CHIPS_AFTER - 1 ? chips : null}
+            </Fragment>
+          ))}
+          {home.collections.length < CHIPS_AFTER ? chips : null}
+        </div>
         <HomeFaq />
         <HomeFinal priceRub={priceRub} />
       </div>

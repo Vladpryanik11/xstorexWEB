@@ -1,6 +1,7 @@
 import type { CollectionView } from '@xstore/shared';
 import { useId } from 'react';
-import { HeroIcons, heroIcons } from './HeroIcons';
+import { AUDIENCE } from './figures';
+import { HeroIcons } from './HeroIcons';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
 
@@ -22,39 +23,23 @@ const BENEFITS = [
   },
 ];
 
-/** Audience line under the button; the figure comes from the owner (spec v2 §3.1). */
-const AUDIENCE = '10 000+';
-
-/** Home hero that sells the subscription (spec v2 §3.1, owner 2026-11-20). */
+/**
+ * Home hero that sells the subscription (spec v2 §3.1). Phone order (owner 2026-11-21): promise,
+ * icon row, button, guarantee, audience.
+ */
 export function HomeHero({ collections }: { collections: CollectionView[] }) {
   const listId = useId();
-  const inline = heroIcons(collections, 3);
   return (
     <section className={styles.hero} data-home-hero>
       <div className={styles.inner}>
         <div className={styles.copy}>
-          <p className={styles.trust}>
-            <span className={styles.check} aria-hidden="true">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6 12.5l4 4 8-9" />
-              </svg>
-            </span>
-            Гарантия на весь срок подписки
-          </p>
           <h1 className={styles.title}>
             <span className={styles.accent}>200+</span> приложений{' '}
-            <span className={styles.wide}>с&nbsp;Premium‑доступом</span>{' '}
-            <span className={styles.inline} aria-hidden="true">
-              {inline.map((src) => (
-                // biome-ignore lint/performance/noImgElement: tiny decorative icons from S3
-                <img key={src} src={src} alt="" />
-              ))}
-            </span>
-            на&nbsp;вашем&nbsp;iPhone
+            <span className={styles.wide}>с&nbsp;Premium‑доступом</span> на&nbsp;вашем&nbsp;iPhone
           </h1>
           <p className={styles.sub}>
-            <span>Удалённые из App Store</span>{' '}
-            <span>Premium‑доступы к приложениям уже в подписке</span>
+            <span className={styles.subLead}>Даже удалённые из App Store.</span>{' '}
+            <span>Premium уже включён.</span>
           </p>
           <span id={listId} hidden>
             Что входит в подписку
@@ -83,6 +68,14 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
+          <p className={styles.trust}>
+            <span className={styles.check} aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 12.5l4 4 8-9" />
+              </svg>
+            </span>
+            Гарантия на весь срок подписки
+          </p>
           <div className={styles.audience}>
             <span className={styles.avatars} aria-hidden="true">
               <span>А</span>
