@@ -3,13 +3,15 @@ import styles from './Footer.module.css';
 
 const groups = [
   [
-    { href: '/blog', label: 'Блог' },
     { href: '/faq', label: 'Вопросы' },
     { href: '/support', label: 'Поддержка' },
+    { href: '/legal', label: 'Контакты' },
   ],
   [
-    { href: '/terms', label: 'Условия использования' },
+    { href: '/terms', label: 'Пользовательское соглашение' },
     { href: '/privacy', label: 'Политика конфиденциальности' },
+    { href: '/consent', label: 'Согласие на обработку данных' },
+    { href: '/refunds', label: 'Возврат средств' },
   ],
 ];
 

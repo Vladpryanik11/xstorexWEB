@@ -16,6 +16,6 @@ test('unknown path shows the Russian 404 inside the site header and footer', asy
   else await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
   await expect(page.locator('footer')).toBeVisible();
   await expect(
-    page.locator('footer').getByRole('link', { name: 'Условия использования' }),
+    page.locator('footer').getByRole('link', { name: 'Пользовательское соглашение' }),
   ).toBeVisible();
 });

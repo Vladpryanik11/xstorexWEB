@@ -13,15 +13,19 @@ describe('Footer', () => {
     expect(brand).toHaveAttribute('href', '/');
     expect(brand.querySelector('img')).toHaveAttribute('src', '/brand/mark.png');
     const links: [string, string][] = [
-      ['Блог', '/blog'],
       ['Вопросы', '/faq'],
       ['Поддержка', '/support'],
-      ['Условия использования', '/terms'],
+      ['Контакты', '/legal'],
+      ['Пользовательское соглашение', '/terms'],
       ['Политика конфиденциальности', '/privacy'],
+      ['Согласие на обработку данных', '/consent'],
+      ['Возврат средств', '/refunds'],
     ];
     for (const [name, href] of links) {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
     }
+    // The blog comes in stage 2 (plan 2026-11-21, 1.2).
+    expect(screen.queryByRole('link', { name: 'Блог' })).toBeNull();
     expect(
       screen.getByText('Приложения для iPhone и iPad. Только с правами на распространение.'),
     ).toBeInTheDocument();
