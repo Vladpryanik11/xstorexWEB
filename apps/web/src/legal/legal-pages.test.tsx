@@ -31,7 +31,8 @@ describe('legal pages', () => {
       '10. Изменение соглашения',
       '11. Контакты',
     ]);
-    expect(screen.getByText(/не продлевается автоматически/)).toBeInTheDocument();
+    expect(screen.getByText(/продлевается автоматически на следующий месяц/)).toBeInTheDocument();
+    expect(screen.queryByText(/не продлевается автоматически/)).toBeNull();
     expect(screen.queryByText(/[Рр]ежим разработчика/)).toBeNull();
   });
 
@@ -60,6 +61,8 @@ describe('legal pages', () => {
     expect(screen.getByText(/в течение 7 дней с покупки/)).toBeInTheDocument();
     expect(screen.getByText(/от 5 до 10 рабочих дней/)).toBeInTheDocument();
     expect(screen.getByText(/от 2 до 3 рабочих дней/)).toBeInTheDocument();
+    expect(headings()).toContain('5. Отмена автопродления');
+    expect(screen.getByText(/Отключить автопродление/)).toBeInTheDocument();
   });
 
   it('/legal: contacts without the owner’s personal data, Telegram only when set', () => {
