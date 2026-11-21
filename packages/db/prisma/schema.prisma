@@ -58,6 +58,8 @@ model User {
   orders                     Order[]
   uploadedDeviceCertificates DeviceCertificate[]
   loginHandoffs              LoginHandoff[]
+  signingJobs                SigningJob[]
+  installTokens              InstallToken[]
 
   @@index([isProvisional, checkoutEmail])
 }
@@ -98,6 +100,8 @@ model Device {
   installEvents      InstallEvent[]
   subscription       Subscription?
   certificates       DeviceCertificate[]
+  signingJobs        SigningJob[]
+  installTokens      InstallToken[]
 
   @@index([userId, createdAt])
   @@index([status])
@@ -135,6 +139,8 @@ model DeviceCertificate {
   uploadedBy       User                    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
   createdAt        DateTime                @default(now())
   endedAt          DateTime?
+  signingJobs      SigningJob[]
+  signedBuilds     SignedBuild[]
 
   @@index([certSha1, status])
   @@index([deviceId, createdAt])
@@ -278,24 +284,27 @@ model App {
 }
 
 model AppVersion {
-  id           String        @id @default(cuid())
-  appId        String
-  app          App           @relation(fields: [appId], references: [id], onDelete: Cascade)
-  version      String
-  build        String
-  bundleId     String
-  minIos       String?
+  id            String         @id @default(cuid())
+  appId         String
+  app           App            @relation(fields: [appId], references: [id], onDelete: Cascade)
+  version       String
+  build         String
+  bundleId      String
+  minIos        String?
   /// `UIDeviceFamily` from the IPA: 1 iPhone, 2 iPad.
-  deviceFamily Int[]         @default([1])
-  sizeBytes    BigInt
-  sha256       String
-  ipaKey       String
-  icon57Key    String?
-  encrypted    Boolean
-  changelog    String?
-  status       VersionStatus @default(draft)
-  publishedAt  DateTime?
-  createdAt    DateTime      @default(now())
+  deviceFamily  Int[]          @default([1])
+  sizeBytes     BigInt
+  sha256        String
+  ipaKey        String
+  icon57Key     String?
+  encrypted     Boolean
+  changelog     String?
+  status        VersionStatus  @default(draft)
+  publishedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  signingJobs   SigningJob[]
+  signedBuilds  SignedBuild[]
+  installTokens InstallToken[]
 
   @@unique([bundleId, version, build])
   @@index([bundleId])
@@ -486,4 +495,85 @@ model NotificationLog {
   /// Set for letters sent at most once (`payment_paid:<orderId>`); null for repeatable ones.
   dedupeKey String?  @unique
   createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------------------------
+// N4: signing and OTA install (spec 2026-11-21-n4-signing-install-design.md).
+
+enum SigningStage {
+  queued
+  downloading
+  signing
+  uploading
+  ready
+  failed
+}
+
+/// One «Установить» tap that needed a signed build. Taps for the same version × device files
+/// share one queue job (`queueJobId` = `sign-<appVersionId>-<deviceCertificateId>`).
+model SigningJob {
+  id                  String            @id @default(cuid())
+  userId              String
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId            String
+  device              Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  appVersionId        String
+  appVersion          AppVersion        @relation(fields: [appVersionId], references: [id], onDelete: Cascade)
+  deviceCertificateId String
+  deviceCertificate   DeviceCertificate @relation(fields: [deviceCertificateId], references: [id], onDelete: Cascade)
+  queueJobId          String
+  stage               SigningStage      @default(queued)
+  errorCode           String?
+  /// Why it failed or waits, for the admin only: DISK_FULL, ZSIGN_TIMEOUT, ZSIGN_EXIT, ERROR.
+  failReason          String?
+  signedBuildId       String?
+  signedBuild         SignedBuild?      @relation(fields: [signedBuildId], references: [id], onDelete: SetNull)
+  createdAt           DateTime          @default(now())
+  finishedAt          DateTime?
+
+  @@index([queueJobId, stage])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+/// An IPA signed with one device's supplier files; lives in the `signed` bucket at `key`.
+model SignedBuild {
+  id                  String            @id @default(cuid())
+  appVersionId        String
+  appVersion          AppVersion        @relation(fields: [appVersionId], references: [id], onDelete: Cascade)
+  deviceCertificateId String
+  deviceCertificate   DeviceCertificate @relation(fields: [deviceCertificateId], references: [id], onDelete: Cascade)
+  key                 String
+  sizeBytes           BigInt
+  /// The bundle id the build was signed with (the profile's App ID for a single-app profile).
+  bundleId            String
+  createdAt           DateTime          @default(now())
+  lastUsedAt          DateTime          @default(now())
+  signingJobs         SigningJob[]
+  installTokens       InstallToken[]
+
+  @@unique([appVersionId, deviceCertificateId])
+  @@index([lastUsedAt])
+  @@index([deviceCertificateId])
+}
+
+/// One-time OTA install link; only the SHA-256 of the token is stored.
+model InstallToken {
+  tokenHash     String      @id
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId      String
+  device        Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  signedBuildId String
+  signedBuild   SignedBuild @relation(fields: [signedBuildId], references: [id], onDelete: Cascade)
+  appVersionId  String
+  appVersion    AppVersion  @relation(fields: [appVersionId], references: [id], onDelete: Cascade)
+  expiresAt     DateTime
+  usedAt        DateTime?
+  usedIp        String?
+  usedUa        String?
+  createdAt     DateTime    @default(now())
+
+  @@index([signedBuildId, expiresAt])
+  @@index([expiresAt])
 }

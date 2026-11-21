@@ -34,6 +34,15 @@ import {
   pageSchema,
 } from './catalog.js';
 import { apiErrorSchema, ErrorCode, errorMessages } from './errors.js';
+import {
+  type ChosenApp,
+  chosenAppSchema,
+  type InstallJobView,
+  type InstallLink,
+  type InstallRequest,
+  installJobViewSchema,
+  installLinkSchema,
+} from './install.js';
 
 export class ApiClientError extends Error {
   override readonly name = 'ApiClientError';
@@ -42,6 +51,8 @@ export class ApiClientError extends Error {
     readonly status: number,
     readonly code: ErrorCode,
     message: string,
+    /** Machine-readable reasons, e.g. the app `REPLACES_APP` would replace. */
+    readonly details: string[] = [],
   ) {
     super(message);
   }
@@ -68,7 +79,9 @@ export function createApiClient(opts: ApiClientOptions) {
     const body: unknown = await res.json().catch(() => undefined);
     if (!res.ok) {
       const err = apiErrorSchema.safeParse(body);
-      if (err.success) throw new ApiClientError(res.status, err.data.code, err.data.message);
+      if (err.success) {
+        throw new ApiClientError(res.status, err.data.code, err.data.message, err.data.details);
+      }
       throw new ApiClientError(res.status, ErrorCode.INTERNAL, errorMessages.INTERNAL);
     }
     return schema.parse(body) as z.infer<T>;
@@ -133,6 +146,14 @@ export function createApiClient(opts: ApiClientOptions) {
     /** Spec v2 §4 step 2a: a one-time link that signs this buyer in from Safari. */
     issueHandoff: (): Promise<HandoffResponse> => post('/auth/handoff', handoffResponseSchema, {}),
     redeemHandoff: (body: HandoffRedeem): Promise<void> => send('/auth/handoff/redeem', body),
+    /** Н4: ask for a signed copy for the buyer's device, follow it, take a one-time link. */
+    requestInstall: (slug: string, body: InstallRequest = {}): Promise<InstallJobView> =>
+      post(`/install/apps/${seg(slug)}`, installJobViewSchema, body),
+    installJob: (id: string): Promise<InstallJobView> =>
+      get(`/install/jobs/${seg(id)}`, installJobViewSchema),
+    installLink: (id: string): Promise<InstallLink> =>
+      post(`/install/jobs/${seg(id)}/token`, installLinkSchema, {}),
+    chosenApp: (): Promise<ChosenApp> => get('/install/chosen', chosenAppSchema),
     /** Link the browser opens to download the connection file; not a fetch. */
     enrollmentProfileUrl: (): string => `${base}/enrollment/profile`,
     /** Development only (`XSTORE_DEV_PAGES=1`): marks the buyer's device ready or pending. */

@@ -26,5 +26,8 @@ export default async function ConnectPage({
   const access = await api.getAccess();
   // `hasPassword` comes only with a buyer session; the connect link needs one.
   if (access.hasPassword === undefined) redirect('/signin?next=/get/iphone');
-  return <ConnectStep access={access.state} result={result} />;
+  // Step 3 installs the app the buyer paid from; without it the step points to the catalog.
+  const ready = access.state.kind === 'active' && access.state.device?.ready === true;
+  const chosen = ready ? ((await api.chosenApp().catch(() => null))?.app ?? null) : null;
+  return <ConnectStep access={access.state} result={result} chosen={chosen} />;
 }

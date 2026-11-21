@@ -5,7 +5,8 @@ import type { DeviceKind } from './device';
 /**
  * What the button in the app window shows (spec v2 §3.2). Without access the window leads to the
  * wizard and an unpaid order continues. A subscriber first connects the iPhone (Н2), waits while it
- * is prepared, and then waits for installs (`soon`) until Н4 ships them.
+ * is prepared, and then installs (`install`, Н4) from an iPhone or iPad; a computer only shows
+ * where to install (`phone_only`).
  */
 export type InstallCtx = {
   device: DeviceKind;
@@ -19,14 +20,26 @@ export type InstallCtx = {
 };
 
 export type InstallState = {
-  kind: 'buy' | 'resume' | 'connect' | 'preparing' | 'help' | 'soon' | 'desktop' | 'unavailable';
+  kind:
+    | 'buy'
+    | 'resume'
+    | 'connect'
+    | 'preparing'
+    | 'help'
+    | 'install'
+    | 'phone_only'
+    | 'desktop'
+    | 'unavailable';
   label: string;
   href?: string;
   /** Second action for visitors who have already paid; returns to the same window. */
   signinHref?: string;
 };
 
-const SOON: InstallState = { kind: 'soon', label: 'Скоро можно будет установить' };
+const PHONE_ONLY: InstallState = {
+  kind: 'phone_only',
+  label: 'Установить можно с iPhone или iPad',
+};
 
 function subscriberState(
   device: DeviceKind,
@@ -38,9 +51,9 @@ function subscriberState(
   if (!bound) {
     return device === 'ios'
       ? { kind: 'connect', label: `Подключить ${familyName(family)}`, href: '/get/iphone' }
-      : SOON;
+      : PHONE_ONLY;
   }
-  if (bound.ready) return SOON;
+  if (bound.ready) return device === 'ios' ? { kind: 'install', label: 'Установить' } : PHONE_ONLY;
   if (bound.needsHelp) return { kind: 'help', label: 'Написать в поддержку', href: '/support' };
   const status = bound.updating ? 'processing' : 'pending';
   return { kind: 'preparing', label: deviceStatusText(status, bound.family) };

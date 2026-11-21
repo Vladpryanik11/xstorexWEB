@@ -165,6 +165,8 @@ jobs:
         run: |
           cp .env.example .env
           echo 'CADDY_CERT_ISSUER=local' >> .env
+      - name: Real zsign signs a synthetic app
+        run: docker build --target zsign-test -f apps/worker/Dockerfile .
       - name: Build and start production stack
         run: docker compose -f infra/docker-compose.yml --env-file .env up -d --build --wait --wait-timeout 180
       - name: Smoke test production stack

@@ -1,0 +1,150 @@
+/* Н4 install button: pill → ring (spec 2026-11-21 §4). Tokens only. */
+.root {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 0;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-blue);
+  color: var(--x-white);
+  box-shadow: 0 6px 14px -6px var(--x-blue);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+  cursor: pointer;
+  transition:
+    background-color 0.16s,
+    transform 0.16s var(--x-ease);
+}
+
+.pill:hover {
+  background: var(--x-blue-deep);
+}
+
+.pill:active {
+  transform: scale(0.97);
+}
+
+.pill:focus-visible,
+.quiet:focus-visible,
+.again a:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.circle {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background: var(--x-white);
+  box-shadow: var(--x-shadow-sm);
+}
+
+.ring {
+  width: 3.25rem;
+  height: 3.25rem;
+  transform: rotate(-90deg);
+}
+
+.track,
+.arc {
+  fill: none;
+  stroke-width: 4;
+}
+
+.track {
+  stroke: var(--x-sky-50);
+}
+
+.arc {
+  stroke: var(--x-blue);
+  stroke-linecap: round;
+  transition-property: stroke-dashoffset;
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.stop {
+  fill: var(--x-blue);
+}
+
+.check {
+  fill: none;
+  stroke: var(--x-blue);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(90deg);
+  transform-origin: 26px 26px;
+}
+
+.line {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--x-text-2);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+  text-align: center;
+}
+
+[data-state="failed"] .line {
+  color: var(--x-err);
+}
+
+.confirm {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.quiet {
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-sky-50);
+  color: var(--x-quiet-fg);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-small);
+  cursor: pointer;
+}
+
+a.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-decoration: none;
+}
+
+.again {
+  margin: 0;
+  color: var(--x-text-2);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
+}
+
+.again a {
+  border-radius: var(--x-radius-pill);
+  color: var(--x-quiet-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc,
+  .pill {
+    transition: none;
+  }
+}

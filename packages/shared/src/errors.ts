@@ -48,6 +48,13 @@ export const ErrorCode = {
   ALL_DEVICES_PROFILE: 'ALL_DEVICES_PROFILE',
   CERT_REVOKED: 'CERT_REVOKED',
   SIGNING_UNAVAILABLE: 'SIGNING_UNAVAILABLE',
+  DEVICE_NOT_READY: 'DEVICE_NOT_READY',
+  APP_NOT_AVAILABLE: 'APP_NOT_AVAILABLE',
+  WRONG_DEVICE: 'WRONG_DEVICE',
+  SIGNING_FAILED: 'SIGNING_FAILED',
+  INSTALL_LINK_USED: 'INSTALL_LINK_USED',
+  INSTALL_LINK_EXPIRED: 'INSTALL_LINK_EXPIRED',
+  REPLACES_APP: 'REPLACES_APP',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -103,6 +110,13 @@ export const errorMessages: Record<ErrorCode, string> = {
   ALL_DEVICES_PROFILE: 'Этот профиль не для конкретного iPhone',
   CERT_REVOKED: 'Сертификат уже отозван',
   SIGNING_UNAVAILABLE: 'Загрузка сертификатов недоступна: не задан мастер-ключ',
+  DEVICE_NOT_READY: 'iPhone ещё готовится, установка будет доступна чуть позже',
+  APP_NOT_AVAILABLE: 'Приложение сейчас недоступно',
+  WRONG_DEVICE: 'Это приложение не работает на вашем устройстве',
+  SIGNING_FAILED: 'Не получилось подготовить приложение. Попробуйте ещё раз',
+  INSTALL_LINK_USED: 'Ссылка установки уже использована. Нажмите «Установить» ещё раз',
+  INSTALL_LINK_EXPIRED: 'Ссылка установки устарела. Нажмите «Установить» ещё раз',
+  REPLACES_APP: 'Это приложение заменит на iPhone предыдущее',
 };
 
 /** Sign-in texts that are not one per code: shown by the buyer and staff sign-in forms. */

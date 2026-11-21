@@ -1,4 +1,4 @@
-import { createWriteStream } from 'node:fs';
+import { createReadStream, createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import {
@@ -8,6 +8,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import type { WorkerS3Config } from './config.js';
 
 export type BucketName = 'originals' | 'media' | 'signed' | 'uploads';
@@ -18,6 +19,8 @@ export type WorkerS3 = {
   /** Streams an object to a local file. */
   download(bucket: string, key: string, path: string): Promise<void>;
   put(bucket: string, key: string, body: Buffer, contentType: string): Promise<void>;
+  /** Streams a local file up in 16 MiB parts (multipart); the file is never read whole. */
+  uploadFile(bucket: string, key: string, path: string, contentType: string): Promise<void>;
   /** Copies an object inside a bucket; `false` when the source does not exist. */
   copy(bucket: string, from: string, to: string): Promise<boolean>;
   /** Deletes an object; deleting a missing object is not an error. */
@@ -46,6 +49,19 @@ export function createWorkerS3(config: WorkerS3Config): WorkerS3 {
       await client.send(
         new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }),
       );
+    },
+    async uploadFile(bucket, key, path, contentType) {
+      await new Upload({
+        client,
+        params: {
+          Bucket: bucket,
+          Key: key,
+          Body: createReadStream(path),
+          ContentType: contentType,
+        },
+        partSize: 16 * 1024 * 1024,
+        queueSize: 2,
+      }).done();
     },
     async copy(bucket, from, to) {
       try {

@@ -30,6 +30,15 @@ COPY --from=pruner /app/out/full/ .
 COPY tsconfig.base.json ./
 RUN pnpm exec turbo run build --filter=@xstore/worker
 
+# Real zsign on a synthetic app (Н4): `docker build --target zsign-test -f apps/worker/Dockerfile .`
+FROM builder AS zsign-test
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends libssl3 openssl \
+  && rm -rf /var/lib/apt/lists/*
+COPY --from=zsign-build /src/zsign/bin/zsign /usr/local/bin/zsign
+ENV ZSIGN_BIN=/usr/local/bin/zsign
+RUN pnpm --filter @xstore/worker exec vitest run src/signing/zsign.real.test.ts src/signing/zsign.test.ts
+
 FROM base AS prod-deps
 WORKDIR /app
 COPY --from=pruner /app/out/json/ .
@@ -52,5 +61,7 @@ COPY --from=builder /app/packages/mail/dist packages/mail/dist
 COPY --from=builder /app/packages/secrets/dist packages/secrets/dist
 COPY --from=builder /app/packages/signing/dist packages/signing/dist
 COPY --from=builder /app/apps/worker/dist apps/worker/dist
+# Signing scratch space (compose mounts the `workertmp` volume here; it keeps this owner).
+RUN mkdir -p /work && chown node:node /work
 USER node
 CMD ["node", "apps/worker/dist/main.js"]

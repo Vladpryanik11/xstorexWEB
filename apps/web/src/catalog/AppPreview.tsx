@@ -9,6 +9,7 @@ import { type DeviceKind, deviceKind } from '../app-page/device';
 import { installButtonState } from '../app-page/install-button-state';
 import { browserApi } from '../checkout/browser-api';
 import { browserFamily } from '../checkout/connect-step';
+import { InstallButton } from '../install/InstallButton';
 import styles from './AppPreview.module.css';
 
 export type AppPreviewProps = {
@@ -71,7 +72,7 @@ export function AppPreview({
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const primary = useRef<HTMLAnchorElement>(null);
+  const primary = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
   // Set once the visitor tabs or taps inside the window: focus is theirs from then on.
   const focusMoved = useRef(false);
   // The public catalog lists only apps with a published version.
@@ -287,6 +288,8 @@ export function AppPreview({
                         <span className={styles.soon} aria-hidden="true">
                           {install.label}
                         </span>
+                      ) : install.kind === 'install' ? (
+                        <InstallButton ref={primary} slug={slug} />
                       ) : install.href ? (
                         <a ref={primary} className={styles.install} href={install.href}>
                           {install.label}

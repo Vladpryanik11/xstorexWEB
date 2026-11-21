@@ -7,6 +7,8 @@ it('names the queues', () => {
     ipa: 'ipa',
     billing: 'billing',
     certificates: 'certificates',
+    signing: 'signing',
+    maintenance: 'maintenance',
   });
 });
 

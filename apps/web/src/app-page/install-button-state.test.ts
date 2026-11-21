@@ -58,13 +58,15 @@ describe('installButtonState', () => {
     }
   });
 
-  it('a subscriber with a ready device waits for installs: the button is inactive', () => {
-    for (const device of ['ios', 'desktop'] as const) {
-      expect(installButtonState({ device, access: READY, app: app() })).toEqual({
-        kind: 'soon',
-        label: 'Скоро можно будет установить',
-      });
-    }
+  it('a subscriber with a ready device installs from the phone', () => {
+    expect(installButtonState({ device: 'ios', access: READY, app: app() })).toEqual({
+      kind: 'install',
+      label: 'Установить',
+    });
+    expect(installButtonState({ device: 'desktop', access: READY, app: app() })).toEqual({
+      kind: 'phone_only',
+      label: 'Установить можно с iPhone или iPad',
+    });
   });
 
   it('iPhone with access and no device: «Подключить iPhone» opens the connect step', () => {
@@ -81,10 +83,10 @@ describe('installButtonState', () => {
     ).toEqual({ kind: 'connect', label: 'Подключить iPad', href: '/get/iphone' });
   });
 
-  it('a computer with access and no device cannot connect from here: inactive «Скоро…»', () => {
+  it('a computer with access and no device cannot connect from here: points to the phone', () => {
     expect(installButtonState({ device: 'desktop', access: ACTIVE, app: app() })).toEqual({
-      kind: 'soon',
-      label: 'Скоро можно будет установить',
+      kind: 'phone_only',
+      label: 'Установить можно с iPhone или iPad',
     });
   });
 

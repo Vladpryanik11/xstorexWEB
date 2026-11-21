@@ -6,6 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import { createPrismaClient } from '@xstore/db';
 import { resetDatabase } from '@xstore/db/testing';
 import { mailpitMessages, waitForMail } from '@xstore/mail/testing';
+import { EVICT_SIGNED_JOB, QueueName } from '@xstore/shared';
 import {
   fakeOcspFetch,
   makeKit,
@@ -21,6 +22,7 @@ import { createApp } from '../src/app.js';
 import { DeviceWaitingNotifier } from '../src/apple/device-waiting.notifier.js';
 import { SessionService } from '../src/auth/session.service.js';
 import { loadConfig } from '../src/config/config.js';
+import { QUEUES, type Queues } from '../src/infra/queues.provider.js';
 import { SITE, seedPlan } from './helpers/billing.js';
 import { testEnv } from './test-env.js';
 
@@ -288,6 +290,19 @@ describe('upload', () => {
     expect(rows[0]?.endedAt).toBeTruthy();
     const letters = await waitForMail(email, 2);
     expect(letters[1]?.subject).toBe('Переустановите приложения');
+  });
+
+  it('replacing or deleting device files queues the removal of signed copies', async () => {
+    const queue = app.get<Queues>(QUEUES)[QueueName.maintenance];
+    await queue.obliterate({ force: true });
+    const { device } = await boundDevice();
+    await admin().post(`/admin/devices/${device.id}/certificate`, upload(makeKit()));
+    expect(await queue.getJobCountByTypes('waiting')).toBe(0);
+    await admin().post(`/admin/devices/${device.id}/certificate`, upload(makeKit()));
+    expect(await queue.getJobCountByTypes('waiting')).toBe(1);
+    await admin().del(`/admin/devices/${device.id}/certificate`);
+    const jobs = await queue.getJobs(['waiting']);
+    expect(jobs.map((j) => j.name)).toEqual([EVICT_SIGNED_JOB, EVICT_SIGNED_JOB]);
   });
 
   it('upload does not ask OCSP while strict checks are off', async () => {

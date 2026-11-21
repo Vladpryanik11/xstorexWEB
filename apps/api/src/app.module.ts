@@ -20,6 +20,7 @@ import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { isHealthCheck } from './health/is-health-check.js';
 import { InfraModule } from './infra/infra.module.js';
+import { InstallModule } from './install/install.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -67,6 +68,7 @@ export class AppModule {
         StorageModule,
         UploadsModule,
         CatalogModule,
+        InstallModule,
         AdminCatalogModule,
         JobsModule,
         BillingModule,

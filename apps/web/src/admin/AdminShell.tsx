@@ -32,12 +32,16 @@ export function AdminShell({
           ['/admin/collections', 'Подборки'],
           ['/admin/categories', 'Категории'],
           ['/admin/jobs', 'Задания'],
+          ['/admin/signing', 'Подпись'],
           ['/admin/plan', 'Тариф'],
           ['/admin/orders', 'Заказы'],
           ['/admin/subscriptions', 'Подписки'],
           ['/admin/devices', 'Ждут сертификата'],
         ]
-      : [['/admin/jobs', 'Задания']];
+      : [
+          ['/admin/jobs', 'Задания'],
+          ['/admin/signing', 'Подпись'],
+        ];
   return (
     <div className={s.shell}>
       <header className={s.header}>

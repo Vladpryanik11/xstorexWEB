@@ -63,6 +63,8 @@ export type DeviceCertificateView = {
   status: DeviceCertificateStatus;
   teamId: string;
   certSerial: string;
+  /** Н4: `all` — a wildcard profile; `single` — one App ID, each app replaces the previous. */
+  profileKind: 'all' | 'single';
   certNotAfter: string;
   profileExpiresAt: string;
   createdAt: string;
