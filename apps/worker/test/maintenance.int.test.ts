@@ -129,6 +129,19 @@ it('keeps builds with a live token', async () => {
   expect(await exists(old.key)).toBe(true);
 });
 
+it('keeps a copy whose install link was opened minutes ago (the download is running)', async () => {
+  const seed = await seedSigning(deps.db, deps.s3, keyring());
+  const old = await build(seed, { lastUsedAt: new Date(NOW.getTime() - 4 * DAY) });
+  await liveToken(seed, old.id, old.appVersionId);
+  await deps.db.installToken.updateMany({ data: { usedAt: new Date(NOW.getTime() - 5 * 60_000) } });
+  expect(await evictSignedBuilds(deps, NOW)).toEqual({ ended: 0, stale: 0, trimmed: 0 });
+  // Once the 15-minute IPA link is over, the copy goes as usual.
+  await deps.db.installToken.updateMany({
+    data: { usedAt: new Date(NOW.getTime() - 20 * 60_000) },
+  });
+  expect(await evictSignedBuilds(deps, NOW)).toEqual({ ended: 0, stale: 1, trimmed: 0 });
+});
+
 it('trims by size, oldest first', async () => {
   await deps.db.setting.create({ data: { key: CACHE_MAX_GB_KEY, value: 1 } });
   const seed = await seedSigning(deps.db, deps.s3, keyring());

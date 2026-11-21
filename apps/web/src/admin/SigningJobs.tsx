@@ -1,5 +1,10 @@
 'use client';
-import { errorMessages, type SigningJobAdminView, stageLabel } from '@xstore/shared';
+import {
+  errorMessages,
+  failReasonText,
+  type SigningJobAdminView,
+  stageLabel,
+} from '@xstore/shared';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import s from './admin.module.css';
@@ -60,6 +65,12 @@ export function SigningJobs({
               {job.errorCode && (
                 <div className={s.muted} data-tone="err">
                   {errorMessages[job.errorCode as keyof typeof errorMessages] ?? job.errorCode}
+                </div>
+              )}
+              {job.failReason && (
+                <div className={s.muted} data-tone={job.stage === 'failed' ? 'err' : 'warn'}>
+                  {job.stage === 'failed' ? '' : 'Ждёт: '}
+                  {failReasonText(job.failReason)}
                 </div>
               )}
             </td>

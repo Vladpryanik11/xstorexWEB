@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildManifest,
   canInstall,
+  failReasonText,
   INSTALL_STAGES,
   profileKind,
   signingBundleId,
@@ -137,5 +138,15 @@ describe('buildManifest', () => {
   it('skips icons that are missing', () => {
     const xml = buildManifest({ ...M, icon57Url: undefined, icon512Url: undefined });
     expect(xml).not.toContain('display-image');
+  });
+});
+
+describe('failReasonText', () => {
+  it('names each admin-only reason and passes an unknown one through', () => {
+    expect(failReasonText('DISK_FULL')).toBe('Мало места на сервере');
+    expect(failReasonText('ZSIGN_TIMEOUT')).toBe('Подпись не уложилась во время');
+    expect(failReasonText('ZSIGN_EXIT')).toBe('zsign завершился с ошибкой');
+    expect(failReasonText('ERROR')).toBe('Ошибка воркера, подробности в журнале');
+    expect(failReasonText('NEW_ONE')).toBe('NEW_ONE');
   });
 });

@@ -13,7 +13,7 @@ import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { loadWorkerConfig } from '../src/config.js';
 import { closeWorkerDeps, createWorkerDeps, type WorkerDeps } from '../src/deps.js';
 import { createSigningWorker, SigningJobName } from '../src/queues/signing.js';
-import { signAppVersion } from '../src/signing/sign.js';
+import { finishRequests, signAppVersion } from '../src/signing/sign.js';
 import { ensureBuckets, fakeZsign, seedSigning } from './helpers/signing.js';
 
 const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
@@ -40,6 +40,8 @@ async function makeDeps(zsignBin: string): Promise<WorkerDeps> {
     MASTER_KEY_V1: MASTER,
     ZSIGN_BIN: zsignBin,
     SIGNING_TIMEOUT_MS: '10000',
+    SIGNING_DISK_WAIT_MS: '50',
+    SIGNING_DISK_WAITS: '2',
   });
   const deps = createWorkerDeps(config, pino({ level: 'silent' }));
   await ensureBuckets(deps.s3, ['originals', 'signed']);
@@ -193,16 +195,81 @@ it('marks requests failed after the last attempt', async () => {
       { jobId: job.queueJobId, attempts: 2, backoff: { type: 'fixed', delay: 10 } },
     );
     await expect(queued.waitUntilFinished(events, 15_000)).rejects.toThrow();
-    let row = await deps.db.signingJob.findUniqueOrThrow({ where: { id: job.id } });
-    for (let i = 0; i < 40 && row.stage !== 'failed'; i++) {
-      await new Promise((r) => setTimeout(r, 50));
-      row = await deps.db.signingJob.findUniqueOrThrow({ where: { id: job.id } });
-    }
-    expect([row.stage, row.errorCode]).toEqual(['failed', 'SIGNING_FAILED']);
+    // Marked by the last attempt itself, before BullMQ drops the job.
+    const row = await deps.db.signingJob.findUniqueOrThrow({ where: { id: job.id } });
+    expect([row.stage, row.errorCode, row.failReason]).toEqual([
+      'failed',
+      'SIGNING_FAILED',
+      'ZSIGN_EXIT',
+    ]);
     expect(await argsFiles()).toHaveLength(2);
     expect(await deps.db.signedBuild.count()).toBe(0);
   } finally {
     await worker.close();
     await events.close();
   }
+});
+
+it('a full disk waits, tells the admin, then gives up', async () => {
+  await useZsign();
+  const queue = deps.queues[QueueName.signing];
+  await queue.obliterate({ force: true });
+  const events = new QueueEvents(QueueName.signing, { connection: deps.connection.duplicate() });
+  await events.waitUntilReady();
+  const worker: Worker = createSigningWorker(deps);
+  await worker.waitUntilReady();
+  try {
+    const seed = await seedSigning(deps.db, deps.s3, keyring());
+    // An IPA no disk can hold 2.5 times.
+    await deps.db.appVersion.update({
+      where: { id: seed.version.id },
+      data: { sizeBytes: 10n ** 17n },
+    });
+    const job = await request(seed);
+    const queued = await queue.add(
+      SigningJobName.sign,
+      { signingJobId: job.id },
+      { jobId: job.queueJobId, attempts: 2, backoff: { type: 'fixed', delay: 10 } },
+    );
+    let waited = false;
+    for (let i = 0; i < 100; i++) {
+      const row = await deps.db.signingJob.findUniqueOrThrow({ where: { id: job.id } });
+      if (row.stage === 'queued' && row.failReason === 'DISK_FULL') waited = true;
+      if (row.stage === 'failed') break;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    // While it waits the buyer still sees «Проверяем доступ», the admin sees the reason.
+    expect(waited).toBe(true);
+    await expect(queued.waitUntilFinished(events, 15_000)).rejects.toThrow();
+    const row = await deps.db.signingJob.findUniqueOrThrow({ where: { id: job.id } });
+    expect([row.stage, row.errorCode, row.failReason]).toEqual([
+      'failed',
+      'SIGNING_FAILED',
+      'DISK_FULL',
+    ]);
+    expect(await argsFiles()).toHaveLength(0);
+  } finally {
+    await worker.close();
+    await events.close();
+  }
+});
+
+it('a late failure never fails a request made after it', async () => {
+  await useZsign();
+  const seed = await seedSigning(deps.db, deps.s3, keyring());
+  const old = await request(seed);
+  const cutoff = new Date();
+  await new Promise((r) => setTimeout(r, 10));
+  const fresh = await request(seed);
+  await finishRequests(
+    deps.db,
+    old.queueJobId,
+    { errorCode: 'SIGNING_FAILED' },
+    { createdBefore: cutoff },
+  );
+  const rows = await deps.db.signingJob.findMany({ orderBy: { createdAt: 'asc' } });
+  expect(rows.map((r) => [r.id, r.stage])).toEqual([
+    [old.id, 'failed'],
+    [fresh.id, 'queued'],
+  ]);
 });

@@ -57,6 +57,46 @@ describe('InstallButton', () => {
     expect(api.requestInstall).toHaveBeenCalledWith('app-1', {});
   });
 
+  it('says «Установлено» once the buyer is back from the iPhone window', async () => {
+    api.requestInstall.mockResolvedValue({ jobId: 'j5', stage: 'ready' });
+    render(<InstallButton slug="app-1" catalogLink />);
+    tap();
+    await screen.findByText('Нажмите «Установить» в окне iPhone');
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    expect(
+      await screen.findByText('Установлено. Приложение появится на экране «Домой»'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'В каталог' })).toHaveAttribute('href', '/');
+  });
+
+  it('a late second tap takes a fresh link: the first one is spent', async () => {
+    api.requestInstall.mockResolvedValue({ jobId: 'j6', stage: 'ready' });
+    render(<InstallButton slug="app-1" />);
+    tap();
+    await screen.findByText('Нажмите «Установить» в окне iPhone');
+    const fresh = { itmsUrl: 'itms-services://?action=download-manifest&url=y', expiresAt: '' };
+    api.installLink.mockResolvedValueOnce(fresh);
+    await act(() => vi.advanceTimersByTimeAsync(3 * 60_000));
+    fireEvent.click(screen.getByRole('link', { name: /ещё раз/ }));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(api.installLink).toHaveBeenCalledTimes(2);
+    expect(assign).toHaveBeenLastCalledWith(fresh.itmsUrl);
+    expect(screen.getByRole('link', { name: /ещё раз/ })).toHaveAttribute('href', fresh.itmsUrl);
+  });
+
+  it('one lost poll does not stop the signing', async () => {
+    api.requestInstall.mockResolvedValue({ jobId: 'j7', stage: 'queued' });
+    api.installJob
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce({ jobId: 'j7', stage: 'ready' });
+    render(<InstallButton slug="app-1" />);
+    tap();
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(await screen.findByText('Нажмите «Установить» в окне iPhone')).toBeInTheDocument();
+  });
+
   it('a ready copy opens the link at once', async () => {
     api.requestInstall.mockResolvedValue({ jobId: 'j2', stage: 'ready' });
     render(<InstallButton slug="app-1" />);

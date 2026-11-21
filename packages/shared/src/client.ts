@@ -35,6 +35,8 @@ import {
 } from './catalog.js';
 import { apiErrorSchema, ErrorCode, errorMessages } from './errors.js';
 import {
+  type ChosenApp,
+  chosenAppSchema,
   type InstallJobView,
   type InstallLink,
   type InstallRequest,
@@ -151,6 +153,7 @@ export function createApiClient(opts: ApiClientOptions) {
       get(`/install/jobs/${seg(id)}`, installJobViewSchema),
     installLink: (id: string): Promise<InstallLink> =>
       post(`/install/jobs/${seg(id)}/token`, installLinkSchema, {}),
+    chosenApp: (): Promise<ChosenApp> => get('/install/chosen', chosenAppSchema),
     /** Link the browser opens to download the connection file; not a fetch. */
     enrollmentProfileUrl: (): string => `${base}/enrollment/profile`,
     /** Development only (`XSTORE_DEV_PAGES=1`): marks the buyer's device ready or pending. */

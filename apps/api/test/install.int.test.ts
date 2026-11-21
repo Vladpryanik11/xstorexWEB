@@ -10,7 +10,7 @@ import { createApp } from '../src/app.js';
 import { SessionService } from '../src/auth/session.service.js';
 import { loadConfig } from '../src/config/config.js';
 import { QUEUES, type Queues } from '../src/infra/queues.provider.js';
-import { SITE } from './helpers/billing.js';
+import { SITE, seedPlan } from './helpers/billing.js';
 import { testEnv } from './test-env.js';
 
 const DAY = 86_400_000;
@@ -267,6 +267,53 @@ describe('install request', () => {
   });
 });
 
+describe('the app chosen before payment', () => {
+  async function paidOrder(userId: string, returnTo: string | null, paidAt = new Date()) {
+    const plan = await seedPlan(db).catch(() => db.plan.findFirstOrThrow({ select: { id: true } }));
+    const sub = await db.subscription.findFirstOrThrow({ where: { userId } });
+    return db.order.create({
+      data: {
+        userId,
+        subscriptionId: sub.id,
+        planId: plan.id,
+        planSnapshot: {},
+        checkoutEmail: 'b@x.test',
+        checkoutKey: randomBytes(8).toString('hex'),
+        returnTo,
+        amountRub: 299,
+        status: 'paid',
+        provider: 'fake',
+        paidAt,
+        expiresAt: new Date(Date.now() + DAY),
+      },
+    });
+  }
+
+  it('is the app of the latest paid order', async () => {
+    const b = await buyer();
+    const older = await publishedApp('Старое');
+    const { app: chosen } = await publishedApp('Выбранное');
+    await paidOrder(b.user.id, `/app/${older.app.slug}`, new Date(Date.now() - DAY));
+    await paidOrder(b.user.id, `/app/${chosen.slug}`);
+    const res = await b.http.get('/install/chosen');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ app: { slug: chosen.slug, name: 'Выбранное' } });
+  });
+
+  it('is none without an app page or once the app is hidden', async () => {
+    const b = await buyer();
+    expect((await b.http.get('/install/chosen')).body).toEqual({ app: null });
+    const { app: hidden } = await publishedApp('Скрытое');
+    await db.app.update({ where: { id: hidden.id }, data: { status: 'hidden' } });
+    await paidOrder(b.user.id, `/app/${hidden.slug}`);
+    expect((await b.http.get('/install/chosen')).body).toEqual({ app: null });
+  });
+
+  it('a guest is asked to sign in', async () => {
+    expect((await server().get('/api/v1/install/chosen')).status).toBe(401);
+  });
+});
+
 describe('manifest', () => {
   async function link() {
     const b = await buyer();
@@ -352,8 +399,13 @@ describe('admin signing jobs', () => {
         version: '2.1',
         stage: 'queued',
         email: expect.any(String),
+        failReason: null,
       }),
     ]);
+    // A job waiting for disk space shows why, to staff only.
+    await db.signingJob.updateMany({ data: { failReason: 'DISK_FULL' } });
+    const waiting = await (await staff('support')).get('/admin/signing-jobs');
+    expect(waiting.body[0].failReason).toBe('DISK_FULL');
     expect((await b.http.get('/admin/signing-jobs')).status).toBe(403);
   });
 

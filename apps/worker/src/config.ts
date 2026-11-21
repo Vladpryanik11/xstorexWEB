@@ -36,6 +36,8 @@ const envSchema = z.object({
   SIGNING_MEMORY_MB: z.coerce.number().int().min(128).default(2048),
   SIGNING_CPU_SEC: z.coerce.number().int().min(10).default(900),
   SIGNING_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(1),
+  SIGNING_DISK_WAIT_MS: z.coerce.number().int().min(10).default(60_000),
+  SIGNING_DISK_WAITS: z.coerce.number().int().min(0).default(10),
 });
 
 /** Outside production the letters go to the local Mailpit (`pnpm infra:up`). */
@@ -69,6 +71,9 @@ export type WorkerSigningConfig = {
   memoryMb: number;
   cpuSec: number;
   concurrency: number;
+  /** A full disk: wait this long before the next try, at most `diskWaits` times. */
+  diskWaitMs: number;
+  diskWaits: number;
 };
 
 export type WorkerConfig = {
@@ -141,6 +146,8 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv): WorkerConfig {
       memoryMb: e.SIGNING_MEMORY_MB,
       cpuSec: e.SIGNING_CPU_SEC,
       concurrency: e.SIGNING_CONCURRENCY,
+      diskWaitMs: e.SIGNING_DISK_WAIT_MS,
+      diskWaits: e.SIGNING_DISK_WAITS,
     },
   };
 }

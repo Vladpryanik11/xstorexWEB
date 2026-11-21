@@ -35,8 +35,51 @@ describe('installReducer', () => {
   });
 
   it('the link tells to confirm in the iPhone window', () => {
-    const s = installReducer(IDLE, { type: 'link', itmsUrl: 'itms-services://?x' });
+    const s = installReducer(IDLE, {
+      type: 'link',
+      jobId: 'j',
+      itmsUrl: 'itms-services://?x',
+      at: 5,
+    });
+    expect(s).toEqual({ kind: 'opened', jobId: 'j', itmsUrl: 'itms-services://?x', at: 5 });
     expect(flowText(s)).toBe('Нажмите «Установить» в окне iPhone');
+  });
+
+  it('back from the iPhone window says it is installed', () => {
+    const opened = installReducer(IDLE, {
+      type: 'link',
+      jobId: 'j',
+      itmsUrl: 'itms-services://?x',
+      at: 5,
+    });
+    const s = installReducer(opened, { type: 'back' });
+    expect(s).toEqual({ ...opened, kind: 'installed' });
+    expect(flowText(s)).toBe('Установлено. Приложение появится на экране «Домой»');
+    // Only an open link turns into «Установлено».
+    expect(installReducer(IDLE, { type: 'back' })).toEqual(IDLE);
+  });
+
+  it('a refusal from the worker shows its reason, a crash the generic line', () => {
+    const working: InstallFlow = { kind: 'working', jobId: 'j', stage: 'queued' };
+    expect(
+      installReducer(working, {
+        type: 'stage',
+        jobId: 'j',
+        stage: 'failed',
+        errorCode: 'DEVICE_NOT_READY',
+      }),
+    ).toEqual({
+      kind: 'failed',
+      message: 'iPhone ещё готовится, установка будет доступна чуть позже',
+    });
+    expect(
+      installReducer(working, {
+        type: 'stage',
+        jobId: 'j',
+        stage: 'failed',
+        errorCode: 'SIGNING_FAILED',
+      }),
+    ).toEqual({ kind: 'failed', message: 'Не получилось подготовить приложение' });
   });
 });
 

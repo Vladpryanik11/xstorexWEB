@@ -57,6 +57,8 @@ describe('loadWorkerConfig', () => {
         memoryMb: 2048,
         cpuSec: 900,
         concurrency: 1,
+        diskWaitMs: 60_000,
+        diskWaits: 10,
       },
     });
   });

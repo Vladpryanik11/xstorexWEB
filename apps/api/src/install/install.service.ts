@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   buildManifest,
+  type ChosenApp,
   canInstall,
   ErrorCode,
   type InstallJobView,
@@ -145,6 +146,8 @@ export class InstallService {
       queueJobId,
     };
     if (build) {
+      // A tap counts as use: the hourly cleanup keeps the copy until the link is taken.
+      await db.signedBuild.update({ where: { id: build.id }, data: { lastUsedAt: now } });
       const row = await db.signingJob.create({
         data: { ...base, stage: 'ready', signedBuildId: build.id, finishedAt: now },
         select: { id: true, stage: true, errorCode: true },
@@ -177,6 +180,23 @@ export class InstallService {
       await existing.remove().catch(() => undefined);
     }
     await queue.add(SIGN_JOB_NAME, { signingJobId }, { ...SIGN_JOB_OPTIONS, jobId: queueJobId });
+  }
+
+  /** The app page the buyer paid from (`returnTo` of the latest paid order), while it is listed. */
+  async chosen(userId: string): Promise<ChosenApp> {
+    const db = this.prisma.client;
+    const order = await db.order.findFirst({
+      where: { userId, status: 'paid', returnTo: { startsWith: '/app/' } },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+      select: { returnTo: true },
+    });
+    const slug = order?.returnTo?.match(/^\/app\/([^/?#]+)$/)?.[1];
+    if (!slug) return { app: null };
+    const app = await db.app.findUnique({
+      where: { slug: decodeURIComponent(slug) },
+      select: { slug: true, name: true, status: true },
+    });
+    return { app: app?.status === 'published' ? { slug: app.slug, name: app.name } : null };
   }
 
   async job(userId: string, id: string): Promise<InstallJobView> {

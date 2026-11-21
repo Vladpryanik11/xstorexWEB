@@ -28,6 +28,7 @@ export class AdminSigningController {
         id: true,
         stage: true,
         errorCode: true,
+        failReason: true,
         createdAt: true,
         finishedAt: true,
         user: { select: { email: true, checkoutEmail: true } },
@@ -41,6 +42,7 @@ export class AdminSigningController {
       email: r.user.email ?? r.user.checkoutEmail,
       stage: r.stage,
       errorCode: r.errorCode,
+      failReason: r.failReason,
       createdAt: r.createdAt.toISOString(),
       finishedAt: r.finishedAt?.toISOString() ?? null,
     }));
@@ -59,7 +61,7 @@ export class AdminSigningController {
     if (row.stage !== 'failed') throw new DomainError(ErrorCode.CONFLICT, 409);
     await db.signingJob.update({
       where: { id },
-      data: { stage: 'queued', errorCode: null, finishedAt: null },
+      data: { stage: 'queued', errorCode: null, failReason: null, finishedAt: null },
     });
     const queue = this.queues[QueueName.signing];
     const existing = await queue.getJob(row.queueJobId);

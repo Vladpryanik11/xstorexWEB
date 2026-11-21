@@ -13,14 +13,22 @@ export type EvictOutcome = { ended: number; stale: number; trimmed: number };
  * Removes signed copies (spec Н4 §6): every copy of device files that are no longer active
  * (replaced, revoked, expired, deleted) at once; copies unused for `signing.cacheTtlDays` (3);
  * then the least recently used while the total is over `signing.cacheMaxGb` (10). A copy with
- * a live unused install link is kept by the last two rules. Objects go first, then rows, so a
+ * a live unused install link, or one opened in the last 15 minutes, is kept by the last two rules. Objects go first, then rows, so a
  * row never points at nothing; a failed object delete leaves the row for the next run.
  */
 export async function evictSignedBuilds(deps: WorkerDeps, now = new Date()): Promise<EvictOutcome> {
   const { db } = deps;
   const ttlDays = await readSetting(db, CACHE_TTL_DAYS_KEY, z.number().positive(), 3);
   const maxGb = await readSetting(db, CACHE_MAX_GB_KEY, z.number().positive(), 10);
-  const liveToken = { installTokens: { some: { usedAt: null, expiresAt: { gt: now } } } };
+  // A link not used yet, or opened less than the IPA link's 15 minutes ago (iOS is downloading).
+  const downloading = new Date(now.getTime() - 15 * 60_000);
+  const liveToken = {
+    installTokens: {
+      some: {
+        OR: [{ usedAt: null, expiresAt: { gt: now } }, { usedAt: { gt: downloading } }],
+      },
+    },
+  };
 
   const ended = await db.signedBuild.findMany({
     where: { deviceCertificate: { status: { not: 'active' } } },

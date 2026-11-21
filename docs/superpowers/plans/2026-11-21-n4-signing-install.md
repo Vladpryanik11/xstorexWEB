@@ -4,7 +4,7 @@
 
 **Goal:** Покупатель с готовым iPhone жмёт «Установить» у любого приложения каталога; воркер подписывает IPA файлами поставщика этого устройства (zsign), кнопка показывает анимацию по этапам, затем Safari открывает `itms-services://`, и iOS ставит приложение.
 
-**Architecture:** Новые модели `SigningJob`, `SignedBuild`, `InstallToken`. Воркер: очередь `signing` (расшифровка `.p12` → PEM-файлы → zsign с лимитами → потоковая многочастная загрузка в бакет `signed`), очередь `maintenance` (уборка копий раз в час). API: модуль `install` (запрос установки, состояние задачи для опроса, токен, манифест). Н3 при замене/отзыве/удалении файлов удаляет копии устройства. Web: кнопка-круг в окне приложения и на шаге 3 мастера; админка — раздел «Подпись».
+**Architecture:** Новые модели `SigningJob`, `SignedBuild`, `InstallToken`. Воркер: очередь `signing` (расшифровка `.p12` → одноразовый `.p12` под случайным паролем → zsign с лимитами → потоковая многочастная загрузка в бакет `signed`), очередь `maintenance` (уборка копий раз в час). API: модуль `install` (запрос установки, состояние задачи для опроса, токен, манифест). Н3 при замене/отзыве/удалении файлов удаляет копии устройства. Web: кнопка-круг в окне приложения и на шаге 3 мастера; админка — раздел «Подпись».
 
 **Tech Stack:** как Н3 + `@aws-sdk/lib-storage` (многочастная загрузка), zsign v1.1.3 (уже в образе воркера), `prlimit` (util-linux в `node:24-bookworm-slim`).
 
@@ -37,7 +37,7 @@
 
 **Files:**
 - Modify: `packages/db/prisma/schema.prisma` (+ миграция `n4_signing`), `packages/shared/src/errors.ts`, `packages/shared/src/queues.ts`, `packages/shared/src/index.ts`
-- Create: `packages/shared/src/install.ts`, `packages/shared/src/manifest.ts`
+- Create: `packages/shared/src/install.ts` (правила, этапы, манифест)
 - Test: `packages/shared/src/install.test.ts`, `packages/shared/src/manifest.test.ts`
 
 **Interfaces:**
@@ -57,12 +57,12 @@
 - Modify: `apps/worker/src/config.ts` (лимиты, `ZSIGN_BIN`), `apps/worker/Dockerfile` (`util-linux` для `prlimit`, если его нет в образе).
 
 **Interfaces:**
-- `writeIdentityFiles(dir, privateKeyPem, certificatePem, profile)` → `{ keyPath, certPath, profilePath }`, права `0600`.
-- `runZsign({ zsignBin, input, output, keyPath, certPath, profilePath, bundleId?, timeoutMs, memoryMb, cpuSec })` — `prlimit --as=… --cpu=… -- zsign -k -c -m -o -z 1 [-b] input`; SIGKILL по времени; ненулевой код → `ZsignError` (хвост stderr 2 КБ, без путей ключей).
+- `writeIdentityFiles(dir, { parsed, profile })` → `{ p12Path, p12Password, profilePath }`: ключ с цепочкой перепакован `packP12` под случайным одноразовым паролем (zsign 1.1.3 берёт цепочку WWDR только из `.p12`), права `0600`.
+- `runZsign({ zsignBin, input, output, p12Path, p12Password, profilePath, workDir, bundleId?, timeoutMs, memoryMb, cpuSec })` — `prlimit --as=… --cpu=… -- zsign -k <p12> -p <одноразовый> -m -o -t <work> -z 1 -q [-b] input`; SIGKILL по времени; ненулевой код → `ZsignError` (хвост stderr 2 КБ, без путей ключей).
 - `ensureFreeSpace(dir, bytes)` → `DiskFullError`.
 - `withTempDir(root, fn)` — папка удаляется и после ошибки.
 
-- [ ] Тесты (zsign подменён shell-скриптом): `passes PEM files and never a password`, `passes bundle id only when it changes`, `kills on timeout`, `cleans up`, `reports low disk space`. FAIL → реализация → PASS → commit `feat(worker): zsign runner with limits`.
+- [ ] Тесты (zsign подменён shell-скриптом): `passes a one-time p12 and never the supplier password`, `passes bundle id only when it changes`, `kills on timeout`, `cleans up`, `reports low disk space`. FAIL → реализация → PASS → commit `feat(worker): zsign runner with limits`.
 
 ### Task 3: Задача подписи
 
@@ -70,7 +70,7 @@
 - Create: `apps/worker/src/signing/sign.ts`, `apps/worker/src/queues/signing.ts`; Modify: `apps/worker/src/s3.ts` (+ `uploadFile` через `lib-storage`, `size`), `apps/worker/src/main.ts`.
 - Test: `apps/worker/test/signing.int.test.ts`.
 
-**Flow:** взять `SigningJob` → действующий `DeviceCertificate` (иначе `failed` `DEVICE_NOT_READY`) → копия уже есть → `ready` → иначе `downloading` (место, скачать оригинал) → `signing` (расшифровать, PEM, zsign) → `uploading` (`signed/<deviceCertificateId>/<appVersionId>.ipa`, многочастно) → `SignedBuild` upsert → все `SigningJob` с этим `queueJobId` → `ready` + `signedBuildId`. Последняя попытка упала → все они `failed` `SIGNING_FAILED`.
+**Flow:** взять `SigningJob` → действующий `DeviceCertificate` (иначе `failed` `DEVICE_NOT_READY`) → копия уже есть → `ready` → иначе проверка места (2,5 × IPA; мало — задача ждёт `SIGNING_DISK_WAIT_MS` до `SIGNING_DISK_WAITS` раз, у запросов `failReason = DISK_FULL`) → `downloading` (скачать оригинал) → `signing` (расшифровать, одноразовый `.p12`, zsign) → `uploading` (`signed/<deviceCertificateId>/<appVersionId>.ipa`, многочастно) → `SignedBuild` upsert → все `SigningJob` с этим `queueJobId` → `ready` + `signedBuildId`. Последняя попытка упала → сам обработчик (пока задача держит свой id) ставит всем `failed` `SIGNING_FAILED` и причину для админки `failReason` (`DISK_FULL`, `ZSIGN_TIMEOUT`, `ZSIGN_EXIT`, `ERROR`).
 
 - [ ] Тесты: `signs, stores the build and completes every waiting request`, `stages go in order`, `reuses an existing build`, `marks requests failed after the last attempt`, `refuses when device files ended`. FAIL → реализация → PASS → commit `feat(worker): signing job`.
 
@@ -85,7 +85,7 @@
 ### Task 5: API установки
 
 **Files:**
-- Create: `apps/api/src/install/{install.module,install.controller,install.service,tokens}.ts`; Modify: `apps/api/src/app.module.ts`, `apps/api/src/billing/access.controller.ts` (в ответ `/access` — `profileKind` и `lastInstalled` устройства), `packages/shared/src/client.ts` / `access.ts`.
+- Create: `apps/api/src/install/{install.module,install.controller,install.service,tokens}.ts`; Modify: `apps/api/src/app.module.ts`, `packages/shared/src/client.ts`. Вместо `profileKind`/`lastInstalled` в `/access`: `POST /install/apps/:slug` отвечает 409 `REPLACES_APP` с названием прошлого приложения; `GET /install/chosen` — приложение, с которого платили (шаг 3 мастера).
 - Test: `apps/api/test/install.int.test.ts`.
 
 **Interfaces:**
@@ -100,9 +100,9 @@
 
 **Files:**
 - Create: `apps/web/src/install/{InstallButton.tsx,InstallButton.module.css,install-flow.ts,ProgressRing.tsx}` + тесты; Modify: `apps/web/src/app-page/install-button-state.ts` (`soon` → `install`), окно приложения (`AppPreview`), шаг 3 мастера, `apps/web/src/api/*`.
-- Test: `install-flow.test.ts`, `InstallButton.test.tsx`, `apps/web/e2e/install.spec.ts`.
+- Test: `install-flow.test.ts`, `InstallButton.test.tsx`, e2e в `apps/web/e2e/connect-iphone.spec.ts` (после загрузки файлов поставщика).
 
-**Behaviour:** спека Н4 §4. Состояния: `idle` → `confirmReplace` (профиль `single` и есть прошлое приложение) → `working(stage)` → `ready` (открыть `itmsUrl`; если не открылось — «Установить» ещё раз) → `done` | `failed`. Круг: SVG, `stroke-dashoffset`, плавно к `to` этапа, `prefers-reduced-motion` — скачками. Основа — Stateful Button (Aceternity) и Animated Circular Progress Bar (Magic UI), перенесены на CSS Modules и токены.
+**Behaviour:** спека Н4 §4. Состояния: `idle` → `confirmReplace` (профиль `single` и есть прошлое приложение) → `working(stage)` → `opened` (открыть `itmsUrl`; «Нажмите ещё раз»; ссылка старше 100 с заменяется новой) → `installed` («Установлено…», при возврате в Safari или через 10 с) | `failed`. Круг: SVG, `stroke-dashoffset`, плавно к `to` этапа, `prefers-reduced-motion` — скачками. Основа — Stateful Button (Aceternity) и Animated Circular Progress Bar (Magic UI), перенесены на CSS Modules и токены.
 
 - [ ] Тесты: `ready device shows Install`, `stages move the ring forward only`, `warns before replacing the previous app`, `failure offers a retry`, e2e `install shows the ring, then an itms-services link with a valid manifest`. FAIL → реализация → проверка вёрстки 390 и 1280 → PASS → commit `feat(web): install button with signing animation`.
 

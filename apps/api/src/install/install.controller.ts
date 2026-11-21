@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Header, HttpCode, Param, Post, Req, Res } from '@nestjs/common';
-import { ErrorCode, type InstallJobView, type InstallLink } from '@xstore/shared';
+import { type ChosenApp, ErrorCode, type InstallJobView, type InstallLink } from '@xstore/shared';
 import { z } from 'zod';
 import { RequireUser } from '../auth/roles.decorator.js';
 import { DomainError } from '../common/domain-error.js';
@@ -44,6 +44,13 @@ export class InstallController {
     return this.install.request(userId, slug, body);
   }
 
+  @Get('chosen')
+  @RequireUser()
+  chosen(@Req() req: HttpReq): Promise<ChosenApp> {
+    // biome-ignore lint/style/noNonNullAssertion: @RequireUser guarantees a session
+    return this.install.chosen(req.auth!.userId);
+  }
+
   @Get('jobs/:id')
   @RequireUser()
   job(@Param('id') id: string, @Req() req: HttpReq): Promise<InstallJobView> {
@@ -54,9 +61,17 @@ export class InstallController {
   @Post('jobs/:id/token')
   @RequireUser()
   @HttpCode(200)
-  token(@Param('id') id: string, @Req() req: HttpReq): Promise<InstallLink> {
+  async token(@Param('id') id: string, @Req() req: HttpReq): Promise<InstallLink> {
     // biome-ignore lint/style/noNonNullAssertion: @RequireUser guarantees a session
-    return this.install.token(req.auth!.userId, id);
+    const userId = req.auth!.userId;
+    // Each link keeps the copy for an hour: a loop must not pin the cache.
+    const { allowed } = await this.limiter.consume(
+      `install-link:${userId}`,
+      INSTALL_LIMIT.limit,
+      INSTALL_LIMIT.windowSec,
+    );
+    if (!allowed) throw new DomainError(ErrorCode.RATE_LIMITED, 429);
+    return this.install.token(userId, id);
   }
 
   /** Public: iOS fetches it without cookies. The token in the path is the only key. */

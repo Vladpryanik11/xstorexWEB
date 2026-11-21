@@ -157,6 +157,12 @@ export const installLinkSchema = z.object({
   expiresAt: z.string(),
 });
 
+/** `GET /install/chosen`: the app the buyer picked before paying (wizard step 3), if still listed. */
+export type ChosenApp = { app: { slug: string; name: string } | null };
+export const chosenAppSchema = z.object({
+  app: z.object({ slug: z.string().min(1), name: z.string().min(1) }).nullable(),
+});
+
 /** A row of the admin «Подпись» list (newest first). */
 export type SigningJobAdminView = {
   id: string;
@@ -165,6 +171,8 @@ export type SigningJobAdminView = {
   email: string | null;
   stage: InstallStage;
   errorCode: string | null;
+  /** Why it failed or waits, admin only (`failReasonText`). */
+  failReason: string | null;
   createdAt: string;
   finishedAt: string | null;
 };
@@ -177,3 +185,12 @@ export const stageLabel: Record<InstallStage, string> = {
   ready: 'Готово',
   failed: 'Ошибка',
 };
+
+/** The admin «Подпись» line for `SigningJob.failReason`. */
+const FAIL_REASONS: Record<string, string> = {
+  DISK_FULL: 'Мало места на сервере',
+  ZSIGN_TIMEOUT: 'Подпись не уложилась во время',
+  ZSIGN_EXIT: 'zsign завершился с ошибкой',
+  ERROR: 'Ошибка воркера, подробности в журнале',
+};
+export const failReasonText = (reason: string): string => FAIL_REASONS[reason] ?? reason;

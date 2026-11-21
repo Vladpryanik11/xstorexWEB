@@ -1,6 +1,11 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { type AccessResponse, type AccessState, errorMessages } from '@xstore/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../install/InstallButton', () => ({
+  InstallButton: ({ slug }: { slug: string }) => <button type="button">Установить {slug}</button>,
+}));
+
 import { ConnectStep } from './ConnectStep';
 import { CONNECT_WAITING_STORAGE } from './connect-step';
 
@@ -33,6 +38,35 @@ function connect() {
 }
 
 describe('ConnectStep', () => {
+  it('step 3: the app chosen before payment installs right here', () => {
+    render(
+      <ConnectStep
+        access={withDevice(true)}
+        result={null}
+        device="ios"
+        getAccess={vi.fn()}
+        chosen={{ slug: 'telegram', name: 'Telegram' }}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'iPhone готов' })).toBeInTheDocument();
+    expect(screen.getByText('Установите «Telegram» прямо сейчас.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Установить telegram' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Другие приложения в каталоге' })).toHaveAttribute(
+      'href',
+      '/',
+    );
+  });
+
+  it('step 3 without a chosen app sends to the catalog', () => {
+    render(
+      <ConnectStep access={withDevice(true)} result={null} device="ios" getAccess={vi.fn()} />,
+    );
+    expect(
+      screen.getByText('Выберите приложение в каталоге и нажмите «Установить».'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Установить/ })).toBeNull();
+  });
+
   it('iPhone: three pictures with captions and the connect link', () => {
     render(
       <ConnectStep

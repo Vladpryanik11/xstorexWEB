@@ -29,18 +29,45 @@ async function setStage(db: PrismaClient, queueJobId: string, stage: SigningStag
   });
 }
 
-/** Finishes every open request of this queue job. */
-export async function finishRequests(
+/** Notes on every open request why the job waits (the admin sees it; the buyer does not). */
+export async function noteWaiting(
   db: PrismaClient,
   queueJobId: string,
-  result: { signedBuildId: string } | { errorCode: string },
+  failReason: string,
 ): Promise<void> {
   await db.signingJob.updateMany({
     where: { queueJobId, stage: { in: OPEN_STAGES } },
+    data: { failReason },
+  });
+}
+
+/** Finishes every open request of this queue job (`createdBefore`: only requests made by then). */
+export async function finishRequests(
+  db: PrismaClient,
+  queueJobId: string,
+  result: { signedBuildId: string } | { errorCode: string; failReason?: string },
+  opts: { createdBefore?: Date } = {},
+): Promise<void> {
+  await db.signingJob.updateMany({
+    where: {
+      queueJobId,
+      stage: { in: OPEN_STAGES },
+      ...(opts.createdBefore ? { createdAt: { lte: opts.createdBefore } } : {}),
+    },
     data:
       'signedBuildId' in result
-        ? { stage: 'ready', signedBuildId: result.signedBuildId, finishedAt: new Date() }
-        : { stage: 'failed', errorCode: result.errorCode, finishedAt: new Date() },
+        ? {
+            stage: 'ready',
+            signedBuildId: result.signedBuildId,
+            failReason: null,
+            finishedAt: new Date(),
+          }
+        : {
+            stage: 'failed',
+            errorCode: result.errorCode,
+            failReason: result.failReason ?? null,
+            finishedAt: new Date(),
+          },
   });
 }
 
@@ -95,9 +122,9 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
   const key = signedBuildKey(cert.id, version.id);
   const started = Date.now();
   const sizeBytes = await withTempDir(config.tmpDir, async (dir) => {
-    await setStage(db, queueJobId, 'downloading');
-    // Original + signed copy + zsign's unpacked tree.
+    // Original + signed copy + zsign's unpacked tree; while space is short the request stays queued.
     await ensureFreeSpace(dir, Math.ceil(Number(version.sizeBytes) * 2.5));
+    await setStage(db, queueJobId, 'downloading');
     const input = join(dir, 'original.ipa');
     await s3.download(s3.bucket('originals'), version.ipaKey, input);
 

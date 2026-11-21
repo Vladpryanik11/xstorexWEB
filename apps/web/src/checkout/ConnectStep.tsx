@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useNow } from '../access/use-now';
 import { formatReadyBy } from '../access/wait-time';
 import type { DeviceKind } from '../app-page/device';
+import { InstallButton } from '../install/InstallButton';
 import { browserApi } from './browser-api';
 import { ConnectGuide } from './ConnectGuide';
 import styles from './checkout.module.css';
@@ -45,6 +46,8 @@ export type ConnectStepProps = {
   now?: Date;
   /** Time zone of the ready-by time; the browser's when left out. */
   timeZone?: string;
+  /** Step 3: the app the buyer paid from (`GET /install/chosen`), installed right here. */
+  chosen?: { slug: string; name: string } | null;
 };
 
 const defaultGetAccess = () => browserApi().getAccess();
@@ -140,6 +143,7 @@ export function ConnectStep({
   navigate = defaultNavigate,
   now: fixedNow,
   timeZone,
+  chosen = null,
 }: ConnectStepProps) {
   const now = useNow(fixedNow);
   const detected = useBrowserDevice();
@@ -332,10 +336,22 @@ export function ConnectStep({
         <section className={styles.panel}>
           <span className={styles.okBadge}>Можно ставить</span>
           <h1 className={styles.title}>{name} готов</h1>
-          <p className={styles.lead}>Выберите приложение в каталоге и нажмите «Установить».</p>
-          <Button href="/" className={styles.wide}>
-            В каталог
-          </Button>
+          {chosen && device === 'ios' ? (
+            <>
+              <p className={styles.lead}>Установите «{chosen.name}» прямо сейчас.</p>
+              <InstallButton slug={chosen.slug} />
+              <Button variant="quiet" href="/" className={styles.wide}>
+                Другие приложения в каталоге
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className={styles.lead}>Выберите приложение в каталоге и нажмите «Установить».</p>
+              <Button href="/" className={styles.wide}>
+                В каталог
+              </Button>
+            </>
+          )}
         </section>
       ) : step === 'open_on_phone' ? (
         <section className={styles.panel}>
