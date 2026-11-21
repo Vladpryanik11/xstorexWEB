@@ -124,10 +124,6 @@
   stroke-linejoin: round;
 }
 
-.ctaArrow {
-  display: inline-flex;
-}
-
 .cta:hover {
   background: var(--x-blue-deep);
 }
@@ -432,56 +428,16 @@
     display: none;
   }
 
-  /* Owner 2026-11-21: «сделай ui ux дизайн» for the button. A tall glossy pill (light from the top,
-     deeper blue below), the arrow in a round white badge at the end that nudges forward on hover. */
+  /* Owner 2026-11-21: the button fits its label (no full-width bar, no gloss or glow). */
   .cta {
-    position: relative;
-    min-height: 3.75rem;
+    width: auto;
+    align-self: center;
+    min-height: 3.25rem;
     margin-top: 0.5rem;
-    padding: 0 4rem;
-    background: linear-gradient(
-      180deg,
-      var(--x-sky-400) -40%,
-      var(--x-blue) 55%,
-      var(--x-blue-deep)
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 14px 28px -12px var(--x-blue);
+    padding: 0 1.75rem;
     font: var(--x-type-body);
     font-weight: 600;
     letter-spacing: var(--x-track-body);
-  }
-
-  .cta:hover {
-    background: linear-gradient(180deg, var(--x-blue), var(--x-blue-deep));
-  }
-
-  .ctaArrow {
-    position: absolute;
-    top: 50%;
-    right: 0.375rem;
-    display: grid;
-    place-items: center;
-    width: 3rem;
-    height: 3rem;
-    margin-top: -1.5rem;
-    border-radius: 50%;
-    background: var(--x-white);
-    box-shadow: var(--x-shadow-sm);
-    color: var(--x-blue);
-    transition: transform 0.2s var(--x-ease);
-  }
-
-  .cta:hover .ctaArrow,
-  .cta:focus-visible .ctaArrow {
-    transform: translateX(2px);
-  }
-
-  .ctaArrow svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    stroke-width: 2.4;
   }
 
   .stage {
@@ -509,11 +465,5 @@
   /* No iPhone picture on phones (owner 2026-11-20). */
   .visual {
     display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ctaArrow {
-    transition: none;
   }
 }

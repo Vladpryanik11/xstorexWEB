@@ -235,13 +235,10 @@ test('on a phone the hero leads with the guarantee and real catalog icons (varia
     await expect(stage).toBeVisible();
     await expect(stage.locator('img')).toHaveCount(6);
     await expect(list).toBeHidden();
-    // Owner 2026-11-21: the button is a tall pill with the arrow in a round white badge.
-    const cta = hero.locator('[data-hero-cta]');
-    const badge = cta.locator('[data-cta-arrow]');
-    expect((await cta.boundingBox())?.height).toBeGreaterThanOrEqual(56);
-    expect(await badge.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-      'rgb(255, 255, 255)',
-    );
+    // Owner 2026-11-21: the button fits its label, not the whole screen width.
+    const box = await hero.locator('[data-hero-cta]').boundingBox();
+    expect(box?.width).toBeLessThan(300);
+    expect(box?.height).toBeGreaterThanOrEqual(52);
   } else {
     await expect(trust).toBeHidden();
     await expect(stage).toBeHidden();
