@@ -79,9 +79,11 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
           </div>
           <a className={styles.cta} href="/get" data-hero-cta>
             Подключить iPhone
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <span className={styles.ctaArrow} data-cta-arrow="">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </span>
           </a>
           <div className={styles.audience}>
             <span className={styles.avatars} aria-hidden="true">
