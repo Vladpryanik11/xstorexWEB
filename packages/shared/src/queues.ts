@@ -20,6 +20,9 @@ export type IpaInspectJob = z.infer<typeof ipaInspectJob>;
 export const signingJob = z.object({ signingJobId: z.string().min(1) });
 export type SigningJobData = z.infer<typeof signingJob>;
 
+/** Removes signed copies of ended device files and old copies (worker `maintenance` queue). */
+export const EVICT_SIGNED_JOB = 'maintenance:evictSigned';
+
 /** Defaults for every job (M1 plan, Global Constraints); structurally a BullMQ `JobsOptions`. */
 export const defaultJobOptions = {
   attempts: 5,

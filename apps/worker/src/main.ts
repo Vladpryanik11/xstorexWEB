@@ -5,6 +5,7 @@ import { closeWorkerDeps, createWorkerDeps } from './deps.js';
 import { createBillingWorker, scheduleBillingJobs } from './queues/billing.js';
 import { createCertificatesWorker, scheduleCertificateJobs } from './queues/certificates.js';
 import { createIpaWorker } from './queues/ipa.js';
+import { createMaintenanceWorker, scheduleMaintenanceJobs } from './queues/maintenance.js';
 import { createSigningWorker } from './queues/signing.js';
 import { createSystemWorker } from './queues/system.js';
 
@@ -22,6 +23,7 @@ const workers = [
   createBillingWorker(deps),
   createCertificatesWorker(deps),
   createSigningWorker(deps),
+  createMaintenanceWorker(deps),
 ];
 for (const worker of workers) {
   worker.on('failed', (job, err) =>
@@ -55,6 +57,7 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 await Promise.all(workers.map((worker) => worker.waitUntilReady()));
 await scheduleBillingJobs(deps.queues[QueueName.billing]);
 await scheduleCertificateJobs(deps.queues[QueueName.certificates]);
+await scheduleMaintenanceJobs(deps.queues[QueueName.maintenance]);
 logger.info(
   { queues: workers.map((w) => w.name), concurrency: config.concurrency },
   'worker started',

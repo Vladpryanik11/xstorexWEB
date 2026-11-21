@@ -8,7 +8,9 @@ import {
   type DeviceCertificateView,
   deviceFamily,
   ErrorCode,
+  EVICT_SIGNED_JOB,
   maskUdid,
+  QueueName,
   type WaitingDevice,
 } from '@xstore/shared';
 import {
@@ -26,6 +28,7 @@ import type { AppConfig } from '../config/config.js';
 import { APP_CONFIG } from '../config/tokens.js';
 import { CmsError, verifyCms } from '../enrollment/cms.js';
 import { PrismaService } from '../infra/prisma.service.js';
+import { QUEUES, type Queues } from '../infra/queues.provider.js';
 import { MailService } from '../mail/mail.service.js';
 import { signingAnchors } from './anchors.js';
 import { OCSP_OPTIONS, type OcspOptions } from './ocsp.provider.js';
@@ -89,6 +92,7 @@ export class DeviceCertificatesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly mail: MailService,
+    @Inject(QUEUES) private readonly queues: Queues,
   ) {
     this.anchors = signingAnchors(config.signing.testAnchorPath);
   }
@@ -225,6 +229,7 @@ export class DeviceCertificatesService {
         },
       })
       .catch((err: unknown) => this.logger.error({ err: String(err) }, 'audit failed'));
+    if (hadFiles) await this.dropSignedCopies();
     const to = emailOf(device);
     if (to) {
       await this.mail
@@ -260,7 +265,18 @@ export class DeviceCertificatesService {
         entityId: deviceId,
       })
       .catch((err: unknown) => this.logger.error({ err: String(err) }, 'audit failed'));
+    await this.dropSignedCopies();
     return this.card(deviceId);
+  }
+
+  /**
+   * Н4: copies signed with files that just ended are removed by the worker now, not at the next
+   * hourly cleanup. A failure only waits for that cleanup; the files change stands.
+   */
+  private async dropSignedCopies(): Promise<void> {
+    await this.queues[QueueName.maintenance]
+      .add(EVICT_SIGNED_JOB, {}, { attempts: 3, removeOnComplete: 100, removeOnFail: 100 })
+      .catch((err: unknown) => this.logger.error({ err: String(err) }, 'cannot queue cleanup'));
   }
 
   private async check(p12: Buffer, password: string, profileDer: Buffer, udid: string) {

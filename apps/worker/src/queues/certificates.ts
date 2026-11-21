@@ -2,6 +2,7 @@ import { QueueName } from '@xstore/shared';
 import { type Job, type Queue, Worker } from 'bullmq';
 import { runCertificateCheck } from '../certificates/check.js';
 import type { WorkerDeps } from '../deps.js';
+import { MaintenanceJob } from './maintenance.js';
 import { UnknownJobError } from './system.js';
 
 export const CertificatesJob = { check: 'certificates:check' } as const;
@@ -21,12 +22,17 @@ export function createCertificatesWorker(deps: WorkerDeps): Worker {
     QueueName.certificates,
     async (job: Job) => {
       if (job.name !== CertificatesJob.check) throw new UnknownJobError(job.name);
-      return runCertificateCheck({
+      const outcome = await runCertificateCheck({
         db: deps.db,
         keyring: deps.config.keyring,
         now: new Date(),
         logger: deps.logger,
       });
+      // Ended files: their signed copies go now, not at the next hourly cleanup.
+      if (outcome.revoked + outcome.expired > 0) {
+        await deps.queues[QueueName.maintenance].add(MaintenanceJob.evictSigned, {});
+      }
+      return outcome;
     },
     { connection: deps.connection, concurrency: 1 },
   );

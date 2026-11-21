@@ -6,9 +6,9 @@ import { parseP12 } from '@xstore/signing';
 import { makeKit } from '@xstore/signing/testing';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { buildIpaBuffer } from '../../../../packages/ios/test/helpers/build-ipa.js';
+import { buildExecutable } from '../../test/helpers/build-executable.js';
 import { writeIdentityFiles } from './identity-files.js';
 import { runZsign } from './zsign.js';
-import { buildExecutable } from '../../test/helpers/build-executable.js';
 
 /** Real zsign (the worker image's `test` stage sets ZSIGN_BIN); skipped without it. */
 const ZSIGN = process.env.ZSIGN_BIN;
