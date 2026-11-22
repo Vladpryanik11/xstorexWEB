@@ -990,8 +990,9 @@ export function createIntro(
       if (!arrived) {
         stopMusic(0.3);
         setTimeout(closeAudio, 400);
-        html.removeAttribute('data-intro');
       }
+      // Timers are cleared above, so the page must be given back here in every case.
+      html.removeAttribute('data-intro');
     },
   };
 }
