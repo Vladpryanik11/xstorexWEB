@@ -3,10 +3,18 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // Spec 2026-11-17-typography §3: every size comes from the --x-type-* scale.
+// The intro is a dark stage with its own fonts and sizes (spec 2026-11-22-intro, exception).
+const EXEMPT = [join('src', 'intro', 'intro.module.css')];
 const roots = [join(__dirname, '..'), join(__dirname, '../../../packages/ui/src')];
 const files = roots.flatMap((root) =>
   readdirSync(root, { recursive: true, encoding: 'utf8' })
-    .filter((f) => f.endsWith('.css') && !f.includes('node_modules') && !f.startsWith('.next'))
+    .filter(
+      (f) =>
+        f.endsWith('.css') &&
+        !f.includes('node_modules') &&
+        !f.startsWith('.next') &&
+        !EXEMPT.includes(f),
+    )
     .map((f) => join(root, f)),
 );
 const name = (f: string) => relative(join(__dirname, '../../..'), f);

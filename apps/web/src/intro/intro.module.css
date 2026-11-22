@@ -1,0 +1,432 @@
+/* Intro «Бортовой компьютер» (spec 2026-11-22-intro), ported from the owner's xstorex-intro.html.
+   A dark stage of its own: own fonts, sizes and HUD colours (exception in typography.test.ts);
+   the glow and the white come from the site tokens. */
+
+.root {
+  --void: #000;
+  --hud: #9fb6d9;
+  --hud-dim: #4a5a78;
+  --star: #e8f1ff;
+  --glow: var(--x-sky-400);
+  --f-logo: var(--intro-font-logo), "Segoe UI", system-ui, sans-serif;
+  --f-mono: var(--intro-font-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  color-scheme: dark;
+}
+
+/* Only when the inline script decided to show it: no flash of the stage for anyone else. */
+:global(html:not([data-intro])) .root {
+  display: none;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--hud);
+  pointer-events: auto;
+}
+
+.stage.hidden {
+  display: none;
+}
+
+.space {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* HUD */
+.hud {
+  position: absolute;
+  inset: max(18px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px))
+    max(18px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud.on {
+  opacity: 1;
+}
+
+.corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: var(--hud-dim);
+  border-style: solid;
+  border-width: 0;
+  transform: scale(0);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.hud.on .corner {
+  transform: scale(1);
+}
+
+.corner.tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  transform-origin: 0 0;
+}
+
+.corner.tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+  transform-origin: 100% 0;
+}
+
+.corner.bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+  transform-origin: 0 100%;
+}
+
+.corner.br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+  transform-origin: 100% 100%;
+}
+
+.readout {
+  position: absolute;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout.tl {
+  top: 6px;
+  left: 34px;
+}
+
+.readout.tr {
+  top: 6px;
+  right: 34px;
+  text-align: right;
+}
+
+.readout.br {
+  bottom: 6px;
+  right: 34px;
+  text-align: right;
+}
+
+.readout b {
+  color: var(--hud);
+  font-weight: 500;
+}
+
+/* The typed instruction */
+.log {
+  position: absolute;
+  left: max(40px, calc(env(safe-area-inset-left, 0px) + 40px));
+  bottom: max(56px, calc(env(safe-area-inset-bottom, 0px) + 56px));
+  right: 16px;
+  font-family: var(--f-mono);
+  font-size: clamp(12px, 1.05vw, 16px);
+  line-height: 1.9;
+  color: var(--hud-dim);
+  letter-spacing: 0.04em;
+  white-space: pre;
+  transition: opacity 0.8s;
+}
+
+.log .ok {
+  color: var(--star);
+}
+
+.log div:last-child .ok {
+  color: var(--glow);
+  letter-spacing: 0.2em;
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  background: var(--glow);
+  vertical-align: -2px;
+  animation: blink 0.8s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Logo */
+.center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 22px;
+  padding-inline: 16px;
+  pointer-events: none;
+}
+
+.logo {
+  font-family: var(--f-logo);
+  font-weight: 300;
+  font-size: clamp(30px, 8.4vw, 104px);
+  letter-spacing: 0.32em;
+  margin-right: -0.32em;
+  color: var(--star);
+  white-space: nowrap;
+  line-height: 1;
+  text-shadow: 0 0 0 transparent;
+  transition:
+    text-shadow 1.2s,
+    transform 2.4s cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.logo.lit {
+  text-shadow:
+    0 0 28px rgba(77, 163, 255, 0.55),
+    0 0 2px rgba(232, 241, 255, 0.9);
+}
+
+.logo span {
+  display: inline-block;
+  text-align: center;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s,
+    filter 0.6s;
+}
+
+.logo span.in {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.rule {
+  height: 1px;
+  width: min(520px, 70vw);
+  margin-inline: auto;
+  background: linear-gradient(90deg, transparent, var(--glow), transparent);
+  transform: scaleX(0);
+  transition: transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.rule.on {
+  transform: scaleX(1);
+}
+
+.tag {
+  font-family: var(--f-mono);
+  font-size: clamp(11px, 1.5vw, 14px);
+  letter-spacing: 0.3em;
+  color: var(--hud);
+  min-height: 1.4em;
+  white-space: pre;
+}
+
+.sub {
+  font-family: var(--f-mono);
+  font-size: clamp(10px, 1.2vw, 12px);
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+  min-height: 1.4em;
+  white-space: pre;
+}
+
+/* Gate */
+.gate {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 26px;
+  text-align: center;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px))
+    max(16px, env(safe-area-inset-right, 0px));
+  transition: opacity 0.7s;
+  z-index: 5;
+}
+
+.gate.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gateLabel {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: var(--hud-dim);
+  text-transform: uppercase;
+}
+
+.start {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--star);
+  background: rgba(77, 163, 255, 0.06);
+  border: 1px solid rgba(159, 182, 217, 0.35);
+  border-radius: 0;
+  padding: 16px 28px 16px 32px;
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color 0.3s,
+    background 0.3s,
+    box-shadow 0.3s;
+}
+
+.start:hover,
+.start:focus-visible {
+  border-color: var(--glow);
+  background: rgba(77, 163, 255, 0.14);
+  box-shadow: 0 0 36px rgba(77, 163, 255, 0.25);
+  outline: none;
+}
+
+.start::before,
+.start::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--glow);
+}
+
+.start::before {
+  top: -4px;
+  left: -4px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.start::after {
+  bottom: -4px;
+  right: -4px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.gateHint {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--hud-dim);
+}
+
+/* Visible from the gate on (owner's choice 2026-11-22: skipping is always one tap away). */
+.skip {
+  position: absolute;
+  z-index: 6;
+  right: max(28px, calc(env(safe-area-inset-right, 0px) + 28px));
+  bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 28px));
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hud);
+  background: transparent;
+  border: 1px solid rgba(159, 182, 217, 0.25);
+  border-radius: 0;
+  padding: 9px 14px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition:
+    opacity 0.6s,
+    border-color 0.3s;
+}
+
+.skip.off {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.skip:hover,
+.skip:focus-visible {
+  border-color: var(--glow);
+  opacity: 1;
+  outline: none;
+}
+
+/* White into the site */
+.flash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--x-white);
+  transition: opacity 0.8s cubic-bezier(0.55, 0, 0.75, 0.5);
+}
+
+.flash.on {
+  opacity: 1;
+}
+
+.flash.out {
+  opacity: 0;
+  transition: opacity 1.5s cubic-bezier(0.3, 0, 0.3, 1);
+}
+
+@media (max-width: 560px) {
+  .log {
+    left: max(20px, calc(env(safe-area-inset-left, 0px) + 20px));
+    bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 64px));
+    font-size: 10.5px;
+    letter-spacing: 0;
+    line-height: 2;
+  }
+
+  .log div:last-child .ok {
+    letter-spacing: 0.14em;
+  }
+
+  .readout.tr {
+    display: none;
+  }
+
+  .logo {
+    letter-spacing: 0.22em;
+    margin-right: -0.22em;
+  }
+
+  .tag {
+    letter-spacing: 0.16em;
+  }
+
+  .sub {
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo span {
+    transition: opacity 0.4s;
+    filter: none;
+  }
+}

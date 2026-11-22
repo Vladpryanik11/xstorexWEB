@@ -34,7 +34,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${manrope.variable}`}>
+    // The intro script marks <html> before hydration (spec 2026-11-22-intro).
+    <html lang="ru" className={`${inter.variable} ${manrope.variable}`} suppressHydrationWarning>
       <body>
         <SessionRenewal />
         {children}

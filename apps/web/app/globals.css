@@ -26,3 +26,32 @@ body {
 body > main {
   flex: 1 0 auto;
 }
+
+/* Intro (spec 2026-11-22-intro): the page does not scroll under the stage; after the white flash
+   it comes into focus from a soft zoom. Each top-level block scales around the viewport centre. */
+html[data-intro] body {
+  overflow: hidden;
+}
+
+html[data-intro="reveal"] body > :not([data-intro-root]),
+html[data-intro="show"] body > :not([data-intro-root]) {
+  transform-origin: 50% 50vh;
+}
+
+html[data-intro="reveal"] body > :not([data-intro-root]) {
+  filter: blur(14px);
+  transform: scale(1.06);
+}
+
+html[data-intro="show"] body > :not([data-intro-root]) {
+  transition:
+    filter 1.9s cubic-bezier(0.25, 0.6, 0.25, 1),
+    transform 2.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-intro="reveal"] body > :not([data-intro-root]) {
+    filter: none;
+    transform: none;
+  }
+}
