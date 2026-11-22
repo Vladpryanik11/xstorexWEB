@@ -48,3 +48,10 @@ it('on a phone: two-line promise, then icons, the button, the guarantee and 10 0
   expect(trust).toHaveTextContent('Гарантия на весь срок подписки');
   expect(trust?.nextElementSibling).toHaveTextContent(/10 000\+\s*пользователей в месяц/);
 });
+
+it('paints the soft blue moving background behind the hero, hidden from screen readers', () => {
+  const { container } = render(<HomeHero collections={collections} />);
+  const bg = container.querySelector('[data-hero-bg]');
+  expect(bg).not.toBeNull();
+  expect(bg?.querySelector('canvas')).toHaveAttribute('aria-hidden', 'true');
+});

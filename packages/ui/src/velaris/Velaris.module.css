@@ -1,0 +1,20 @@
+/* Velaris: живой WebGL-градиент (21st.dev), перенесён на CSS Modules. Без WebGL виден фон root. */
+.root {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--x-sky-50, #e3edfd) 0%, #fff 100%);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}

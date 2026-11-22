@@ -1,4 +1,5 @@
 import type { CollectionView } from '@xstore/shared';
+import { Velaris } from '@xstore/ui';
 import { useId } from 'react';
 import { AUDIENCE } from './figures';
 import { HeroIcons } from './HeroIcons';
@@ -31,6 +32,9 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
   const listId = useId();
   return (
     <section className={styles.hero} data-home-hero>
+      <div className={styles.bg} data-hero-bg>
+        <Velaris className={styles.bgFill} />
+      </div>
       <div className={styles.inner}>
         <div className={styles.copy}>
           <h1 className={styles.title}>

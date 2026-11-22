@@ -24,3 +24,4 @@ export {
 export { Stars, type StarsProps } from './stars/Stars';
 export { type Step, Stepper, type StepperProps } from './stepper/Stepper';
 export { Toaster, toast } from './toast/Toaster';
+export { Velaris, type VelarisProps } from './velaris/Velaris';
