@@ -42,8 +42,8 @@ test('desktop pill hugs its links and stays centred, not full width', async ({ p
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const box = await pill(page).boundingBox();
     if (!box) throw new Error('no pill');
-    // Word «Xstorex» + «Каталог» + help pages + end slot (owner 2026-11-20).
-    expect(box.width).toBeLessThanOrEqual(760);
+    // Word «Xstorex» + «Каталог» + three pages + «Войти» and «Подключить iPhone» (owner 2026-11-23).
+    expect(box.width).toBeLessThanOrEqual(880);
     expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   }
 });
@@ -128,8 +128,12 @@ test('focus ring stays visible in the open card menu', async ({ page }) => {
   await expect(burger).toHaveCSS('outline-color', 'rgb(34, 118, 243)');
 });
 
-test('iPhone status bar matches the ice page', async ({ page }) => {
+test('iPhone status bar matches the sky on the home page and the ice elsewhere', async ({
+  page,
+}) => {
   await page.goto('/');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1e8fff');
+  await page.goto('/faq');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
 });
 
@@ -201,22 +205,39 @@ test('the word «Xstorex» leads home on a phone and a computer', async ({ page 
   }
 });
 
-test('on a phone the pill holds only the word and the menu button', async ({ page }) => {
+test('on a phone the pill holds the word, «Войти» as a person, «Подключить» and the menu', async ({
+  page,
+}) => {
   for (const auth of ['', 'auth=1&']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const header = page.locator('header').first();
     await expect(header.getByRole('link', { name: 'Xstorex, на главную' })).toBeVisible();
-    await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
-    await expect(header.getByRole('link', { name: 'Тарифы' })).toBeHidden();
-    await expect(header.getByRole('link', { name: 'Мой доступ' })).toBeHidden();
+    const burger = header.getByRole('button', { name: 'Меню' });
+    await expect(burger).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Тарифы' })).toHaveCount(0);
+    if (auth) {
+      // A subscriber sees «Мой доступ» instead of the button.
+      await expect(header.getByRole('link', { name: 'Мой доступ' }).first()).toBeVisible();
+    } else {
+      // Owner 2026-11-23: a person icon without a circle, a 32px «Подключить».
+      const login = header.getByRole('link', { name: 'Войти' });
+      await expect(login.locator('svg')).toBeVisible();
+      const connect = header.getByRole('link', { name: /^Подключить/ });
+      await expect(connect).toHaveAttribute('href', '/get');
+      expect((await connect.boundingBox())?.height).toBe(32);
+      expect(await connect.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+        /linear-gradient/,
+      );
+    }
     const pillBox = await pill(page).boundingBox();
-    const burger = await header.getByRole('button', { name: 'Меню' }).boundingBox();
-    if (!pillBox || !burger) throw new Error('no box');
-    expect(pillBox.x + pillBox.width - (burger.x + burger.width)).toBeLessThanOrEqual(12);
+    const burgerBox = await burger.boundingBox();
+    if (!pillBox || !burgerBox) throw new Error('no box');
+    expect(pillBox.x + pillBox.width - (burgerBox.x + burgerBox.width)).toBeLessThanOrEqual(12);
     // Pricing and «Мой доступ» stay one tap away, in the menu.
-    await header.getByRole('button', { name: 'Меню' }).click();
+    await burger.click();
     const name = auth ? 'Мой доступ' : 'Тарифы';
     await expect(page.getByRole('dialog').getByRole('link', { name })).toBeVisible();
+    await page.keyboard.press('Escape');
   }
 });

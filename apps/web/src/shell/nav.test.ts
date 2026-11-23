@@ -14,10 +14,11 @@ const SUBSCRIBER = { signedIn: true, hasAccess: true };
 const SIGNED_IN_NO_ACCESS = { signedIn: true, hasAccess: false };
 
 describe('navFor', () => {
-  it('guest: pricing and sign-in', () => {
+  // Owner 2026-11-23 (spec 2026-11-23-home-first-screen §2): «Войти» and «Подключить iPhone» always.
+  it('guest: sign-in and «Подключить iPhone»', () => {
     expect(navFor(GUEST)).toEqual([
-      { href: '/pricing', label: 'Тарифы', kind: 'entry' },
       { href: '/signin', label: 'Войти', kind: 'quiet' },
+      { href: '/get', label: 'Подключить iPhone', kind: 'entry' },
     ]);
   });
 
@@ -25,10 +26,10 @@ describe('navFor', () => {
     expect(navFor(SUBSCRIBER)).toEqual([{ href: '/access', label: 'Мой доступ', kind: 'entry' }]);
   });
 
-  it('signed in without access: pricing stays, «Мой доступ» replaces sign-in', () => {
+  it('signed in without access: «Мой доступ» replaces sign-in, the button stays', () => {
     expect(navFor(SIGNED_IN_NO_ACCESS)).toEqual([
-      { href: '/pricing', label: 'Тарифы', kind: 'entry' },
       { href: '/access', label: 'Мой доступ', kind: 'quiet' },
+      { href: '/get', label: 'Подключить iPhone', kind: 'entry' },
     ]);
   });
 });
@@ -61,8 +62,8 @@ describe('navStateFrom', () => {
 
 describe('navItems', () => {
   it('the middle row is the same for everyone', () => {
-    expect(navItems().map((i) => i.label)).toEqual(['Блог', 'Вопросы', 'Поддержка']);
-    expect(navItems().map((i) => i.href)).toEqual(['/blog', '/faq', '/support']);
+    expect(navItems().map((i) => i.label)).toEqual(['Как это работает', 'Вопросы', 'Блог']);
+    expect(navItems().map((i) => i.href)).toEqual(['/#how', '/faq', '/blog']);
   });
 });
 

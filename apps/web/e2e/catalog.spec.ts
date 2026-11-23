@@ -4,18 +4,11 @@ import { expect, test } from '@playwright/test';
 
 test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
   await page.goto('/');
+  // Owner 2026-11-23 (spec 2026-11-23-home-first-screen §3).
   await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: isMobile
-        ? /^200\+ приложений на\sвашем\siPhone$/
-        : /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
-    }),
+    page.getByRole('heading', { level: 1, name: 'Удаленные из App Store снова доступны' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
-    'href',
-    '/get',
-  );
+  await expect(page.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
   await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
@@ -134,24 +127,31 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home hero is light, sits under the pill; the iPhone with the catalog is for wide screens', async ({
+test('home hero: bright sky with white text under the pill; the iPhone is for wide screens', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
   expect((await hero.boundingBox())?.y).toBe(0);
-  expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
-    /rgb\(227, 237, 253\).*rgb\(242, 248, 253\)/,
+  // Owner 2026-11-23: «Яркое небо, белый текст» (spec 2026-11-23-home-first-screen §4).
+  const sky = hero.locator('[data-hero-sky]');
+  expect(await sky.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /rgb\(30, 143, 255\).*rgb\(62, 198, 255\)/,
   );
-  // Owner 2026-11-20: no iPhone picture in the phone layout.
+  expect((await sky.boundingBox())?.y).toBe(0);
   const phone = hero.locator('[data-hero-phone]');
   await expect(phone).toBeHidden();
   const title = page.getByRole('heading', { level: 1 });
-  await expect(title).toHaveCSS('color', 'rgb(14, 26, 51)');
+  await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
+  expect(await title.evaluate((el) => getComputedStyle(el).textShadow)).not.toBe('none');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
+  // The sky turns white before the search.
+  const skyBox = await sky.boundingBox();
+  const search = await hero.getByRole('search').boundingBox();
+  expect((skyBox?.y ?? 0) + (skyBox?.height ?? 0)).toBeLessThanOrEqual(search?.y ?? 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -213,7 +213,8 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   isMobile,
 }) => {
   await page.goto('/');
-  const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
+  // The header carries its own «Подключить» (owner 2026-11-23); count the page buttons only.
+  const buttons = page.locator('main').getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
   await page.getByRole('heading', { name: 'Как это работает' }).scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);
@@ -221,32 +222,35 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   await expect(buttons).toHaveCount(1);
 });
 
-test('on a phone the hero: promise, icon row, button, then the guarantee and 10 000+', async ({
+test('the first screen: ticks, banner, search, button, guarantee and 10 000+ above the fold', async ({
   page,
   isMobile,
 }) => {
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
-  const trust = hero.getByText('Гарантия на весь срок подписки');
-  const icons = hero.locator('[data-hero-icons]');
-  const cta = hero.locator('[data-hero-cta]');
-  const list = page.getByRole('list', { name: 'Что входит в подписку' });
+  const parts = [
+    hero.getByRole('list', { name: 'Без лишнего' }),
+    hero.locator('[data-hero-banner]'),
+    hero.getByRole('search'),
+    hero.locator('[data-hero-cta]'),
+    hero.getByText('Гарантия на весь срок подписки'),
+    hero.getByText('пользователей в месяц'),
+  ];
+  const boxes = await Promise.all(parts.map((l) => l.boundingBox()));
+  const ys = boxes.map((b) => b?.y ?? -1);
+  expect(ys).toEqual([...ys].sort((x, y) => x - y));
+  await expect(hero.locator('[data-hero-icons] [data-icon]')).toHaveCount(5);
+  await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
   if (isMobile) {
-    await expect(hero.getByText('Даже удалённые из App Store.')).toBeVisible();
-    await expect(icons.locator('[data-icon]')).toHaveCount(5);
-    await expect(list).toBeHidden();
-    // Owner 2026-11-21: icons, then the button that fits its label, then the guarantee.
-    const [i, c, t] = await Promise.all([icons, cta, trust].map((l) => l.boundingBox()));
-    expect(c?.width).toBeLessThan(300);
-    expect(c?.height).toBeGreaterThanOrEqual(52);
-    expect((i?.y ?? 0) < (c?.y ?? 0) && (c?.y ?? 0) < (t?.y ?? 0)).toBe(true);
-    // The whole first screen fits a 390 × 844 phone.
-    const proof = hero.getByText('пользователей в месяц');
-    expect(((await proof.boundingBox())?.y ?? 9999) + 24).toBeLessThan(844);
-  } else {
-    await expect(trust).toBeHidden();
-    await expect(icons).toBeHidden();
-    await expect(list.getByRole('listitem')).toHaveCount(3);
+    // Sizes variant А: a 56px full-width button; 10 000+ ends above the 660px fold.
+    const cta = boxes[3];
+    expect(cta?.height).toBeGreaterThanOrEqual(55);
+    expect(cta?.width).toBeGreaterThan(300);
+    const proof = boxes[5];
+    expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(660);
+    // The three steps start under the first screen.
+    const steps = await hero.getByRole('list', { name: 'Три шага' }).boundingBox();
+    expect(steps?.y ?? 0).toBeGreaterThan(proof?.y ?? 0);
   }
 });
 

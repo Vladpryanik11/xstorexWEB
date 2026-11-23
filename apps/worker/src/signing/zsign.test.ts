@@ -76,7 +76,7 @@ describe('runZsign', () => {
   it('passes bundle id only when given', async () => {
     const bin = await script('zsign', RECORDER);
     await runZsign(opts(bin));
-    expect(await readFile(join(dir, 'args.txt'), 'utf8')).not.toContain('-b');
+    expect((await readFile(join(dir, 'args.txt'), 'utf8')).trim().split('\n')).not.toContain('-b');
     await runZsign({ ...opts(bin), bundleId: 'ru.supplier.one' });
     const args = (await readFile(join(dir, 'args.txt'), 'utf8')).trim().split('\n');
     expect(args).toEqual(expect.arrayContaining(['-b', 'ru.supplier.one']));

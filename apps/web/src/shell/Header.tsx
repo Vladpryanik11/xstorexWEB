@@ -20,7 +20,21 @@ export type HeaderProps = {
   forcedPath?: string;
 };
 
-/** Floating white glass pill (spec 2026-11-17 §5). */
+/** «Подключить iPhone» reads «Подключить» on a phone (owner 2026-11-23). */
+function EntryLabel({ label }: { label: string }) {
+  const tail = ' iPhone';
+  if (!label.endsWith(tail)) return <>{label}</>;
+  return (
+    <>
+      {/* One flex item, so the space before «iPhone» survives. */}
+      <span>
+        {label.slice(0, -tail.length)} <span className={styles.wide}>iPhone</span>
+      </span>
+    </>
+  );
+}
+
+/** Floating white glass pill (spec 2026-11-17 §5, composition spec 2026-11-23 §2). */
 export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
   const state = useNavState(nav);
   const items = navItems();
@@ -87,15 +101,27 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
           <MobileMenu nav={state} forcedPath={forcedPath} />
         </nav>
         <div className={styles.end}>
-          {navFor(state).map((item) => (
-            <Link
-              key={item.href}
-              className={item.kind === 'entry' ? styles.entry : styles.quiet}
-              href={item.href}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navFor(state).map((item) =>
+            item.kind === 'quiet' ? (
+              <Link key={item.href} className={styles.quiet} href={item.href}>
+                {/* On a phone «Войти» is a person without a circle (owner 2026-11-23). */}
+                <svg
+                  className={styles.person}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle cx="12" cy="8" r="3.75" />
+                  <path d="M4.75 19.5c.9-3.6 3.75-5.5 7.25-5.5s6.35 1.9 7.25 5.5" />
+                </svg>
+                <span className={styles.quietLabel}>{item.label}</span>
+              </Link>
+            ) : (
+              <Link key={item.href} className={styles.entry} href={item.href}>
+                <EntryLabel label={item.label} />
+              </Link>
+            ),
+          )}
         </div>
       </div>
       {/* After the pill, so the pill stays the header's first box; z-index puts it behind. */}

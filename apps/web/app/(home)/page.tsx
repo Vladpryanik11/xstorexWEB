@@ -1,6 +1,6 @@
 import { ApiClientError, type AppDetail } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fragment } from 'react';
 import { serverApi } from '../../src/api/server';
 import { AppPreview } from '../../src/catalog/AppPreview';
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     '200+ приложений с Premium‑доступом на вашем iPhone, в том числе удалённые из App Store. Установка прямо из Safari.',
   openGraph: { title: 'Xstore — приложения для iPhone и iPad', type: 'website' },
 };
+
+/** iPhone status bar matches the bright sky of the hero (spec 2026-11-23-home-first-screen §4). */
+export const viewport: Viewport = { themeColor: '#1e8fff' };
 
 /** Chips go after this many collections (spec §6.3). */
 const CHIPS_AFTER = 2;

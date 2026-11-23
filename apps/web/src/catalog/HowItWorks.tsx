@@ -12,7 +12,7 @@ const steps = [
 export function HowItWorks() {
   const id = useId();
   return (
-    <section className={styles.section} aria-labelledby={id}>
+    <section id="how" className={styles.section} aria-labelledby={id}>
       <div id={id}>
         <SectionTitle>Как это работает</SectionTitle>
       </div>
