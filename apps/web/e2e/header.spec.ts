@@ -239,7 +239,7 @@ test('phone menu button is glass on every page (owner 2026-11-23)', async ({ pag
   await page.goto('/');
   const burger = page.locator('header').first().getByRole('button', { name: 'Меню' });
   // Over the home sky: clear glass with white lines.
-  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.22)');
+  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.28)');
   expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
   await expect(burger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(burger).toHaveCSS('color', 'rgb(255, 255, 255)');
@@ -248,15 +248,17 @@ test('phone menu button is glass on every page (owner 2026-11-23)', async ({ pag
   await expect(page.locator('header').first()).toHaveAttribute('data-scrolled', 'true');
   await expect
     .poll(() => css(pill(page), 'background-color', '::before'))
-    .toBe('rgba(255, 255, 255, 0.55)');
+    .toBe('rgba(255, 255, 255, 0.7)');
   expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
   await expect(burger).toHaveCSS('color', 'rgb(26, 110, 234)');
 
   // Every other page: the same frosted glass, no pale circle inside it.
   await page.goto('/dev/ui?path=/faq');
   const plain = page.locator('header').first().getByRole('button', { name: 'Меню' });
-  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.55)');
+  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.7)');
   expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
+  // Variant Б (owner 2026-11-23): no rim, only a soft bluish shadow.
+  expect(await css(pill(page), 'box-shadow', '::before')).not.toContain('inset');
   await expect(plain).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(plain).toHaveCSS('color', 'rgb(26, 110, 234)');
 });
