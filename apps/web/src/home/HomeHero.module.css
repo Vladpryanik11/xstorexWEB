@@ -77,7 +77,8 @@
   margin: 0;
   color: var(--x-white);
   font: var(--x-type-hero);
-  letter-spacing: -0.03em;
+  /* Owner 2026-11-23 («ближе к Apple»): a little air between letters (−0.5 %). */
+  letter-spacing: -0.005em;
   text-shadow: var(--hero-shadow-big);
   text-wrap: balance;
 }

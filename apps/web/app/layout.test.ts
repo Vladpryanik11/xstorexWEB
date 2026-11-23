@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('next/font/google', () => ({
   Onest: () => ({ variable: 'var-onest', className: 'font-onest' }),
   Unbounded: () => ({ variable: 'var-unbounded', className: 'font-unbounded' }),
+  Inter_Tight: () => ({ variable: 'var-inter-tight', className: 'font-inter-tight' }),
 }));
 
 describe('root layout', () => {
@@ -19,11 +20,11 @@ describe('root layout', () => {
     expect(viewport).not.toHaveProperty('userScalable');
   });
 
-  it('serves Unbounded and Onest through next/font on <html>', async () => {
+  it('serves Unbounded, Onest and Inter Tight through next/font on <html>', async () => {
     const { default: RootLayout } = await import('./layout');
     const html = RootLayout({ children: null }) as { props: { className: string } };
     expect(html.props.className.split(' ')).toEqual(
-      expect.arrayContaining(['var-onest', 'var-unbounded']),
+      expect.arrayContaining(['var-onest', 'var-unbounded', 'var-inter-tight']),
     );
   });
 });

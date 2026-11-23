@@ -2,7 +2,7 @@ import '@xstore/ui/tokens.css';
 import './globals.css';
 import { Toaster } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
-import { Onest, Unbounded } from 'next/font/google';
+import { Inter_Tight, Onest, Unbounded } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { SessionRenewal } from '../src/auth/SessionRenewal';
 
@@ -22,6 +22,14 @@ const unbounded = Unbounded({
   display: 'swap',
 });
 
+// The first-screen title (owner 2026-11-23, «ближе к Apple»): Inter Tight 600.
+const interTight = Inter_Tight({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['600'],
+  variable: '--font-inter-tight',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: { default: 'Xstore — приложения для iPhone и iPad', template: '%s — Xstore' },
   description:
@@ -37,7 +45,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${onest.variable} ${unbounded.variable}`}>
+    <html lang="ru" className={`${onest.variable} ${unbounded.variable} ${interTight.variable}`}>
       <body>
         <SessionRenewal />
         {children}
