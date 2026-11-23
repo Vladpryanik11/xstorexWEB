@@ -9,8 +9,8 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
   await expect(hero).toHaveCSS('font-family', /Inter Tight/i);
   await expect(hero).toHaveCSS('font-weight', '600');
   const heroSize = Number.parseFloat(await hero.evaluate((el) => getComputedStyle(el).fontSize));
-  // Sizes variant А (owner 2026-11-23): 28 px on a phone, up to 56 px on a computer.
-  if (isMobile) expect(heroSize).toBe(28);
+  // Owner 2026-11-23: 34 px on a phone («заголовок должен быть больше»), up to 56 px on a computer.
+  if (isMobile) expect(heroSize).toBe(34);
   else {
     expect(heroSize).toBeGreaterThanOrEqual(34);
     expect(heroSize).toBeLessThanOrEqual(56);
@@ -20,6 +20,9 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
     return Number.parseFloat(s.letterSpacing) / Number.parseFloat(s.fontSize);
   });
   expect(heroTrack).toBeCloseTo(-0.005, 3);
+
+  // «App Store» never breaks across lines (owner 2026-11-23).
+  expect(await hero.textContent()).toContain('App\u00a0Store');
 
   const body = page.locator('body');
   await expect(body).toHaveCSS('font-family', /Onest/i);

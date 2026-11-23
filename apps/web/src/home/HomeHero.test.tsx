@@ -14,7 +14,7 @@ it('first screen in the approved order: promise, ticks, banner, search, button, 
 
   const h1 = screen.getByRole('heading', {
     level: 1,
-    name: 'Удаленные из App Store снова доступны',
+    name: 'Удаленные из App\u00a0Store снова доступны',
   });
   const sub = screen.getByText(
     'Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке',
