@@ -78,7 +78,8 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-type-hero', '500 1.75rem / 1.1 var(--x-font-head)'],
     ['--x-type-herolg', '500 3.5rem / 1.08 var(--x-font-head)'],
     ['--x-type-button', '600 1.0625rem / 1.2 var(--x-font)'],
-    ['--x-cta-gradient', 'linear-gradient(90deg, #0b4fd6, #1a86ff)'],
+    ['--x-cta-gradient', 'linear-gradient(to right, #8be3fc, #576bff)'],
+    ['--x-cta-shadow', '0 20px 30px -7px rgba(97, 118, 238, .5)'],
   ])('%s = %s', (name, value) => {
     expect(token(name)).toBe(value);
   });

@@ -57,8 +57,9 @@
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;
-  /* the «Подключить» buttons and the home sky (owner 2026-11-23) */
-  --x-cta-gradient: linear-gradient(90deg, #0b4fd6, #1a86ff);
+  /* the «Подключить» buttons: Uiverse «Connect» by vinodjangid07, MIT (owner 2026-11-23) */
+  --x-cta-gradient: linear-gradient(to right, #8be3fc, #576bff);
+  --x-cta-shadow: 0 20px 30px -7px rgba(97, 118, 238, .5);
   --x-ease: cubic-bezier(.23, 1, .32, 1);
   --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
 }

@@ -153,29 +153,34 @@
 }
 
 .cta {
+  /* From Uiverse.io by vinodjangid07 - https://uiverse.io/vinodjangid07/clever-dingo-15
+     MIT License, Copyright (c) vinodjangid07 (Vinod Jangid) */
   grid-row: 6;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4375rem;
   width: 100%;
   min-height: 3.5rem;
   margin-top: 0.75rem;
   padding: 0 1.75rem;
   border-radius: var(--x-radius-pill);
   background: var(--x-cta-gradient);
+  box-shadow: var(--x-cta-shadow);
   color: var(--x-white);
   font: var(--x-type-button);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    filter 0.2s ease,
-    transform 0.15s var(--x-ease);
+  transition: all 0.3s ease-in-out;
+}
+
+.ctaIcon {
+  flex: none;
 }
 
 .cta:active {
-  filter: brightness(0.9);
-  transform: scale(0.97);
+  transform: scale(0.96) translate(0, 3.2px);
 }
 
 .cta:focus-visible {
@@ -347,7 +352,8 @@
   }
 
   .cta:hover {
-    filter: brightness(0.94);
+    box-shadow: none;
+    transform: translate(0, 2.2px);
   }
 
   .guarantee {

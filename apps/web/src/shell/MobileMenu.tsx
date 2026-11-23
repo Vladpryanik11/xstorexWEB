@@ -57,6 +57,12 @@ const strokes: Record<string, ReactNode> = {
       <path d="m6.2 6.2 3.3 3.3m5 5 3.3 3.3m0-11.6-3.3 3.3m-5 5-3.3 3.3" />
     </>
   ),
+  '/get': (
+    <>
+      <rect x="6.75" y="2.75" width="10.5" height="18.5" rx="2.5" />
+      <path d="M10.75 18.25h2.5" />
+    </>
+  ),
   '/signin': (
     <>
       <path d="M14 4.25h3.25a2 2 0 0 1 2 2v11.5a2 2 0 0 1-2 2H14" />

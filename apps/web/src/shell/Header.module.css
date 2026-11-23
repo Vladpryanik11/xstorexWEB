@@ -71,6 +71,7 @@
   position: relative;
   flex: none;
   order: 3;
+  margin-inline-start: auto;
 }
 
 .row {
@@ -197,8 +198,9 @@
 
 /* End slot (owner 2026-11-23, spec 2026-11-23-home-first-screen §2): on a phone a person icon
    for «Войти» and a 32px «Подключить», before the menu button; from 48em text and «Подключить iPhone». */
+/* Phone pill: only the word and the menu (owner 2026-11-23); the end slot shows from 48em. */
 .end {
-  display: flex;
+  display: none;
   flex: 0 1 auto;
   order: 2;
   align-items: center;
@@ -207,26 +209,32 @@
   margin-inline-start: auto;
 }
 
-/* Both «Подключить» buttons share the sky gradient, no glow (owner 2026-11-23). */
+/* Both «Подключить» buttons look the same (owner 2026-11-23).
+   From Uiverse.io by vinodjangid07 - https://uiverse.io/vinodjangid07/clever-dingo-15
+   MIT License, Copyright (c) vinodjangid07 (Vinod Jangid) */
 .entry {
   display: inline-flex;
   flex: none;
   align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
   min-height: 2rem;
   padding: 0 0.875rem;
   border-radius: var(--x-radius-pill);
   background: var(--x-cta-gradient);
+  box-shadow: var(--x-cta-shadow);
   color: var(--x-white);
   font-weight: 600;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    filter 0.16s,
-    transform 0.16s var(--x-ease);
+  transition: all 0.3s ease-in-out;
 }
 
 .entry:active {
-  filter: brightness(0.9);
-  transform: scale(0.97);
+  transform: scale(0.96) translate(0, 3.2px);
+}
+
+.connectIcon {
+  flex: none;
 }
 
 .wide {
@@ -436,7 +444,8 @@
   }
 
   .entry:hover {
-    filter: brightness(0.94);
+    box-shadow: none;
+    transform: translate(0, 2.2px);
   }
 }
 
@@ -532,6 +541,7 @@
   }
 
   .end {
+    display: flex;
     order: 0;
     gap: 0.75rem;
     margin-inline-start: 0;

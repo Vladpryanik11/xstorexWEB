@@ -205,9 +205,7 @@ test('the word «Xstorex» leads home on a phone and a computer', async ({ page 
   }
 });
 
-test('on a phone the pill holds the word, «Войти» as a person, «Подключить» and the menu', async ({
-  page,
-}) => {
+test('on a phone the pill holds only the word and the menu', async ({ page }) => {
   for (const auth of ['', 'auth=1&']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/dev/ui?${auth}path=/faq`);
@@ -216,28 +214,25 @@ test('on a phone the pill holds the word, «Войти» as a person, «Подк
     const burger = header.getByRole('button', { name: 'Меню' });
     await expect(burger).toBeVisible();
     await expect(header.getByRole('link', { name: 'Тарифы' })).toHaveCount(0);
-    if (auth) {
-      // A subscriber sees «Мой доступ» instead of the button.
-      await expect(header.getByRole('link', { name: 'Мой доступ' }).first()).toBeVisible();
-    } else {
-      // Owner 2026-11-23: a person icon without a circle, a 32px «Подключить».
-      const login = header.getByRole('link', { name: 'Войти' });
-      await expect(login.locator('svg')).toBeVisible();
-      const connect = header.getByRole('link', { name: /^Подключить/ });
-      await expect(connect).toHaveAttribute('href', '/get');
-      expect((await connect.boundingBox())?.height).toBe(32);
-      expect(await connect.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
-        /linear-gradient/,
-      );
-    }
+    // Owner 2026-11-23: no person icon and no «Подключить» in the phone pill.
+    await expect(header.getByRole('link', { name: 'Войти' })).toBeHidden();
+    await expect(header.getByRole('link', { name: 'Мой доступ' })).toBeHidden();
+    await expect(header.getByRole('link', { name: /^Подключить/ })).toBeHidden();
     const pillBox = await pill(page).boundingBox();
     const burgerBox = await burger.boundingBox();
     if (!pillBox || !burgerBox) throw new Error('no box');
     expect(pillBox.x + pillBox.width - (burgerBox.x + burgerBox.width)).toBeLessThanOrEqual(12);
-    // Pricing and «Мой доступ» stay one tap away, in the menu.
+    // «Подключить», pricing and «Войти» / «Мой доступ» stay one tap away, in the menu.
     await burger.click();
-    const name = auth ? 'Мой доступ' : 'Тарифы';
-    await expect(page.getByRole('dialog').getByRole('link', { name })).toBeVisible();
+    const menu = page.getByRole('dialog');
+    await expect(menu.getByRole('link', { name: auth ? 'Мой доступ' : 'Войти' })).toBeVisible();
+    if (!auth) {
+      await expect(menu.getByRole('link', { name: 'Тарифы' })).toBeVisible();
+      await expect(menu.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+        'href',
+        '/get',
+      );
+    }
     await page.keyboard.press('Escape');
   }
 });
