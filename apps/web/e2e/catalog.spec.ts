@@ -4,18 +4,11 @@ import { expect, test } from '@playwright/test';
 
 test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
   await page.goto('/');
+  // Owner 2026-11-23 (spec 2026-11-23-home-first-screen §3).
   await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: isMobile
-        ? /^200\+ приложений на\sвашем\siPhone$/
-        : /^200\+ приложений с\sPremium‑доступом на\sвашем\siPhone$/,
-    }),
+    page.getByRole('heading', { level: 1, name: 'Удаленные из App Store снова доступны' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
-    'href',
-    '/get',
-  );
+  await expect(page.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
   await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
@@ -220,7 +213,8 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   isMobile,
 }) => {
   await page.goto('/');
-  const buttons = page.getByRole('link', { name: 'Подключить iPhone' });
+  // The header carries its own «Подключить» (owner 2026-11-23); count the page buttons only.
+  const buttons = page.locator('main').getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
   await page.getByRole('heading', { name: 'Как это работает' }).scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);

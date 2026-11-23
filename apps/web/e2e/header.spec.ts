@@ -42,8 +42,8 @@ test('desktop pill hugs its links and stays centred, not full width', async ({ p
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const box = await pill(page).boundingBox();
     if (!box) throw new Error('no pill');
-    // Word «Xstorex» + «Каталог» + help pages + end slot (owner 2026-11-20).
-    expect(box.width).toBeLessThanOrEqual(760);
+    // Word «Xstorex» + «Каталог» + three pages + «Войти» and «Подключить iPhone» (owner 2026-11-23).
+    expect(box.width).toBeLessThanOrEqual(880);
     expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   }
 });
