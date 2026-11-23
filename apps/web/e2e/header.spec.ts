@@ -43,7 +43,7 @@ test('desktop pill hugs its links and stays centred, not full width', async ({ p
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const box = await pill(page).boundingBox();
     if (!box) throw new Error('no pill');
-    // Word «Xstorex» + «Каталог» + three pages + «Войти» and «Подключить iPhone» (owner 2026-11-23).
+    // «Каталог» + three pages + «Войти» and «Подключить iPhone» (owner 2026-11-23).
     expect(box.width).toBeLessThanOrEqual(880);
     expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
   }
@@ -191,27 +191,23 @@ test('«Каталог» is not in the phone pill', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Каталог' })).toBeHidden();
 });
 
-test('the word «Xstorex» leads home on a phone and a computer', async ({ page }) => {
+test('no word «Xstorex» in the header on a phone and a computer (owner 2026-11-23)', async ({
+  page,
+}) => {
   for (const width of [390, 768, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/dev/ui?path=/faq');
-    const word = page.locator('header').first().getByRole('link', { name: 'Xstorex, на главную' });
-    await expect(word).toBeVisible();
-    await expect(word).toHaveAttribute('href', '/');
-    const pillBox = await pill(page).boundingBox();
-    const box = await word.boundingBox();
-    if (!pillBox || !box) throw new Error('no box');
-    expect(box.x - pillBox.x).toBeLessThanOrEqual(24);
+    await expect(page.locator('header').first().getByText('Xstorex')).toHaveCount(0);
     expect(await noHorizontalScroll(page)).toBe(true);
   }
 });
 
-test('on a phone the pill holds only the word and the menu', async ({ page }) => {
+test('on a phone the pill holds only the menu', async ({ page }) => {
   for (const auth of ['', 'auth=1&']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/dev/ui?${auth}path=/faq`);
     const header = page.locator('header').first();
-    await expect(header.getByRole('link', { name: 'Xstorex, на главную' })).toBeVisible();
+    await expect(header.getByText('Xstorex')).toHaveCount(0);
     const burger = header.getByRole('button', { name: 'Меню' });
     await expect(burger).toBeVisible();
     await expect(header.getByRole('link', { name: 'Тарифы' })).toHaveCount(0);
