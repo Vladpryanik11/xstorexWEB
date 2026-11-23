@@ -1,7 +1,6 @@
 import type { CollectionView } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
 import { useId } from 'react';
-import { ConnectIcon } from '../shell/ConnectIcon';
 import { AUDIENCE } from './figures';
 import { HeroIcons } from './HeroIcons';
 import { HeroPhone } from './HeroPhone';
@@ -53,7 +52,6 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
           <SearchField action="/search" placeholder="Найти свое приложение" />
         </div>
         <a className={styles.cta} href="/get" data-hero-cta>
-          <ConnectIcon className={styles.ctaIcon} />
           Подключить iPhone
         </a>
         <p className={styles.guarantee}>

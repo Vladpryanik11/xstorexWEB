@@ -155,34 +155,28 @@
 }
 
 .cta {
-  /* From Uiverse.io by vinodjangid07 - https://uiverse.io/vinodjangid07/clever-dingo-15
-     MIT License, Copyright (c) vinodjangid07 (Vinod Jangid) */
+  /* Apple-like pill В+ (owner 2026-11-23): flat ultramarine, the label alone, darker when pressed. */
   grid-row: 6;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4375rem;
   width: 100%;
-  min-height: 3.5rem;
+  min-height: 3.25rem;
   margin-top: 0.75rem;
   padding: 0 1.75rem;
   border-radius: var(--x-radius-pill);
-  background: var(--x-cta-gradient);
-  box-shadow: var(--x-cta-shadow);
+  background: var(--x-cta);
   color: var(--x-white);
   font: var(--x-type-button);
+  letter-spacing: -0.01em;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s ease-in-out;
-}
-
-.ctaIcon {
-  flex: none;
+  transition: background-color 0.15s ease;
 }
 
 .cta:active {
-  transform: scale(0.96) translate(0, 3.2px);
+  background: var(--x-cta-pressed);
 }
 
 .cta:focus-visible {
@@ -353,10 +347,6 @@
     padding: 0 2.25rem;
   }
 
-  .cta:hover {
-    box-shadow: none;
-    transform: translate(0, 2.2px);
-  }
 
   .guarantee {
     margin-top: 0.625rem;

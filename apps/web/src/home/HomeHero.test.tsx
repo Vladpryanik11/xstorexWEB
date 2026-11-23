@@ -32,8 +32,8 @@ it('first screen in the approved order: promise, ticks, banner, search, button, 
   expect(screen.getByPlaceholderText('Найти свое приложение')).toBeVisible();
   const cta = screen.getByRole('link', { name: 'Подключить iPhone' });
   expect(cta).toHaveAttribute('href', '/get');
-  // Uiverse «Connect» button (owner 2026-11-23): a link icon before the label.
-  expect(cta.querySelector('svg[aria-hidden="true"][data-connect-icon]')).not.toBeNull();
+  // Apple-like pill В+ (owner 2026-11-23): the label alone, no icon.
+  expect(cta.querySelector('svg')).toBeNull();
   const guarantee = screen.getByText('Гарантия на весь срок подписки');
   const audience = screen.getByText('10 000+');
   expect(screen.getByText('пользователей в месяц')).toBeVisible();

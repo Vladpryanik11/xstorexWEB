@@ -48,3 +48,15 @@ test('first-screen search is the App Store glass pill', async ({ page }) => {
     'rgb(110, 110, 115)',
   );
 });
+
+// Owner 2026-11-23: both «Подключить» buttons are the Apple-like pill В+ in light ultramarine.
+test('«Подключить iPhone» is a flat light-ultramarine pill', async ({ page }) => {
+  await page.goto('/');
+  const cta = page.locator('[data-hero-cta]');
+  await expect(cta).toHaveCSS('background-color', 'rgb(42, 92, 240)');
+  await expect(cta).toHaveCSS('background-image', 'none');
+  await expect(cta).toHaveCSS('box-shadow', 'none');
+  await expect(cta).toHaveCSS('font-size', '17px');
+  await expect(cta).toHaveCSS('font-weight', '600');
+  await expect(cta.locator('svg')).toHaveCount(0);
+});

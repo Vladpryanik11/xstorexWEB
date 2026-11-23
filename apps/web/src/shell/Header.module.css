@@ -179,32 +179,24 @@
   margin-inline-start: auto;
 }
 
-/* Both «Подключить» buttons look the same (owner 2026-11-23).
-   From Uiverse.io by vinodjangid07 - https://uiverse.io/vinodjangid07/clever-dingo-15
-   MIT License, Copyright (c) vinodjangid07 (Vinod Jangid) */
+/* Both «Подключить» buttons look the same (owner 2026-11-23): the Apple-like pill В+. */
 .entry {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  gap: 0.4375rem;
   min-height: 2rem;
   padding: 0 0.875rem;
   border-radius: var(--x-radius-pill);
-  background: var(--x-cta-gradient);
-  box-shadow: var(--x-cta-shadow);
+  background: var(--x-cta);
   color: var(--x-white);
   font-weight: 600;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s ease-in-out;
+  transition: background-color 0.15s ease;
 }
 
 .entry:active {
-  transform: scale(0.96) translate(0, 3.2px);
-}
-
-.connectIcon {
-  flex: none;
+  background: var(--x-cta-pressed);
 }
 
 .wide {
@@ -624,11 +616,6 @@
   }
 
   .wide {
-    display: none;
-  }
-
-  /* No room for the link icon next to the tablet row; it returns from 64em. */
-  .connectIcon {
     display: none;
   }
 }

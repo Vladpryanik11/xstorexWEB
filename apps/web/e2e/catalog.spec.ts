@@ -249,9 +249,9 @@ test('the first screen: ticks, banner, search, button, guarantee and 10 000+ abo
   await expect(hero.locator('[data-hero-icons] [data-icon]')).toHaveCount(5);
   await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
   if (isMobile) {
-    // Sizes variant А: a 56px full-width button; 10 000+ ends above the 660px fold.
+    // Apple-like pill В+ (owner 2026-11-23): 52px full width; 10 000+ ends above the 660px fold.
     const cta = boxes[3];
-    expect(cta?.height).toBeGreaterThanOrEqual(55);
+    expect(cta?.height).toBe(52);
     expect(cta?.width).toBeGreaterThan(300);
     const proof = boxes[5];
     expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(660);

@@ -96,8 +96,8 @@ describe('Header', () => {
     expect(login.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     const connect = screen.getByRole('link', { name: 'Подключить iPhone' });
     expect(connect).toHaveAttribute('href', '/get');
-    // Uiverse «Connect» button (owner 2026-11-23): a link icon before the label.
-    expect(connect.querySelector('svg[aria-hidden="true"][data-connect-icon]')).not.toBeNull();
+    // Apple-like pill В+ (owner 2026-11-23): the label alone, no icon.
+    expect(connect.querySelector('svg')).toBeNull();
     expect(login.compareDocumentPosition(connect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Тарифы' })).toBeNull();
   });

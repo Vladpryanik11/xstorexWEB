@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useId, useRef } from 'react';
 import { CatalogPanel } from './CatalogPanel';
-import { ConnectIcon } from './ConnectIcon';
 import styles from './Header.module.css';
 import { HeaderFrame } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
@@ -116,7 +115,6 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
               </Link>
             ) : (
               <Link key={item.href} className={styles.entry} href={item.href}>
-                <ConnectIcon className={styles.connectIcon} />
                 <EntryLabel label={item.label} />
               </Link>
             ),

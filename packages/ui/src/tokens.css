@@ -62,8 +62,9 @@
   --x-track-body: 0em;
   --x-track-small: 0em;
   /* the «Подключить» buttons: Uiverse «Connect» by vinodjangid07, MIT (owner 2026-11-23) */
-  --x-cta-gradient: linear-gradient(to right, #8be3fc, #576bff);
-  --x-cta-shadow: 0 20px 30px -7px rgba(97, 118, 238, .5);
+  /* «Подключить» buttons, Apple-like pill В+, light ultramarine (owner 2026-11-23) */
+  --x-cta: #2a5cf0;
+  --x-cta-pressed: #1449e0;
   --x-ease: cubic-bezier(.23, 1, .32, 1);
   --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
 }
