@@ -29,3 +29,22 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
   await expect(body).toHaveCSS('font-size', '16px');
   expect(await body.evaluate((el) => getComputedStyle(el).letterSpacing)).toMatch(/^(0px|normal)$/);
 });
+
+// Owner 2026-11-23, variant В+: the first-screen search is an App Store glass pill with a thin
+// rim, a bluish shadow and 17px text (iOS Safari zooms into fields under 16px).
+test('first-screen search is the App Store glass pill', async ({ page }) => {
+  await page.goto('/');
+  const form = page.locator('[data-home-hero] form[role=search]');
+  const input = form.locator('input');
+  await expect(input).toHaveCSS('font-size', '17px');
+  await expect(form).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.78)');
+  await expect(form).toHaveCSS('backdrop-filter', /blur\(20px\)/);
+  await expect(form).toHaveCSS(
+    'box-shadow',
+    'rgba(11, 26, 74, 0.08) 0px 0px 0px 1px inset, rgba(20, 73, 224, 0.08) 0px 4px 16px 0px',
+  );
+  expect((await form.boundingBox())?.height).toBe(48);
+  expect(await input.evaluate((el) => getComputedStyle(el, '::placeholder').color)).toBe(
+    'rgb(110, 110, 115)',
+  );
+});
