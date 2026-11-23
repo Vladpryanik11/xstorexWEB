@@ -49,11 +49,11 @@ test('first-screen search is the App Store glass pill', async ({ page }) => {
   );
 });
 
-// Owner 2026-11-23: both «Подключить» buttons are the Apple-like pill В+ in light ultramarine.
-test('«Подключить iPhone» is a flat light-ultramarine pill', async ({ page }) => {
+// Owner 2026-11-23: both «Подключить» buttons are the Apple-like pill В+ in Apple blue #0071E3.
+test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page }) => {
   await page.goto('/');
   const cta = page.locator('[data-hero-cta]');
-  await expect(cta).toHaveCSS('background-color', 'rgb(42, 92, 240)');
+  await expect(cta).toHaveCSS('background-color', 'rgb(0, 113, 227)');
   await expect(cta).toHaveCSS('background-image', 'none');
   await expect(cta).toHaveCSS('box-shadow', 'none');
   await expect(cta).toHaveCSS('font-size', '17px');

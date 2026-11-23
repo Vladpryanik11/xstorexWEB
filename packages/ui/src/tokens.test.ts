@@ -80,8 +80,8 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-type-herolg', '600 3.5rem / 1.08 var(--x-font-title)'],
     ['--x-type-field', '400 1.0625rem / 1.3 var(--x-font)'],
     ['--x-type-button', '600 1.0625rem / 1.2 var(--x-font)'],
-    ['--x-cta', '#2a5cf0'],
-    ['--x-cta-pressed', '#1449e0'],
+    ['--x-cta', '#0071e3'],
+    ['--x-cta-pressed', '#0062c4'],
   ])('%s = %s', (name, value) => {
     expect(token(name)).toBe(value);
   });

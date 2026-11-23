@@ -62,9 +62,9 @@
   --x-track-body: 0em;
   --x-track-small: 0em;
   /* the «Подключить» buttons: Uiverse «Connect» by vinodjangid07, MIT (owner 2026-11-23) */
-  /* «Подключить» buttons, Apple-like pill В+, light ultramarine (owner 2026-11-23) */
-  --x-cta: #2a5cf0;
-  --x-cta-pressed: #1449e0;
+  /* «Подключить» buttons, Apple-like pill В+ in Apple blue (owner 2026-11-23, «apple») */
+  --x-cta: #0071e3;
+  --x-cta-pressed: #0062c4;
   --x-ease: cubic-bezier(.23, 1, .32, 1);
   --x-ease-sheet: cubic-bezier(.32, .72, 0, 1);
 }
