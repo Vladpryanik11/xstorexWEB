@@ -75,10 +75,13 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-track-head', '-.03em'],
     ['--x-track-body', '0em'],
     ['--x-track-small', '0em'],
-    ['--x-type-hero', '500 1.75rem / 1.1 var(--x-font-head)'],
-    ['--x-type-herolg', '500 3.5rem / 1.08 var(--x-font-head)'],
-    ['--x-type-button', '600 1.0625rem / 1.2 var(--x-font)'],
-    ['--x-cta-gradient', 'linear-gradient(90deg, #0b4fd6, #1a86ff)'],
+    ['--x-font-title', 'var(--font-inter-tight, "inter tight"), var(--x-font)'],
+    ['--x-type-hero', '600 2.125rem / 1.1 var(--x-font-title)'],
+    ['--x-type-herolg', '600 3.5rem / 1.08 var(--x-font-title)'],
+    ['--x-type-field', '400 1.0625rem / 1.3 var(--x-font)'],
+    ['--x-type-button', '600 1.25rem / 1.2 var(--x-font)'],
+    ['--x-cta', '#0071e3'],
+    ['--x-cta-pressed', '#0062c4'],
   ])('%s = %s', (name, value) => {
     expect(token(name)).toBe(value);
   });

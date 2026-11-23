@@ -47,8 +47,9 @@ describe('ui styles follow palette E (spec 2026-11-17 §3–4)', () => {
 
   it('chips and search use blue shadows', () => {
     expect(rule('chip/Chip.module.css', '.chip')).toContain('box-shadow: var(--x-shadow-sm)');
+    // Search variant В+ (owner 2026-11-23): its own bluish shadow under a thin rim.
     expect(rule('search/SearchField.module.css', '.glass')).toContain(
-      'box-shadow: var(--x-shadow)',
+      '--search-shadow: 0 4px 16px rgba(20, 73, 224, 0.08)',
     );
   });
 });

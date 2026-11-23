@@ -78,9 +78,13 @@ describe('menuCards', () => {
   });
 
   it('access card follows the session', () => {
-    expect(labels(GUEST)[1]).toEqual(['Доступ', ['Тарифы', 'Войти']]);
+    // Owner 2026-11-23: the phone pill holds only the word and the menu, so «Подключить» moves here.
+    expect(labels(GUEST)[1]).toEqual(['Доступ', ['Подключить iPhone', 'Тарифы', 'Войти']]);
     expect(labels(SUBSCRIBER)[1]).toEqual(['Доступ', ['Мой доступ']]);
-    expect(labels(SIGNED_IN_NO_ACCESS)[1]).toEqual(['Доступ', ['Тарифы', 'Мой доступ']]);
+    expect(labels(SIGNED_IN_NO_ACCESS)[1]).toEqual([
+      'Доступ',
+      ['Подключить iPhone', 'Тарифы', 'Мой доступ'],
+    ]);
   });
 });
 

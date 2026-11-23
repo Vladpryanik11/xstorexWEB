@@ -75,9 +75,6 @@ export function Header({ nav, overHero = false, forcedPath }: HeaderProps) {
           if (open) catalog.hideSoon();
         }}
       >
-        <Link className={styles.word} href="/" aria-label="Xstorex, на главную">
-          <span className={styles.wordX}>X</span>storex
-        </Link>
         <nav className={styles.menu} aria-label="Основное меню">
           <NavLinks
             items={items}

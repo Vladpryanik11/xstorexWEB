@@ -14,7 +14,7 @@ it('first screen in the approved order: promise, ticks, banner, search, button, 
 
   const h1 = screen.getByRole('heading', {
     level: 1,
-    name: 'Удаленные из App Store снова доступны',
+    name: 'Удаленные из App\u00a0Store снова доступны',
   });
   const sub = screen.getByText(
     'Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке',
@@ -32,6 +32,8 @@ it('first screen in the approved order: promise, ticks, banner, search, button, 
   expect(screen.getByPlaceholderText('Найти свое приложение')).toBeVisible();
   const cta = screen.getByRole('link', { name: 'Подключить iPhone' });
   expect(cta).toHaveAttribute('href', '/get');
+  // Apple-like pill В+ (owner 2026-11-23): the label alone, no icon.
+  expect(cta.querySelector('svg')).toBeNull();
   const guarantee = screen.getByText('Гарантия на весь срок подписки');
   const audience = screen.getByText('10 000+');
   expect(screen.getByText('пользователей в месяц')).toBeVisible();

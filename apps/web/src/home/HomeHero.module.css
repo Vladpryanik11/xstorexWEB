@@ -5,8 +5,9 @@
 .hero {
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
   --hero-top: calc(var(--hero-under-pill) + 1rem);
-  --hero-shadow-big: 0 1px 2px rgba(16, 58, 180, 0.28), 0 4px 18px rgba(16, 58, 180, 0.22);
-  --hero-shadow-small: 0 1px 2px rgba(16, 58, 180, 0.45), 0 0 10px rgba(16, 58, 180, 0.25);
+  /* Shadow «5+» (owner 2026-11-23): a 1px dark-blue edge, plus a soft ultramarine depth on the title. */
+  --hero-shadow-big: 0 1px 1px rgba(11, 26, 74, 0.3), 0 6px 12px rgba(20, 73, 224, 0.22);
+  --hero-shadow-small: 0 1px 1px rgba(11, 26, 74, 0.38);
   position: relative;
   overflow: clip;
   padding: var(--hero-top) 0 2rem;
@@ -76,7 +77,8 @@
   margin: 0;
   color: var(--x-white);
   font: var(--x-type-hero);
-  letter-spacing: -0.03em;
+  /* Owner 2026-11-23 («ближе к Apple»): a little air between letters (−0.5 %). */
+  letter-spacing: -0.005em;
   text-shadow: var(--hero-shadow-big);
   text-wrap: balance;
 }
@@ -153,6 +155,7 @@
 }
 
 .cta {
+  /* Apple-like pill В+ (owner 2026-11-23): flat ultramarine, the label alone, darker when pressed. */
   grid-row: 6;
   box-sizing: border-box;
   display: inline-flex;
@@ -163,19 +166,17 @@
   margin-top: 0.75rem;
   padding: 0 1.75rem;
   border-radius: var(--x-radius-pill);
-  background: var(--x-cta-gradient);
+  background: var(--x-cta);
   color: var(--x-white);
   font: var(--x-type-button);
+  letter-spacing: -0.01em;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    filter 0.2s ease,
-    transform 0.15s var(--x-ease);
+  transition: background-color 0.15s ease;
 }
 
 .cta:active {
-  filter: brightness(0.9);
-  transform: scale(0.97);
+  background: var(--x-cta-pressed);
 }
 
 .cta:focus-visible {
@@ -340,14 +341,9 @@
     margin-top: 1.375rem;
   }
 
+  /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
   .cta {
-    width: auto;
     margin-top: 1.125rem;
-    padding: 0 2.25rem;
-  }
-
-  .cta:hover {
-    filter: brightness(0.94);
   }
 
   .guarantee {
@@ -395,9 +391,5 @@
 @media (prefers-reduced-motion: reduce) {
   .cta {
     transition: none;
-  }
-
-  .cta:active {
-    transform: none;
   }
 }

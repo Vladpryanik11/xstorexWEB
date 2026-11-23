@@ -30,7 +30,7 @@ export function HomeHero({ collections }: { collections: CollectionView[] }) {
     <section className={styles.hero} data-home-hero>
       <div className={styles.inner}>
         <div className={styles.sky} aria-hidden="true" data-hero-sky="" />
-        <h1 className={styles.title}>Удаленные из App Store снова доступны</h1>
+        <h1 className={styles.title}>Удаленные из App&nbsp;Store снова доступны</h1>
         <p className={styles.sub}>
           Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке
         </p>

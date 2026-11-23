@@ -96,6 +96,8 @@ describe('Header', () => {
     expect(login.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     const connect = screen.getByRole('link', { name: 'Подключить iPhone' });
     expect(connect).toHaveAttribute('href', '/get');
+    // Apple-like pill В+ (owner 2026-11-23): the label alone, no icon.
+    expect(connect.querySelector('svg')).toBeNull();
     expect(login.compareDocumentPosition(connect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Тарифы' })).toBeNull();
   });
@@ -131,14 +133,17 @@ describe('Header', () => {
     expect(pills[0]?.closest('a')).toHaveTextContent('Вопросы');
   });
 
-  it('has no logo image; the word «Xstorex» leads home', () => {
+  it('has no logo and no word «Xstorex» (owner 2026-11-23); «Главная» stays in the menu', () => {
     const { container } = render(<Header nav={GUEST} />);
     expect(container.querySelector('header img')).toBeNull();
-    const home = screen.getByRole('link', { name: 'Xstorex, на главную' });
-    expect(home).toHaveAttribute('href', '/');
-    expect(home).toHaveTextContent('Xstorex');
+    expect(screen.queryByRole('link', { name: /Xstorex/ })).toBeNull();
+    expect(container.querySelector('header')).not.toHaveTextContent('Xstorex');
     const pill = screen.getByRole('navigation', { name: 'Основное меню' }).parentElement;
-    expect(pill?.firstElementChild).toBe(home);
+    expect(pill?.firstElementChild).toBe(screen.getByRole('navigation', { name: 'Основное меню' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
+    expect(
+      within(screen.getByRole('dialog')).getByRole('link', { name: 'Главная' }),
+    ).toHaveAttribute('href', '/');
   });
 
   it('forcedPath overrides the current path', () => {

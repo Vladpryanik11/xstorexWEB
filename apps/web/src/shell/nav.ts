@@ -37,8 +37,9 @@ export function navStateFrom(res: AccessResponse): NavState {
 }
 
 /**
- * Header end slot (spec 2026-11-23-home-first-screen §2): «Войти» (or «Мой доступ» once signed
- * in) and the «Подключить iPhone» button; a subscriber sees only «Мой доступ».
+ * Header end slot from 48em (spec 2026-11-23-home-first-screen §2): «Войти» (or «Мой доступ» once
+ * signed in) and the «Подключить iPhone» button; a subscriber sees only «Мой доступ». A phone pill
+ * hides it (owner 2026-11-23): these links live in the menu's «Доступ» card.
  */
 export function navFor(state: NavState): EndItem[] {
   if (state.hasAccess) return [{ ...access, kind: 'entry' }];
@@ -48,18 +49,16 @@ export function navFor(state: NavState): EndItem[] {
   ];
 }
 
-/** The «Доступ» card of the phone menu keeps pricing (spec v2 §2). */
+/**
+ * The «Доступ» card of the phone menu keeps pricing (spec v2 §2) and, since the phone pill holds
+ * only the word and the menu (owner 2026-11-23), «Подключить iPhone» for everyone without access.
+ */
 function accessItems(state: NavState): EndItem[] {
-  if (!state.signedIn) {
-    return [
-      { ...pricing, kind: 'entry' },
-      { ...signin, kind: 'quiet' },
-    ];
-  }
   if (state.hasAccess) return [{ ...access, kind: 'entry' }];
   return [
+    { ...connect, kind: 'entry' },
     { ...pricing, kind: 'entry' },
-    { ...access, kind: 'quiet' },
+    { ...(state.signedIn ? access : signin), kind: 'quiet' },
   ];
 }
 

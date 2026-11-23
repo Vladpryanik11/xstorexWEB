@@ -9,11 +9,11 @@ test('unknown path shows the Russian 404 inside the site header and footer', asy
     '/',
   );
   await expect(page.locator('header')).toBeVisible();
-  // «Подключить» is in the pill on every width (owner 2026-11-23); the menu button on a phone.
+  // «Подключить» is in the pill from 48em; a phone pill holds only the menu (owner 2026-11-23).
   const wide = (page.viewportSize()?.width ?? 0) >= 768;
   const header = page.locator('header');
-  await expect(header.getByRole('link', { name: /^Подключить/ })).toBeVisible();
-  if (!wide) await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
+  if (wide) await expect(header.getByRole('link', { name: /^Подключить/ })).toBeVisible();
+  else await expect(header.getByRole('button', { name: 'Меню' })).toBeVisible();
   await expect(page.locator('footer')).toBeVisible();
   await expect(
     page.locator('footer').getByRole('link', { name: 'Пользовательское соглашение' }),
