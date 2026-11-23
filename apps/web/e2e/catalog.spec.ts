@@ -50,8 +50,9 @@ test('home renders every collection layout and the category chips', async ({ pag
   }
   const chips = page.getByRole('navigation', { name: 'Категории' });
   await expect(chips.getByRole('link', { name: 'Игры' })).toHaveAttribute('href', '/category/igry');
-  // The seeded icons come from object storage.
-  const icon = page.locator('img[src*="/icons/"]:visible').first();
+  // The seeded icons come from object storage. The hero lanes move all the time, so the
+  // check takes an icon from the collections below them.
+  const icon = page.locator('img[src*="/icons/"]:visible:not([data-hero-lanes] img)').first();
   await expect(icon).toBeVisible();
   // Shelf icons load lazily; bring one on screen before checking it decoded.
   await icon.scrollIntoViewIfNeeded();
@@ -275,6 +276,57 @@ test('the first screen: lanes, search, button, promises and the audience above t
     expect(boxes[0]?.x).toBe(0);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+// Owner 2026-11-23 18:16, variant В (spec 2026-11-23-home-first-screen §3.3–3.4): the lanes run,
+// and typing swaps them for a shelf of the apps found in the whole catalog.
+test('the first-screen search shows a shelf of found apps that opens the install sheet', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  const track = hero.locator('[data-hero-lane="removed"] [data-lane-track]');
+  await expect(track).not.toHaveCSS('animation-name', 'none');
+
+  await hero.getByRole('searchbox').fill('Тестовое приложение 1');
+  const dock = hero.getByTestId('hero-dock');
+  const found = dock.locator('a[data-dock-app]').first();
+  await expect(found).toHaveAttribute('href', '/?app=testovoe-prilozhenie-1');
+  await expect(hero.locator('[data-hero-finder]')).toHaveAttribute('data-searching', '');
+  await expect(hero.getByRole('search')).toContainText('Нашли');
+  // The shelf stays above the field, where the iPhone keyboard does not reach.
+  const [shelf, field] = await Promise.all([
+    dock.boundingBox(),
+    hero.getByRole('search').boundingBox(),
+  ]);
+  expect((shelf?.y ?? 0) + (shelf?.height ?? 0)).toBeLessThanOrEqual(field?.y ?? 0);
+
+  await found.click();
+  await expect(page.getByRole('dialog', { name: 'Тестовое приложение 1' })).toBeVisible();
+});
+
+test('the first-screen search says when the catalog has no such app', async ({ page }) => {
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  await hero.getByRole('searchbox').fill('Такого нет точно');
+  const dock = hero.getByTestId('hero-dock');
+  await expect(dock).toContainText('Такого приложения пока нет в каталоге');
+  await expect(dock.getByRole('link', { name: 'Весь каталог' })).toHaveAttribute(
+    'href',
+    '/catalog',
+  );
+  await hero.getByRole('searchbox').fill('');
+  await expect(dock).toHaveCount(0);
+  await expect(hero.locator('[data-hero-lanes]')).toBeVisible();
+});
+
+test('the lanes stand still under reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('[data-hero-lane="removed"] [data-lane-track]')).toHaveCSS(
+    'animation-name',
+    'none',
+  );
 });
 
 test('home blocks follow the «Проверь и купи» order', async ({ page }) => {

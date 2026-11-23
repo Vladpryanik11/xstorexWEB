@@ -1,4 +1,4 @@
-/* Two lanes of catalog icons (spec 2026-11-23-home-first-screen §3.3, owner 2026-11-23):
+/* Two live lanes of catalog icons (spec 2026-11-23-home-first-screen §3.3, owner 2026-11-23):
    no frame, from edge to edge of the screen, the second lane shifted by half an icon. */
 .lanes {
   display: flex;
@@ -26,19 +26,59 @@
   text-transform: uppercase;
 }
 
+.view {
+  margin-left: -1.125rem;
+}
+
+.lane + .lane .view {
+  margin-left: -3.25rem;
+}
+
+/* Two equal halves: moving by one half brings the second exactly where the first was. */
 .track {
   display: flex;
   gap: 0.75rem;
   width: max-content;
-  margin-left: -1.125rem;
+  animation: lane var(--lane-duration, 50s) linear infinite;
 }
 
-.lane + .lane .track {
-  margin-left: -3.25rem;
+@keyframes lane {
+  to {
+    transform: translateX(calc(-50% - 0.375rem));
+  }
+}
+
+.lane[data-paused] .track {
+  animation-play-state: paused;
+}
+
+/* Under a mouse the lane stands still, so an icon is easy to hit. */
+@media (hover: hover) and (pointer: fine) {
+  .lane:hover .track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+}
+
+.item {
+  flex: none;
+  display: block;
+  border-radius: 22.5%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
 }
 
 .icon {
-  flex: none;
+  display: block;
   width: 3.375rem;
   height: 3.375rem;
   border-radius: 22.5%;
@@ -63,7 +103,7 @@
     text-align: left;
   }
 
-  .lane + .lane .track {
+  .lane + .lane .view {
     margin-left: -3.75rem;
   }
 

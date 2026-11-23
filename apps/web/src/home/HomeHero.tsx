@@ -1,7 +1,6 @@
-import type { AppCard, CollectionView } from '@xstore/shared';
-import { SearchField } from '@xstore/ui';
+import type { CollectionView } from '@xstore/shared';
 import { useId } from 'react';
-import { HeroLanes } from './HeroLanes';
+import { HeroFinder, type HeroLaneApps } from './HeroFinder';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
 
@@ -36,7 +35,7 @@ const PROMISES = [
 /** Monogram avatars, like contacts without a photo on iPhone. */
 const AVATARS = ['А', 'М', 'Д'];
 
-export type HeroLaneApps = { removed: AppCard[]; premium: AppCard[] };
+export type { HeroLaneApps };
 
 /**
  * First screen of the home page (spec 2026-11-23-home-first-screen, owner 2026-11-22/23):
@@ -61,12 +60,7 @@ export function HomeHero({
         <p className={styles.sub}>
           Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке
         </p>
-        <div className={styles.lanes}>
-          <HeroLanes removed={lanes.removed} premium={lanes.premium} />
-        </div>
-        <div className={styles.search}>
-          <SearchField action="/search" placeholder="Найти свое приложение" />
-        </div>
+        <HeroFinder lanes={lanes} lanesClassName={styles.lanes} searchClassName={styles.search} />
         <a className={styles.cta} href="/get" data-hero-cta>
           Подключить iPhone
         </a>

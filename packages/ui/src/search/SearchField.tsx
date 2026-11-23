@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormEvent } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef } from 'react';
 import styles from './SearchField.module.css';
 
 export type SearchFieldProps = {
@@ -11,6 +11,10 @@ export type SearchFieldProps = {
   /** Where the native GET submit goes, e.g. `/search`; the current URL when left out. */
   action?: string;
   tone?: 'glass' | 'page';
+  /** Called with the text on every change, for search as you type. */
+  onQueryChange?: (q: string) => void;
+  /** A short note at the end of the field, e.g. how many apps were found. */
+  trailing?: ReactNode;
 };
 
 export function SearchField({
@@ -20,7 +24,18 @@ export function SearchField({
   onSubmit,
   action,
   tone = 'glass',
+  onQueryChange,
+  trailing,
 }: SearchFieldProps) {
+  const input = useRef<HTMLInputElement>(null);
+  // Letters typed before the page came alive fire no change event: pass them on once mounted.
+  const report = useRef(onQueryChange);
+  report.current = onQueryChange;
+  useEffect(() => {
+    const value = input.current?.value;
+    if (value) report.current?.(value);
+  }, []);
+
   // Without an onSubmit handler the form submits natively (GET with the field name).
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (!onSubmit) return;
@@ -53,13 +68,16 @@ export function SearchField({
         <path d="m12.5 12.5 4 4" />
       </svg>
       <input
+        ref={input}
         className={styles.input}
         type="search"
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
         aria-label="Поиск"
+        onChange={onQueryChange ? (e) => onQueryChange(e.currentTarget.value) : undefined}
       />
+      {trailing ? <span className={styles.trailing}>{trailing}</span> : null}
     </form>
   );
 }

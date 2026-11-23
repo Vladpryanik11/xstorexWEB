@@ -1,0 +1,66 @@
+/* Lanes and the shelf of found apps share one place over the search (owner 2026-11-23,
+   variant В): the shelf stays above the field, so the iPhone keyboard never covers it. */
+.area {
+  position: relative;
+}
+
+.area[data-searching] {
+  min-height: 7.5rem;
+}
+
+.lanes {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.area[data-searching] .lanes {
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
+}
+
+.dock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--x-gutter);
+  animation: dock-in 0.35s ease both;
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Computer: the shelf starts at the text column, like the captions. */
+@media (min-width: 64em) {
+  .dock {
+    justify-content: flex-start;
+    padding-inline: var(--hero-bleed, 5rem) 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lanes {
+    transition: none;
+  }
+
+  .dock {
+    animation: none;
+  }
+}
