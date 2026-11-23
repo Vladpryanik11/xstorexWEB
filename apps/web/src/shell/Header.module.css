@@ -49,6 +49,9 @@
   inset: 0;
   border-radius: inherit;
   background: var(--x-white);
+  transition:
+    background-color 0.22s,
+    box-shadow 0.22s;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.9),
     var(--x-shadow);
@@ -247,15 +250,32 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--x-sky-50);
-  color: var(--x-quiet-fg);
+  /* One white circle with blue lines, no pale circle inside it (owner 2026-11-23). */
+  background: transparent;
+  color: var(--x-blue);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color 0.22s,
+    color 0.22s,
     transform 0.16s var(--x-ease);
+}
+
+/* Phone, home sky (owner 2026-11-23, variant «Стекло» without the mark): a see-through circle
+   with white lines. Once the page scrolls off the sky, or the menu opens, it turns white again. */
+@media (max-width: 47.9375em) {
+  .over[data-scrolled="false"]:not(:has([aria-expanded="true"])) .pill::before {
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  .over[data-scrolled="false"]:not(:has([aria-expanded="true"])) .burger {
+    color: var(--x-white);
+  }
 }
 
 /* 44px hit area. */
