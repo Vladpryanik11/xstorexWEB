@@ -56,7 +56,8 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
   await expect(cta).toHaveCSS('background-color', 'rgb(0, 113, 227)');
   await expect(cta).toHaveCSS('background-image', 'none');
   await expect(cta).toHaveCSS('box-shadow', 'none');
-  await expect(cta).toHaveCSS('font-size', '17px');
+  // Size Д with 20px text (owner 2026-11-23): 56px high, full width.
+  await expect(cta).toHaveCSS('font-size', '20px');
   await expect(cta).toHaveCSS('font-weight', '600');
   await expect(cta.locator('svg')).toHaveCount(0);
 });
