@@ -44,6 +44,8 @@
   --x-type-body: 400 1rem / 1.5 var(--x-font);
   --x-type-ui: 500 .875rem / 1.4 var(--x-font);
   --x-type-cap: 500 .75rem / 1.35 var(--x-font);
+  /* text fields: 17px, iOS Safari zooms into a field whose text is under 16px (owner 2026-11-23) */
+  --x-type-field: 400 1.0625rem / 1.3 var(--x-font);
   /* home first screen, sizes variant А (owner 2026-11-23); the title is Inter Tight 600
      («ближе к Apple», owner 2026-11-23), tracked −0.5 % in HomeHero. */
   --x-font-title: var(--font-inter-tight, "Inter Tight"), var(--x-font);

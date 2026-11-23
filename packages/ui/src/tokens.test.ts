@@ -78,6 +78,7 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-font-title', 'var(--font-inter-tight, "inter tight"), var(--x-font)'],
     ['--x-type-hero', '600 2.125rem / 1.1 var(--x-font-title)'],
     ['--x-type-herolg', '600 3.5rem / 1.08 var(--x-font-title)'],
+    ['--x-type-field', '400 1.0625rem / 1.3 var(--x-font)'],
     ['--x-type-button', '600 1.0625rem / 1.2 var(--x-font)'],
     ['--x-cta-gradient', 'linear-gradient(to right, #8be3fc, #576bff)'],
     ['--x-cta-shadow', '0 20px 30px -7px rgba(97, 118, 238, .5)'],

@@ -61,10 +61,7 @@
   outline: 0;
   background: transparent;
   color: inherit;
-  font: var(--x-type-ui);
-  /* 17px: iOS Safari zooms the page into a field whose text is under 16px. */
-  font-size: 1.0625rem;
-  font-weight: 400;
+  font: var(--x-type-field);
   letter-spacing: -0.01em;
   appearance: none;
 }
