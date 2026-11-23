@@ -632,4 +632,9 @@
   .wide {
     display: none;
   }
+
+  /* No room for the link icon next to the tablet row; it returns from 64em. */
+  .connectIcon {
+    display: none;
+  }
 }
