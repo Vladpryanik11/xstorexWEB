@@ -251,7 +251,8 @@ test('the first screen: lanes, search, button, promises and the audience above t
   await expect(lane.locator('[data-lane-caption]')).toHaveCSS('color', 'rgb(10, 79, 176)');
   await expect(hero.locator('[data-hero-lane="premium"]')).toHaveCount(0);
   await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
-  await expect(hero.locator('[data-hero-audience]')).toHaveText(
+  // The monogram letters are part of the line's text too; check the words.
+  await expect(hero.locator('[data-hero-audience]')).toContainText(
     'Более 10 000 пользователей в\u00a0месяц',
   );
   await expect(hero.locator('[data-hero-audience] [data-avatar]')).toHaveCount(3);
