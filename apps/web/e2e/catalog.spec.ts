@@ -50,8 +50,9 @@ test('home renders every collection layout and the category chips', async ({ pag
   }
   const chips = page.getByRole('navigation', { name: 'Категории' });
   await expect(chips.getByRole('link', { name: 'Игры' })).toHaveAttribute('href', '/category/igry');
-  // The seeded icons come from object storage.
-  const icon = page.locator('img[src*="/icons/"]:visible').first();
+  // The seeded icons come from object storage. The hero lanes move all the time, so the
+  // check takes an icon from the collections below them.
+  const icon = page.locator('img[src*="/icons/"]:visible:not([data-hero-lanes] img)').first();
   await expect(icon).toBeVisible();
   // Shelf icons load lazily; bring one on screen before checking it decoded.
   await icon.scrollIntoViewIfNeeded();

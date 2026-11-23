@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormEvent, ReactNode } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef } from 'react';
 import styles from './SearchField.module.css';
 
 export type SearchFieldProps = {
@@ -27,6 +27,15 @@ export function SearchField({
   onQueryChange,
   trailing,
 }: SearchFieldProps) {
+  const input = useRef<HTMLInputElement>(null);
+  // Letters typed before the page came alive fire no change event: pass them on once mounted.
+  const report = useRef(onQueryChange);
+  report.current = onQueryChange;
+  useEffect(() => {
+    const value = input.current?.value;
+    if (value) report.current?.(value);
+  }, []);
+
   // Without an onSubmit handler the form submits natively (GET with the field name).
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (!onSubmit) return;
@@ -59,6 +68,7 @@ export function SearchField({
         <path d="m12.5 12.5 4 4" />
       </svg>
       <input
+        ref={input}
         className={styles.input}
         type="search"
         name={name}

@@ -33,6 +33,13 @@ describe('SearchField', () => {
     expect(onQueryChange).toHaveBeenLastCalledWith('вк');
   });
 
+  // Text typed before the page came alive must not be lost.
+  it('reports text that is already in the field when it mounts', () => {
+    const onQueryChange = vi.fn();
+    render(<SearchField defaultValue="вк" onQueryChange={onQueryChange} />);
+    expect(onQueryChange).toHaveBeenCalledWith('вк');
+  });
+
   it('shows a note at the end of the field', () => {
     render(<SearchField trailing={<span>Нашли 3</span>} />);
     expect(screen.getByRole('search')).toHaveTextContent('Нашли 3');
