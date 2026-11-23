@@ -15,10 +15,20 @@ const pricing: NavItem = { href: '/pricing', label: 'Тарифы' };
 const signin: NavItem = { href: '/signin', label: 'Войти' };
 const access: NavItem = { href: '/access', label: 'Мой доступ' };
 
+const connect: NavItem = { href: '/get', label: 'Подключить iPhone' };
+
+/** Help pages: the phone menu card «Помощь» (the footer lists them too). */
 const siteItems: NavItem[] = [
   { href: '/blog', label: 'Блог' },
   { href: '/faq', label: 'Вопросы' },
   { href: '/support', label: 'Поддержка' },
+];
+
+/** The middle row after «Каталог» (owner 2026-11-23, spec 2026-11-23-home-first-screen §2). */
+const rowItems: NavItem[] = [
+  { href: '/#how', label: 'Как это работает' },
+  { href: '/faq', label: 'Вопросы' },
+  { href: '/blog', label: 'Блог' },
 ];
 
 /** `GET /access` sends `email` and `hasPassword` only with a buyer session. */
@@ -27,10 +37,19 @@ export function navStateFrom(res: AccessResponse): NavState {
 }
 
 /**
- * Header end slot (spec v2 §2): a guest sees «Тарифы» and «Войти», a subscriber «Мой доступ».
- * A signed-in buyer without access keeps «Тарифы» and reaches «Мой доступ» instead of «Войти».
+ * Header end slot (spec 2026-11-23-home-first-screen §2): «Войти» (or «Мой доступ» once signed
+ * in) and the «Подключить iPhone» button; a subscriber sees only «Мой доступ».
  */
 export function navFor(state: NavState): EndItem[] {
+  if (state.hasAccess) return [{ ...access, kind: 'entry' }];
+  return [
+    { ...(state.signedIn ? access : signin), kind: 'quiet' },
+    { ...connect, kind: 'entry' },
+  ];
+}
+
+/** The «Доступ» card of the phone menu keeps pricing (spec v2 §2). */
+function accessItems(state: NavState): EndItem[] {
   if (!state.signedIn) {
     return [
       { ...pricing, kind: 'entry' },
@@ -46,7 +65,7 @@ export function navFor(state: NavState): EndItem[] {
 
 /** The middle row: the same for everyone. */
 export function navItems(): NavItem[] {
-  return [...siteItems];
+  return [...rowItems];
 }
 
 /** A menu item is active on its own page and on every page below it. */
@@ -70,7 +89,7 @@ export function menuCards(state: NavState): MenuCard[] {
     },
     {
       title: 'Доступ',
-      items: navFor(state).map(({ href, label, kind }) =>
+      items: accessItems(state).map(({ href, label, kind }) =>
         kind === 'quiet' ? { href, label, quiet: true } : { href, label },
       ),
     },

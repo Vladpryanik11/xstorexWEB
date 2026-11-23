@@ -88,11 +88,23 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
   });
 
-  it('guest header offers pricing and login', () => {
+  it('guest header offers login and «Подключить iPhone» (owner 2026-11-23)', () => {
     render(<Header nav={GUEST} />);
-    expect(screen.getByRole('link', { name: 'Тарифы' })).toHaveAttribute('href', '/pricing');
-    expect(screen.queryByRole('link', { name: 'Установить' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
+    const login = screen.getByRole('link', { name: 'Войти' });
+    expect(login).toHaveAttribute('href', '/signin');
+    // On a phone «Войти» is a person icon without a circle.
+    expect(login.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    const connect = screen.getByRole('link', { name: 'Подключить iPhone' });
+    expect(connect).toHaveAttribute('href', '/get');
+    expect(login.compareDocumentPosition(connect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Тарифы' })).toBeNull();
+  });
+
+  it('a buyer without access keeps the button and reaches «Мой доступ»', () => {
+    render(<Header nav={{ signedIn: true, hasAccess: false }} />);
+    expect(screen.getByRole('link', { name: 'Мой доступ' })).toHaveAttribute('href', '/access');
+    expect(screen.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute('href', '/get');
+    expect(screen.queryByRole('link', { name: 'Войти' })).toBeNull();
   });
 
   it('narrows into the compact pill after 24px of scroll', () => {
@@ -130,8 +142,8 @@ describe('Header', () => {
   });
 
   it('forcedPath overrides the current path', () => {
-    render(<Header nav={SUB} forcedPath="/support" />);
-    expect(screen.getByRole('link', { name: 'Поддержка' })).toHaveAttribute('aria-current', 'page');
+    render(<Header nav={SUB} forcedPath="/blog" />);
+    expect(screen.getByRole('link', { name: 'Блог' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Вопросы' })).not.toHaveAttribute('aria-current');
   });
 });
@@ -256,17 +268,17 @@ describe('MobileMenu', () => {
   it('closes when a header link above the sheet navigates, keeping focus on that link', () => {
     const { rerender } = render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    const pricing = screen
-      .getAllByRole('link', { name: 'Тарифы' })
+    const connect = screen
+      .getAllByRole('link', { name: 'Подключить iPhone' })
       .find((link) => !link.closest('[role="dialog"]'));
-    if (!pricing) throw new Error('no «Тарифы» pill above the sheet');
-    pricing.focus();
+    if (!connect) throw new Error('no «Подключить» button above the sheet');
+    connect.focus();
 
-    nav.pathname = pricing.getAttribute('href') ?? '/pricing';
+    nav.pathname = connect.getAttribute('href') ?? '/get';
     rerender(<Header nav={GUEST} />);
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(pricing).toHaveFocus();
+    expect(connect).toHaveFocus();
   });
 
   it('a forced path does not close the sheet', () => {
@@ -311,13 +323,13 @@ describe('CatalogMenu', () => {
   const button = () => screen.getByRole('button', { name: 'Каталог' });
   const panel = () => document.getElementById(button().getAttribute('aria-controls') ?? '');
 
-  it('«Каталог» leads the menu row, before the help pages', () => {
+  it('«Каталог» leads the menu row: how it works, questions, blog', () => {
     render(<Header nav={GUEST} />);
     const row = screen.getByRole('navigation', { name: 'Основное меню' });
     const names = within(row)
       .getAllByRole('listitem')
       .map((li) => li.firstElementChild?.textContent);
-    expect(names.slice(0, 4)).toEqual(['Каталог', 'Блог', 'Вопросы', 'Поддержка']);
+    expect(names.slice(0, 4)).toEqual(['Каталог', 'Как это работает', 'Вопросы', 'Блог']);
     expect(button()).toHaveAttribute('aria-expanded', 'false');
     expect(panel()).toBeNull();
   });

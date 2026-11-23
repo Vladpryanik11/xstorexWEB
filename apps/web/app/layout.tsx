@@ -2,20 +2,23 @@ import '@xstore/ui/tokens.css';
 import './globals.css';
 import { Toaster } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
-import { Inter, Manrope } from 'next/font/google';
+import { Onest, Unbounded } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { SessionRenewal } from '../src/auth/SessionRenewal';
 
-// Spec 2026-11-17-typography: Inter sets all text, Manrope the headings. next/font self-hosts both.
-const inter = Inter({
+// Spec 2026-11-23-home-first-screen §1: Unbounded sets the headings, Onest all other text.
+// next/font self-hosts both.
+const onest = Onest({
   subsets: ['latin', 'cyrillic'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600'],
+  variable: '--font-onest',
   display: 'swap',
 });
 
-const manrope = Manrope({
+const unbounded = Unbounded({
   subsets: ['latin', 'cyrillic'],
-  variable: '--font-manrope',
+  weight: ['500'],
+  variable: '--font-unbounded',
   display: 'swap',
 });
 
@@ -34,7 +37,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="ru" className={`${onest.variable} ${unbounded.variable}`}>
       <body>
         <SessionRenewal />
         {children}

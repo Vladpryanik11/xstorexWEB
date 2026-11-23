@@ -19,3 +19,8 @@ it('shows three numbered steps and the rights line', () => {
     ),
   ).toBeInTheDocument();
 });
+
+it('is the «Как это работает» target of the header (/#how, owner 2026-11-23)', () => {
+  render(<HowItWorks />);
+  expect(screen.getByRole('region', { name: 'Как это работает' })).toHaveAttribute('id', 'how');
+});

@@ -1,134 +1,191 @@
-/* Selling hero (spec v2 §3.1). The header floats over it (overHero), so the hero starts at the
-   top of the page and pads itself below the pill: 3.5rem pill + .75rem offset. */
+/* First screen of the home page — spec 2026-11-23-home-first-screen (owner 2026-11-22/23),
+   mockups https://claude.ai/artifact/Pge6sP2orkgFx2aTbGp12b (sizes, variant А) and
+   https://claude.ai/artifact/EgEtLDxqATvizNaGdJvZUg (bright sky, white text, gradient button).
+   The header floats over the hero (overHero): 3.5rem pill + .75rem offset. */
 .hero {
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
+  --hero-top: calc(var(--hero-under-pill) + 1rem);
+  --hero-shadow-big: 0 1px 2px rgba(16, 58, 180, 0.28), 0 4px 18px rgba(16, 58, 180, 0.22);
+  --hero-shadow-small: 0 1px 2px rgba(16, 58, 180, 0.45), 0 0 10px rgba(16, 58, 180, 0.25);
   position: relative;
   overflow: clip;
-  padding: calc(var(--hero-under-pill) + 2rem) 0 2.5rem;
-  background: linear-gradient(180deg, var(--x-sky-50) 0%, var(--x-ice) 100%);
+  padding: var(--hero-top) 0 2rem;
+  background: var(--x-white);
   color: var(--x-text);
 }
 
+/* One grid: every piece has its row, so the sky can span the rows above the search. */
 .inner {
   box-sizing: content-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2.5rem;
-  max-width: var(--x-page-max);
+  justify-items: center;
+  max-width: var(--x-column);
   margin-inline: auto;
   padding-inline: var(--x-gutter);
+  text-align: center;
 }
 
-.copy {
+.inner > * {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
+  grid-column: 1;
+}
+
+/* Bright sky: #1E8FFF on top, cyan, pale, white before the search. Bleeds to the page edges and
+   up under the pill; two soft spots drift slowly (one loop ≈ 22 s). */
+.sky {
+  z-index: 0;
+  grid-row: 1 / 5;
+  grid-column: 1 / -1;
+  align-self: stretch;
+  justify-self: stretch;
+  margin: calc(-1 * var(--hero-top)) calc(50% - 50vw) 0;
+  background: linear-gradient(
+    180deg,
+    #1e8fff 0%,
+    #3ec6ff 34%,
+    #c4e8ff 66%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.inner > .sky {
+  position: relative;
+  z-index: 0;
+  grid-column: 1 / -1;
+}
+
+.sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 18% 8%, rgba(20, 110, 255, 0.55), transparent 70%),
+    radial-gradient(55% 50% at 88% 22%, rgba(90, 215, 255, 0.5), transparent 70%);
+  background-size: 160% 160%;
+  mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  animation: sky 22s ease-in-out infinite alternate;
+}
+
+@keyframes sky {
+  from {
+    background-position:
+      0% 0%,
+      100% 0%;
+  }
+  to {
+    background-position:
+      60% 30%,
+      40% 20%;
+  }
 }
 
 .title {
-  max-width: 34rem;
+  grid-row: 1;
   margin: 0;
-  font: var(--x-type-display);
-  letter-spacing: var(--x-track-head);
+  color: var(--x-white);
+  font: var(--x-type-hero);
+  letter-spacing: -0.03em;
+  text-shadow: var(--hero-shadow-big);
   text-wrap: balance;
 }
 
-.accent {
-  color: var(--x-blue);
-}
-
-.benefits {
-  display: grid;
-  gap: 1rem;
-  margin: 1.75rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.benefit {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.icon {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 22.5%;
-  background: linear-gradient(140deg, var(--x-sky-400), var(--x-blue) 60%, var(--x-blue-deep));
-  box-shadow:
-    0 10px 20px -10px rgba(26, 110, 234, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+.sub {
+  grid-row: 2;
+  margin: 0.75rem 0 0;
   color: var(--x-white);
+  font: var(--x-type-lead);
+  text-shadow: var(--hero-shadow-small);
+  text-wrap: balance;
 }
 
-.icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
+.ticks {
+  grid-row: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  color: var(--x-white);
+  font: var(--x-type-tick);
+  list-style: none;
+  text-shadow: var(--hero-shadow-small);
+}
+
+.ticks li,
+.guarantee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tick {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.benefitTitle {
-  display: block;
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
+.ticks .tick {
+  filter: drop-shadow(0 1px 1.5px rgba(16, 58, 180, 0.45));
 }
 
-.benefitText {
-  display: block;
-  margin-top: 0.125rem;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
+/* Motion banner slot (motion postponed by the owner): real catalog icons for now. Its height
+   fills the phone's first screen so the audience line ends above the fold. */
+.banner {
+  grid-row: 4;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: clamp(6rem, 100svh - 32rem, 10rem);
+  margin-top: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.search {
+  grid-row: 5;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.search > * {
+  max-width: none;
+  min-height: 3rem;
 }
 
 .cta {
+  grid-row: 6;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
-  box-sizing: border-box;
   width: 100%;
   min-height: 3.5rem;
-  margin-top: 2rem;
+  margin-top: 0.75rem;
   padding: 0 1.75rem;
   border-radius: var(--x-radius-pill);
-  background: var(--x-blue);
-  box-shadow: 0 6px 14px -6px var(--x-blue);
+  background: var(--x-cta-gradient);
   color: var(--x-white);
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
+  font: var(--x-type-button);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    background 0.2s ease,
+    filter 0.2s ease,
     transform 0.15s var(--x-ease);
 }
 
-.cta svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.cta:hover {
-  background: var(--x-blue-deep);
-}
-
 .cta:active {
+  filter: brightness(0.9);
   transform: scale(0.97);
 }
 
@@ -137,11 +194,43 @@
   outline-offset: 3px;
 }
 
+.guarantee {
+  grid-row: 7;
+  margin: 0.5rem 0 0;
+  color: var(--x-text);
+  font: var(--x-type-note);
+}
+
+.guarantee .tick {
+  color: #0b5be0;
+}
+
+.visual {
+  display: none;
+}
+
+.after {
+  box-sizing: content-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: var(--x-column);
+  margin-inline: auto;
+  padding-inline: var(--x-gutter);
+  text-align: center;
+}
+
 .audience {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font: var(--x-type-lead);
+}
+
+.audienceNum {
+  font: var(--x-type-num);
+  letter-spacing: -0.03em;
 }
 
 .avatars {
@@ -151,9 +240,9 @@
 .avatars > span {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  margin-left: -0.625rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-left: -0.5rem;
   border: 2px solid var(--x-white);
   border-radius: 50%;
   color: var(--x-white);
@@ -162,291 +251,168 @@
 
 .avatars > span:first-child {
   margin-left: 0;
-  background: #ffb86b;
+  background: #4da3ff;
 }
 
 .avatars > span:nth-child(2) {
-  background: var(--x-sky-400);
+  background: #1e8fff;
 }
 
 .avatars > span:nth-child(3) {
-  background: #2bd27a;
+  background: #0b5be0;
 }
 
 .avatars > span:last-child {
   background: var(--x-text);
 }
 
-.audienceNum {
-  display: block;
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
+/* Three steps right under the first screen. */
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.audienceText {
-  display: block;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
-}
-
-.visual {
+.step {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font: var(--x-type-note);
+}
+
+.step + .step::before {
+  content: "→";
+  position: absolute;
+  top: 0.625rem;
+  left: -2rem;
+  color: var(--x-text-3);
+  font: var(--x-type-ui);
+}
+
+.num {
   display: grid;
   place-items: center;
-  min-height: 30rem;
-}
-
-/* Soft blue rings behind the phone instead of the old XSTORE word. */
-.rings {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20rem;
-  height: 20rem;
-  translate: -50% -50%;
-  border: 1px solid var(--x-hair);
+  width: 2.5rem;
+  height: 2.5rem;
+  box-sizing: border-box;
+  border: 1.5px solid var(--x-text);
   border-radius: 50%;
-  box-shadow:
-    0 0 0 3rem rgba(227, 237, 253, 0.55),
-    0 0 0 6rem rgba(227, 237, 253, 0.3);
-  pointer-events: none;
+  font: var(--x-type-step);
 }
 
-@media (min-width: 48em) {
-  .cta {
-    width: auto;
-  }
+.site {
+  margin: 0.75rem 0 0;
+  color: var(--x-text-2);
+  font: var(--x-type-lead);
 }
 
+/* Computer: two columns, text on the left, the picture slot on the right (picture postponed:
+   the iPhone with the mini catalog stays there). 96 px from the pill to the heading. */
 @media (min-width: 64em) {
   .hero {
-    padding: calc(var(--hero-under-pill) + 3rem) 0 3.5rem;
+    --hero-top: calc(var(--hero-under-pill) + 6rem);
+    padding-bottom: 3rem;
   }
 
   .inner {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 3rem;
-  }
-
-  .benefits {
-    gap: 1.25rem;
-    margin-top: 2.25rem;
-  }
-
-  .icon {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .cta {
-    margin-top: 3rem;
-  }
-
-  .audience {
-    margin-top: 2rem;
-  }
-
-  .visual {
-    min-height: 36rem;
-  }
-
-  .rings {
-    width: 28rem;
-    height: 28rem;
-  }
-}
-
-/* Phone and tablet (owner 2026-11-20): the offer reads as one object — the three benefits sit
-   in a white card with hairlines, the button and audience line right under it, all in the
-   first screen; the phone follows without the empty band around it. */
-@media (max-width: 63.99em) {
-  .hero {
-    padding: calc(var(--hero-under-pill) + 1.5rem) 0 1rem;
-  }
-
-  .inner {
-    gap: 0.5rem;
-  }
-
-  .benefits {
-    box-sizing: border-box;
-    width: 100%;
-    gap: 0;
-    margin-top: 1.5rem;
-    padding: 0.25rem 1rem;
-    border-radius: var(--x-radius-panel);
-    background: rgba(255, 255, 255, 0.78);
-    box-shadow:
-      var(--x-shadow-sm),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.9);
-  }
-
-  .benefit {
-    gap: 0.875rem;
-    padding: 0.875rem 0;
-  }
-
-  .benefit + .benefit {
-    border-top: 1px solid var(--x-hair);
-  }
-
-  .icon {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .cta {
-    margin-top: 1.25rem;
-  }
-
-  .audience {
-    align-self: center;
-    gap: 0.625rem;
-    margin-top: 1rem;
-  }
-
-  .audience > span:last-child {
-    display: flex;
-    gap: 0.3em;
-    white-space: nowrap;
-  }
-
-  .avatars > span {
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-left: -0.5rem;
-  }
-
-  .visual {
-    min-height: 0;
-    padding-block: 2.5rem 1.5rem;
-  }
-
-  .rings {
-    width: 18rem;
-    height: 18rem;
-  }
-}
-
-/* Phone-only pieces. */
-.trust,
-.sub,
-.stage {
-  display: none;
-}
-
-/* Phone, «Проверь и купи» (owner 2026-11-21, mockup https://claude.ai/artifact/KTT2YNZgLBaoF76GdxKMtN):
-   centred promise, a row of real icons, the button with the guarantee and the audience right
-   under it. Three groups with more air between them than inside. No iPhone picture, no list. */
-@media (max-width: 47.99em) {
-  .hero {
-    padding-top: calc(var(--hero-under-pill) + 1.75rem);
-  }
-
-  .copy {
-    align-items: center;
-    padding-inline: 0.5rem;
-    text-align: center;
-  }
-
-  .wide {
-    display: none;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    column-gap: 3.5rem;
+    justify-items: start;
+    max-width: var(--x-page-max);
+    text-align: left;
   }
 
   .title {
-    font: var(--x-type-h1);
+    font: var(--x-type-herolg);
   }
 
   .sub {
-    display: grid;
-    gap: 0.125rem;
-    margin: 0.625rem 0 0;
-    color: var(--x-text-2);
-    font: var(--x-type-body);
-    letter-spacing: var(--x-track-body);
+    margin-top: 1.125rem;
+    font: var(--x-type-leadlg);
   }
 
-  .subLead {
-    color: var(--x-text);
-    font-weight: 500;
+  .ticks {
+    justify-content: flex-start;
+    margin-top: 0.875rem;
   }
 
-  .benefits {
-    display: none;
+  .banner {
+    height: 11rem;
+    margin-top: 1.375rem;
+    border-radius: 1.125rem;
   }
 
-  .stage {
-    display: block;
-    margin-top: 1.75rem;
+  .search {
+    margin-top: 1.375rem;
   }
 
-  /* Owner 2026-11-21: the button fits its label, plain blue, no arrow. */
   .cta {
     width: auto;
-    align-self: center;
-    min-height: 3.25rem;
-    margin-top: 1.75rem;
-    padding: 0 1.75rem;
-    font: var(--x-type-body);
-    font-weight: 600;
-    letter-spacing: var(--x-track-body);
+    margin-top: 1.125rem;
+    padding: 0 2.25rem;
   }
 
-  .cta svg {
-    display: none;
+  .cta:hover {
+    filter: brightness(0.94);
   }
 
-  .trust {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin: 0.875rem 0 0;
-    color: var(--x-quiet-fg);
-    font: var(--x-type-cap);
-    letter-spacing: var(--x-track-small);
+  .guarantee {
+    margin-top: 0.625rem;
   }
 
-  .check {
+  /* Taller sky on a computer: the white text keeps the saturated part. */
+  .sky {
+    background: linear-gradient(
+      180deg,
+      #1e8fff 0%,
+      #3ec6ff 62%,
+      #c4e8ff 90%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  .visual {
     display: grid;
+    grid-row: 1 / 8;
+    grid-column: 2;
     place-items: center;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: var(--x-blue);
-    color: var(--x-white);
+    align-self: center;
+    justify-self: center;
   }
 
-  .check svg {
-    width: 0.6875rem;
-    height: 0.6875rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .after {
+    max-width: var(--x-page-max);
   }
 
   .audience {
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 2.5rem;
   }
 
-  .avatars > span {
-    width: 1.5rem;
-    height: 1.5rem;
-    margin-left: -0.4375rem;
+  .steps {
+    gap: 6rem;
+    margin-top: 3rem;
   }
 
-  .audienceNum,
-  .audienceText {
-    font: var(--x-type-cap);
-    letter-spacing: var(--x-track-small);
+  .step + .step::before {
+    left: -3.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky::before {
+    animation: none;
   }
 
-  /* No iPhone picture on phones (owner 2026-11-20). */
-  .visual {
-    display: none;
+  .cta {
+    transition: none;
+  }
+
+  .cta:active {
+    transform: none;
   }
 }
