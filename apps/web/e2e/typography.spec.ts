@@ -60,4 +60,10 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
   await expect(cta).toHaveCSS('font-size', '20px');
   await expect(cta).toHaveCSS('font-weight', '600');
   await expect(cta.locator('svg')).toHaveCount(0);
+  // The same button on a computer (owner 2026-11-23): as wide as the search field above it.
+  const search = await page.locator('[data-home-hero] form[role=search]').boundingBox();
+  const box = await cta.boundingBox();
+  expect(box?.height).toBe(56);
+  expect(box?.width).toBe(search?.width);
+  expect(box?.x).toBe(search?.x);
 });

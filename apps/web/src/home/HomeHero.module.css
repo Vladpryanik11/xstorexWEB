@@ -341,10 +341,9 @@
     margin-top: 1.375rem;
   }
 
+  /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
   .cta {
-    width: auto;
     margin-top: 1.125rem;
-    padding: 0 2.25rem;
   }
 
   .guarantee {
@@ -394,7 +393,4 @@
     transition: none;
   }
 
-  .cta:active {
-    transform: none;
-  }
 }
