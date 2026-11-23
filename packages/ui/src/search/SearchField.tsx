@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import styles from './SearchField.module.css';
 
 export type SearchFieldProps = {
@@ -11,6 +11,10 @@ export type SearchFieldProps = {
   /** Where the native GET submit goes, e.g. `/search`; the current URL when left out. */
   action?: string;
   tone?: 'glass' | 'page';
+  /** Called with the text on every change, for search as you type. */
+  onQueryChange?: (q: string) => void;
+  /** A short note at the end of the field, e.g. how many apps were found. */
+  trailing?: ReactNode;
 };
 
 export function SearchField({
@@ -20,6 +24,8 @@ export function SearchField({
   onSubmit,
   action,
   tone = 'glass',
+  onQueryChange,
+  trailing,
 }: SearchFieldProps) {
   // Without an onSubmit handler the form submits natively (GET with the field name).
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -59,7 +65,9 @@ export function SearchField({
         defaultValue={defaultValue}
         placeholder={placeholder}
         aria-label="Поиск"
+        onChange={onQueryChange ? (e) => onQueryChange(e.currentTarget.value) : undefined}
       />
+      {trailing ? <span className={styles.trailing}>{trailing}</span> : null}
     </form>
   );
 }

@@ -75,3 +75,11 @@
   color: var(--x-text-3);
   opacity: 1;
 }
+
+/* A note at the end of the field, e.g. «Нашли 3» on the home page. */
+.trailing {
+  flex: none;
+  color: #6e6e73;
+  font: var(--x-type-lead);
+  white-space: nowrap;
+}

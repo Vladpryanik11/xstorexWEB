@@ -52,7 +52,10 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
   for (let i = 1; i < order.length; i++) {
     expect(follows(order[i - 1] as Element, order[i] as Element)).toBe(true);
   }
-  expect(screen.getAllByRole('link')).toHaveLength(1);
+  // Apart from the app icons of the lanes, the only link is the button.
+  expect(screen.getAllByRole('link').filter((l) => !l.closest('[data-hero-lanes]'))).toHaveLength(
+    1,
+  );
 });
 
 it('three steps and «Установка прямо с сайта» right under the first screen', () => {
