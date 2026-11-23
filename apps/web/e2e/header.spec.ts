@@ -19,7 +19,8 @@ test('floating white glass pill (desktop)', async ({ page }) => {
   expect(box?.y).toBeGreaterThanOrEqual(12);
   expect(box?.height).toBe(56);
   expect(await css(pill(page), 'border-radius')).toBe('999px');
-  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.78)');
+  // Solid white pill (owner 2026-11-23), no see-through glass.
+  expect(await css(pill(page), 'background-color', '::before')).toBe('rgb(255, 255, 255)');
   expect(await css(header, 'background-image')).toBe('none');
   await expect(page.locator('header [aria-hidden="true"][class*="tint"]')).toHaveCount(0);
 
