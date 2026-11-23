@@ -144,7 +144,14 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   await expect(phone).toBeHidden();
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
-  expect(await title.evaluate((el) => getComputedStyle(el).textShadow)).not.toBe('none');
+  // Owner 2026-11-23, shadow «5+»: a 1px dark-blue edge plus a soft 12px ultramarine depth.
+  expect(await title.evaluate((el) => getComputedStyle(el).textShadow)).toBe(
+    'rgba(11, 26, 74, 0.3) 0px 1px 1px, rgba(20, 73, 224, 0.22) 0px 6px 12px',
+  );
+  // Subtitle and ticks keep only the edge.
+  expect(
+    await hero.getByText(/Премиум подписки/).evaluate((el) => getComputedStyle(el).textShadow),
+  ).toBe('rgba(11, 26, 74, 0.38) 0px 1px 1px');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));

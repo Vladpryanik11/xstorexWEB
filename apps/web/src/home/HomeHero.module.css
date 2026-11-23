@@ -5,8 +5,9 @@
 .hero {
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
   --hero-top: calc(var(--hero-under-pill) + 1rem);
-  --hero-shadow-big: 0 1px 2px rgba(16, 58, 180, 0.28), 0 4px 18px rgba(16, 58, 180, 0.22);
-  --hero-shadow-small: 0 1px 2px rgba(16, 58, 180, 0.45), 0 0 10px rgba(16, 58, 180, 0.25);
+  /* Shadow «5+» (owner 2026-11-23): a 1px dark-blue edge, plus a soft ultramarine depth on the title. */
+  --hero-shadow-big: 0 1px 1px rgba(11, 26, 74, 0.3), 0 6px 12px rgba(20, 73, 224, 0.22);
+  --hero-shadow-small: 0 1px 1px rgba(11, 26, 74, 0.38);
   position: relative;
   overflow: clip;
   padding: var(--hero-top) 0 2rem;
