@@ -244,7 +244,7 @@ test('phone menu button is glass on every page (owner 2026-11-23)', async ({ pag
   await expect(burger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(burger).toHaveCSS('color', 'rgb(255, 255, 255)');
   // Off the sky the page is white: frosted glass with blue lines.
-  await page.mouse.wheel(0, 900);
+  await page.evaluate(() => window.scrollTo(0, 900));
   await expect(page.locator('header').first()).toHaveAttribute('data-scrolled', 'true');
   await expect
     .poll(() => css(pill(page), 'background-color', '::before'))
