@@ -266,6 +266,22 @@
 /* Phone: the menu button is glass on every page (owner 2026-11-23, variant «Стекло» without the
    mark; «везде стекло»). On a light page: frosted white with a faint blue edge and blue lines. */
 @media (max-width: 47.9375em) {
+  /* A 44px circle (owner 2026-11-23: «44 px, линии как у 40»): the 18×2px lines stay as they were. */
+  .header {
+    --pill-h: 2.75rem;
+  }
+
+  .pill,
+  .header[data-scrolled="true"] .pill {
+    min-height: var(--pill-h);
+    padding: 0;
+  }
+
+  .burger {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
   .pill::before {
     background: rgba(255, 255, 255, 0.55);
     box-shadow:

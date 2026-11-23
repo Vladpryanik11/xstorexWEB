@@ -260,3 +260,25 @@ test('phone menu button is glass on every page (owner 2026-11-23)', async ({ pag
   await expect(plain).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(plain).toHaveCSS('color', 'rgb(26, 110, 234)');
 });
+
+test('phone menu button is a 44px circle with 18×2px lines (owner 2026-11-23)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ['/', '/dev/ui?path=/faq']) {
+    await page.goto(path);
+    const box = await pill(page).boundingBox();
+    expect([box?.width, box?.height]).toEqual([44, 44]);
+    const bar = page
+      .locator('header')
+      .first()
+      .getByRole('button', { name: 'Меню' })
+      .locator('span span')
+      .first();
+    expect(await css(bar, 'width')).toBe('18px');
+    expect(await css(bar, 'height')).toBe('2px');
+  }
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await expect(page.locator('header').first()).toHaveAttribute('data-scrolled', 'true');
+  await expect.poll(async () => (await pill(page).boundingBox())?.height).toBe(44);
+});
