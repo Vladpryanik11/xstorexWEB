@@ -4,7 +4,8 @@
    The header floats over the hero (overHero): 3.5rem pill + .75rem offset. */
 .hero {
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
-  --hero-top: calc(var(--hero-under-pill) + 1rem);
+  /* «Поднять повыше» (owner 2026-11-23): the title sits 16px under the menu button. */
+  --hero-top: calc(var(--hero-under-pill) + 0.25rem);
   /* Shadow «5+» (owner 2026-11-23): a 1px dark-blue edge, plus a soft ultramarine depth on the title. */
   --hero-shadow-big: 0 1px 1px rgba(11, 26, 74, 0.3), 0 6px 12px rgba(20, 73, 224, 0.22);
   --hero-shadow-small: 0 1px 1px rgba(11, 26, 74, 0.38);
@@ -37,7 +38,7 @@
    up under the pill; two soft spots stay still (owner 2026-11-23: no motion). */
 .sky {
   z-index: 0;
-  grid-row: 1 / 5;
+  grid-row: 1 / 4;
   grid-column: 1 / -1;
   align-self: stretch;
   justify-self: stretch;
@@ -85,68 +86,25 @@
 
 .sub {
   grid-row: 2;
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0;
   color: var(--x-white);
   font: var(--x-type-lead);
   text-shadow: var(--hero-shadow-small);
   text-wrap: balance;
 }
 
-.ticks {
+/* Two lanes of removed and premium apps (owner 2026-11-23): no frame, edge to edge. */
+.lanes {
   grid-row: 3;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.25rem 1rem;
-  margin: 0.75rem 0 0;
-  padding: 0;
-  color: var(--x-white);
-  font: var(--x-type-tick);
-  list-style: none;
-  text-shadow: var(--hero-shadow-small);
-}
-
-.ticks li,
-.guarantee {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.tick {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ticks .tick {
-  filter: drop-shadow(0 1px 1.5px rgba(16, 58, 180, 0.45));
-}
-
-/* Motion banner slot (motion postponed by the owner): real catalog icons for now. Its height
-   fills the phone's first screen so the audience line ends above the fold. */
-.banner {
-  grid-row: 4;
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: clamp(6rem, 100svh - 32rem, 10rem);
+  justify-self: center;
+  width: 100vw;
   margin-top: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 .search {
-  grid-row: 5;
+  grid-row: 4;
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 1.125rem;
 }
 
 .search > * {
@@ -156,7 +114,7 @@
 
 .cta {
   /* Apple-like pill В+ (owner 2026-11-23): flat ultramarine, the label alone, darker when pressed. */
-  grid-row: 6;
+  grid-row: 5;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -184,15 +142,44 @@
   outline-offset: 3px;
 }
 
-.guarantee {
-  grid-row: 7;
-  margin: 0.5rem 0 0;
-  color: var(--x-text);
-  font: var(--x-type-note);
+/* Three promises under the button (owner 2026-11-23, variant А): white tiles, a blue line icon
+   on the left, two lines of text. */
+.promises {
+  grid-row: 6;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
 }
 
-.guarantee .tick {
-  color: #0b5be0;
+.promise {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.5625rem 0.375rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(11, 26, 74, 0.08),
+    0 4px 14px rgba(20, 73, 224, 0.06);
+  color: #1d1d1f;
+  font: var(--x-type-promise);
+  letter-spacing: -0.015em;
+}
+
+.promiseIcon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--x-cta);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .visual {
@@ -210,17 +197,22 @@
   text-align: center;
 }
 
+/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): grey monograms like
+   contacts on iPhone, quiet grey text, the number a little darker. */
 .audience {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  justify-content: center;
+  gap: 0.625rem;
+  margin: 0.75rem 0 0;
+  color: #6e6e73;
   font: var(--x-type-lead);
+  letter-spacing: -0.01em;
 }
 
 .audienceNum {
-  font: var(--x-type-num);
-  letter-spacing: -0.03em;
+  color: #0e1a33;
+  font-weight: 600;
 }
 
 .avatars {
@@ -230,30 +222,18 @@
 .avatars > span {
   display: grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.625rem;
+  height: 1.625rem;
   margin-left: -0.5rem;
-  border: 2px solid var(--x-white);
   border-radius: 50%;
+  background: linear-gradient(180deg, #a5abb8, #858994);
+  box-shadow: 0 0 0 2px var(--x-white);
   color: var(--x-white);
-  font: var(--x-type-cap);
+  font: var(--x-type-avatar);
 }
 
 .avatars > span:first-child {
   margin-left: 0;
-  background: #4da3ff;
-}
-
-.avatars > span:nth-child(2) {
-  background: #1e8fff;
-}
-
-.avatars > span:nth-child(3) {
-  background: #0b5be0;
-}
-
-.avatars > span:last-child {
-  background: var(--x-text);
 }
 
 /* Three steps right under the first screen. */
@@ -305,7 +285,14 @@
    the iPhone with the mini catalog stays there). 96 px from the pill to the heading. */
 @media (min-width: 64em) {
   .hero {
-    --hero-top: calc(var(--hero-under-pill) + 6rem);
+    /* «Выше» (owner 2026-11-23): 32px from the pill to the heading. From the screen edge to the
+       text column: the lanes start at the screen edge. */
+    --hero-top: calc(var(--hero-under-pill) + 2rem);
+    --hero-bleed: calc(
+      (100vw - min(100vw, var(--x-page-max) + 2 * var(--x-gutter))) /
+      2 +
+      var(--x-gutter)
+    );
     padding-bottom: 3rem;
   }
 
@@ -322,23 +309,19 @@
   }
 
   .sub {
-    margin-top: 1.125rem;
+    margin-top: 1.25rem;
     font: var(--x-type-leadlg);
   }
 
-  .ticks {
-    justify-content: flex-start;
-    margin-top: 0.875rem;
-  }
-
-  .banner {
-    height: 11rem;
-    margin-top: 1.375rem;
-    border-radius: 1.125rem;
+  .lanes {
+    justify-self: start;
+    width: calc(100% + var(--hero-bleed));
+    margin-top: 1.5rem;
+    margin-left: calc(-1 * var(--hero-bleed));
   }
 
   .search {
-    margin-top: 1.375rem;
+    margin-top: 1.75rem;
   }
 
   /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
@@ -346,8 +329,15 @@
     margin-top: 1.125rem;
   }
 
-  .guarantee {
-    margin-top: 0.625rem;
+  .promises {
+    gap: 0.75rem;
+    margin-top: 1.125rem;
+  }
+
+  .promise {
+    gap: 0.625rem;
+    padding: 0.875rem;
+    font: var(--x-type-promiselg);
   }
 
   /* Taller sky on a computer: the white text keeps the saturated part. */
@@ -363,7 +353,7 @@
 
   .visual {
     display: grid;
-    grid-row: 1 / 8;
+    grid-row: 1 / 7;
     grid-column: 2;
     place-items: center;
     align-self: center;

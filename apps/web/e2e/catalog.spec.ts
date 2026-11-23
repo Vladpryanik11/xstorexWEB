@@ -148,7 +148,7 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   expect(await title.evaluate((el) => getComputedStyle(el).textShadow)).toBe(
     'rgba(11, 26, 74, 0.3) 0px 1px 1px, rgba(20, 73, 224, 0.22) 0px 6px 12px',
   );
-  // Subtitle and ticks keep only the edge.
+  // The subtitle keeps only the edge.
   expect(
     await hero.getByText(/Премиум подписки/).evaluate((el) => getComputedStyle(el).textShadow),
   ).toBe('rgba(11, 26, 74, 0.38) 0px 1px 1px');
@@ -229,36 +229,51 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   await expect(buttons).toHaveCount(1);
 });
 
-test('the first screen: ticks, banner, search, button, guarantee and 10 000+ above the fold', async ({
+test('the first screen: lanes, search, button, promises and the audience above the fold', async ({
   page,
   isMobile,
 }) => {
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
   const parts = [
-    hero.getByRole('list', { name: 'Без лишнего' }),
-    hero.locator('[data-hero-banner]'),
+    hero.locator('[data-hero-lanes]'),
     hero.getByRole('search'),
     hero.locator('[data-hero-cta]'),
-    hero.getByText('Гарантия на весь срок подписки'),
-    hero.getByText('пользователей в месяц'),
+    hero.getByRole('list', { name: 'Без лишнего' }),
+    hero.locator('[data-hero-audience]'),
   ];
   const boxes = await Promise.all(parts.map((l) => l.boundingBox()));
   const ys = boxes.map((b) => b?.y ?? -1);
   expect(ys).toEqual([...ys].sort((x, y) => x - y));
-  await expect(hero.locator('[data-hero-icons] [data-icon]')).toHaveCount(5);
+  // Removed apps are seeded, premium is empty in the test catalog: only the removed lane shows.
+  const lane = hero.locator('[data-hero-lane="removed"]');
+  await expect(lane.locator('[data-lane-caption]')).toHaveText('Удалены из App Store');
+  await expect(lane.locator('[data-lane-caption]')).toHaveCSS('color', 'rgb(10, 79, 176)');
+  await expect(hero.locator('[data-hero-lane="premium"]')).toHaveCount(0);
   await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
+  await expect(hero.locator('[data-hero-audience]')).toHaveText(
+    'Более 10 000 пользователей в\u00a0месяц',
+  );
+  await expect(hero.locator('[data-hero-audience] [data-avatar]')).toHaveCount(3);
+  const viewport = page.viewportSize();
+  // The lanes run from edge to edge of a phone; the screen cuts them, the page does not scroll sideways.
   if (isMobile) {
-    // Apple-like pill В+, size Д (owner 2026-11-23): 56px; 10 000+ ends above the 660px fold.
-    const cta = boxes[3];
+    const lanes = boxes[0];
+    expect(lanes?.x).toBe(0);
+    expect(lanes?.width).toBe(viewport?.width);
+    // Apple-like pill В+, size Д (owner 2026-11-23): 56px; the audience ends above the 660px fold.
+    const cta = boxes[2];
     expect(cta?.height).toBe(56);
     expect(cta?.width).toBeGreaterThan(300);
-    const proof = boxes[5];
+    const proof = boxes[4];
     expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(660);
     // The three steps start under the first screen.
     const steps = await hero.getByRole('list', { name: 'Три шага' }).boundingBox();
     expect(steps?.y ?? 0).toBeGreaterThan(proof?.y ?? 0);
+  } else {
+    expect(boxes[0]?.x).toBe(0);
   }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('home blocks follow the «Проверь и купи» order', async ({ page }) => {
