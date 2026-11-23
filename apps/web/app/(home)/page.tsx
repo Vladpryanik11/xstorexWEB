@@ -1,4 +1,4 @@
-import { ApiClientError, type AppDetail } from '@xstore/shared';
+import { ApiClientError, type AppCard, type AppDetail } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
 import { Fragment } from 'react';
@@ -46,18 +46,28 @@ async function planPrice(api: Awaited<ReturnType<typeof serverApi>>): Promise<nu
   }
 }
 
+/** First page of a catalog section for the hero lanes; the home page still opens without it. */
+async function laneApps(api: Awaited<ReturnType<typeof serverApi>>, slug: 'removed' | 'premium') {
+  return api
+    .section(slug)
+    .then((page) => page.items)
+    .catch((): AppCard[] => []);
+}
+
 export default async function HomePage({ searchParams }: Props) {
   const api = await serverApi();
-  const [home, shared, priceRub] = await Promise.all([
+  const [home, shared, priceRub, removed, premium] = await Promise.all([
     api.home(),
     sharedApp(api, (await searchParams).app),
     planPrice(api),
+    laneApps(api, 'removed'),
+    laneApps(api, 'premium'),
   ]);
   const chips = <CategoryChips categories={home.categories} />;
 
   return (
     <>
-      <HomeHero collections={home.collections} />
+      <HomeHero collections={home.collections} lanes={{ removed, premium }} />
       {/* Order «Проверь и купи» (owner 2026-11-21, spec v2 §3.1): check, figures, how, why, plan,
           catalog, questions, last call. */}
       <div className={styles.flow}>
