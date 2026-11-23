@@ -234,29 +234,29 @@ test('on a phone the pill holds only the menu', async ({ page }) => {
   }
 });
 
-test('phone menu button: glass over the home sky, plain blue lines elsewhere (owner 2026-11-23)', async ({
-  page,
-}) => {
+test('phone menu button is glass on every page (owner 2026-11-23)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const burger = page.locator('header').first().getByRole('button', { name: 'Меню' });
-  // Variant «Стекло» without the mark: a see-through circle with white lines on the sky.
+  // Over the home sky: clear glass with white lines.
   expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.22)');
   expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
   await expect(burger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(burger).toHaveCSS('color', 'rgb(255, 255, 255)');
-  // Below the sky the page is white: the circle turns solid again with blue lines.
+  // Off the sky the page is white: frosted glass with blue lines.
   await page.mouse.wheel(0, 900);
   await expect(page.locator('header').first()).toHaveAttribute('data-scrolled', 'true');
   await expect
     .poll(() => css(pill(page), 'background-color', '::before'))
-    .toBe('rgb(255, 255, 255)');
+    .toBe('rgba(255, 255, 255, 0.55)');
+  expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
   await expect(burger).toHaveCSS('color', 'rgb(26, 110, 234)');
 
-  // Other pages: one white circle with blue lines, no pale circle inside it.
+  // Every other page: the same frosted glass, no pale circle inside it.
   await page.goto('/dev/ui?path=/faq');
   const plain = page.locator('header').first().getByRole('button', { name: 'Меню' });
-  expect(await css(pill(page), 'background-color', '::before')).toBe('rgb(255, 255, 255)');
+  expect(await css(pill(page), 'background-color', '::before')).toBe('rgba(255, 255, 255, 0.55)');
+  expect(await css(pill(page), 'backdrop-filter', '::before')).toContain('blur');
   await expect(plain).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(plain).toHaveCSS('color', 'rgb(26, 110, 234)');
 });
