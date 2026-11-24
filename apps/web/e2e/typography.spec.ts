@@ -22,7 +22,8 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
     const s = getComputedStyle(el);
     return Number.parseFloat(s.letterSpacing) / Number.parseFloat(s.fontSize);
   });
-  expect(heroTrack).toBeCloseTo(-0.005, 3);
+  // Owner 2026-11-24 («как у Apple»): tighter, −1.5 %.
+  expect(heroTrack).toBeCloseTo(-0.015, 3);
 
   // «App Store» never breaks across lines (owner 2026-11-23).
   expect(await hero.textContent()).toContain('App\u00a0Store');
