@@ -208,8 +208,8 @@
   text-align: center;
 }
 
-/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): three round photos
-   (owner 2026-11-24 09:20), quiet grey text, the number a little darker. */
+/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): three drawn faces
+   (owner 2026-11-24 09:24, each head whole in its circle), quiet grey text, the number a little darker. */
 .audience {
   display: flex;
   align-items: center;
@@ -236,8 +236,7 @@
   height: 1.625rem;
   margin-left: -0.5rem;
   border-radius: 50%;
-  object-fit: cover;
-  background: #dfe3ea;
+  background: #dcefff;
   box-shadow: 0 0 0 2px var(--x-white);
 }
 
