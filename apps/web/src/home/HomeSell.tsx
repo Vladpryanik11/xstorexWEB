@@ -39,22 +39,27 @@ const ICONS = 5;
 
 /**
  * A row of real catalog icons (the apps of the hero lanes, each once) and the size of the
- * catalog. Without icons nothing is drawn. Shared by the home plan card and the «Оплата» step.
+ * catalog. Without icons, five placeholders stand in (owner 2026-11-24 16:55). Shared by the home plan card and the «Оплата» step.
  */
 export function PlanIcons({ apps }: { apps: AppCard[] }) {
   const seen = new Set<string>();
   const icons = apps
     .filter((a) => a.iconUrl && !seen.has(a.slug) && seen.add(a.slug))
     .slice(0, ICONS);
-  if (icons.length === 0) return null;
   return (
     <ul className={styles.icons} aria-label="Приложения каталога">
-      {icons.map((a) => (
-        <li key={a.slug}>
-          {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
-          <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
-        </li>
-      ))}
+      {icons.length > 0
+        ? icons.map((a) => (
+            <li key={a.slug}>
+              {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
+              <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
+            </li>
+          ))
+        : // Owner 2026-11-24 16:55: placeholders while the catalog is empty.
+          Array.from({ length: ICONS }, (_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: identical placeholders, the position is the key
+            <li key={i} className={styles.ghost} data-ghost="" />
+          ))}
       <li className={styles.more}>+{APPS.replace('+', '')}</li>
     </ul>
   );

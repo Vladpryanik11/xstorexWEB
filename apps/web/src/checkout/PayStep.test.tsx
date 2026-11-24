@@ -69,7 +69,7 @@ describe('PayStep', () => {
     expect(button.textContent?.replace(/\s/g, ' ')).toBe('Оплатить 299 ₽ / мес.');
   });
 
-  it('shows five catalog icons and the size of the catalog, none without apps', () => {
+  it('shows five catalog icons and the size of the catalog, placeholders without apps', () => {
     const apps = ['a', 'b', 'c', 'd', 'e', 'f'].map(
       (slug) => ({ slug, name: slug, iconUrl: `/i/${slug}.png` }) as AppCard,
     );
@@ -79,7 +79,9 @@ describe('PayStep', () => {
     expect(row.textContent).toBe('+200');
     unmount();
     setup();
-    expect(screen.queryByRole('list', { name: 'Приложения каталога' })).toBeNull();
+    // Owner 2026-11-24 16:55: placeholders while the catalog is empty.
+    const empty = screen.getByRole('list', { name: 'Приложения каталога' });
+    expect(empty.querySelectorAll('[data-ghost]')).toHaveLength(5);
   });
 
   it('pressing again sends the same checkoutKey', async () => {

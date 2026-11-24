@@ -87,11 +87,20 @@ it('keeps the apps the search found bright and dims the others', () => {
   for (const d of dims) expect(d.getAttribute('href')).toBe('/?app=a');
 });
 
-it('draws the lane from one section while the other has no apps, and nothing without apps', () => {
+it('draws the lane from one section while the other has no apps', () => {
   const { container } = render(<HeroLanes removed={[]} premium={[app('p', '/p.png')]} />);
   expect(container.querySelectorAll('[data-hero-lane]')).toHaveLength(1);
-  const { container: none } = render(<HeroLanes removed={[]} premium={[]} />);
-  expect(none.querySelector('[data-hero-lanes]')).toBeNull();
+  expect(container.querySelector('[data-lane-placeholder]')).toBeNull();
+});
+
+// Owner 2026-11-24 16:55: while the catalog is empty, placeholders stand in for the icons.
+it('without apps draws placeholder icons that lead nowhere', () => {
+  const { container } = render(<HeroLanes removed={[]} premium={[app('x')]} />);
+  expect(container.querySelector('[data-hero-lane]')).toBeNull();
+  const ghost = container.querySelector('[data-lane-placeholder]');
+  expect(ghost).toHaveAttribute('aria-hidden', 'true');
+  expect(ghost?.querySelectorAll('[data-ghost]').length).toBeGreaterThanOrEqual(12);
+  expect(ghost?.querySelector('a, img')).toBeNull();
 });
 
 // Spec 2026-11-23-home-first-screen, «Лента как Dock» (owner 2026-11-24, ×1.38).
