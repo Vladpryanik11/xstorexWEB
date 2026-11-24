@@ -7,5 +7,6 @@ const section = sectionOf('removed');
 export const metadata = sectionMetadata(section);
 
 export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  return <SectionPage section={section} cursor={one((await searchParams).cursor)} />;
+  const query = await searchParams;
+  return <SectionPage section={section} cursor={one(query.cursor)} category={one(query.c)} />;
 }

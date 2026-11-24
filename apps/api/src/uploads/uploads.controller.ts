@@ -8,6 +8,7 @@ import {
   type PresignParts,
   presignPartsSchema,
   type UploadedParts,
+  type UploadListItem,
   type UploadView,
 } from '@xstore/shared';
 import { Roles } from '../auth/roles.decorator.js';
@@ -32,6 +33,11 @@ export class UploadsController {
     @Req() req: HttpReq,
   ): Promise<UploadView> {
     return this.uploads.create(body, actor(req));
+  }
+
+  @Get()
+  list(): Promise<UploadListItem[]> {
+    return this.uploads.list();
   }
 
   @Get(':id')

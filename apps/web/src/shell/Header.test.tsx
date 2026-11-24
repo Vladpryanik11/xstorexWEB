@@ -177,10 +177,8 @@ describe('MobileMenu', () => {
         .map((link) => link.textContent);
     expect(labels(cards[0] as HTMLElement)).toEqual([
       'Главная',
-      'Весь каталог',
       'Удалённые из App Store',
       'Premium доступы',
-      'Популярные',
       'Поиск',
     ]);
     expect(labels(cards[1] as HTMLElement)).toEqual(['Мой доступ']);
@@ -339,7 +337,7 @@ describe('CatalogMenu', () => {
     expect(panel()).toBeNull();
   });
 
-  it('a click opens the panel: three sections, the whole catalog, search and pricing', () => {
+  it('a click opens the panel: two sections, search and pricing', () => {
     render(<Header nav={GUEST} />);
     fireEvent.click(button());
     expect(button()).toHaveAttribute('aria-expanded', 'true');
@@ -354,8 +352,6 @@ describe('CatalogMenu', () => {
     expect(links).toEqual([
       ['Удалённые из App Store', '/removed'],
       ['Premium доступы', '/premium'],
-      ['Популярные', '/popular'],
-      ['Весь каталог', '/catalog'],
       ['Поиск', '/search'],
       ['Смотреть тарифы', '/pricing'],
     ]);
@@ -431,22 +427,22 @@ describe('CatalogMenu', () => {
     expect(removed.querySelector('img')).toHaveAttribute('src', 'https://cdn.test/removed-1.png');
     fireEvent.click(button());
     fireEvent.click(button());
-    expect(section).toHaveBeenCalledTimes(3);
-    expect(section.mock.calls.map((c) => c[0])).toEqual(['removed', 'premium', 'popular']);
+    expect(section).toHaveBeenCalledTimes(2);
+    expect(section.mock.calls.map((c) => c[0])).toEqual(['removed', 'premium']);
   });
 
   it('keeps the line icon when the section cannot be loaded', async () => {
     section.mockRejectedValue(new Error('offline'));
     render(<Header nav={GUEST} />);
     fireEvent.click(button());
-    await waitFor(() => expect(section).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(section).toHaveBeenCalledTimes(2));
     const removed = within(panel() as HTMLElement).getByRole('link', { name: /Удалённые/ });
     expect(removed.querySelector('img')).toBeNull();
     expect(removed.querySelector('svg')).not.toBeNull();
   });
 
   it('marks «Каталог» current on the catalog, its sections and search', () => {
-    for (const path of ['/catalog', '/removed', '/search']) {
+    for (const path of ['/premium', '/removed', '/search']) {
       const { unmount } = render(<Header nav={GUEST} forcedPath={path} />);
       expect(button()).toHaveAttribute('data-current', 'true');
       expect(

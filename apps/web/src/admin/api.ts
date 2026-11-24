@@ -40,10 +40,10 @@ export const statusLabel: Record<string, string> = {
   hidden: 'Скрыто',
 };
 export const blockerLabel: Record<string, string> = {
-  NO_RIGHTS_BASIS: 'Укажите основание для распространения',
+  NO_SECTION: 'Выберите раздел',
+  NO_CATEGORY: 'Выберите подкатегорию',
   NO_ICON: 'Добавьте иконку',
-  NO_PUBLISHED_VERSION: 'Опубликуйте хотя бы одну версию',
-  NO_CATEGORY: 'Выберите категорию',
+  NO_VERSION: 'Нет файла для установки',
   ENCRYPTED: 'Версия защищена FairPlay и не может быть опубликована',
 };
 export const errorText = (err: unknown): string =>

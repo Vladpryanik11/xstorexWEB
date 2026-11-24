@@ -43,8 +43,18 @@ export class CatalogController {
 
   @Get('sections/:slug')
   @Header('Cache-Control', CATALOG_CACHE)
-  section(@Param('slug') slug: string, @Query('cursor') cursor: unknown): Promise<Page<AppCard>> {
-    return this.catalog.section(slug, cursor);
+  section(
+    @Param('slug') slug: string,
+    @Query('cursor') cursor: unknown,
+    @Query('category') category: unknown,
+  ): Promise<Page<AppCard>> {
+    return this.catalog.section(slug, cursor, category);
+  }
+
+  @Get('sections/:slug/categories')
+  @Header('Cache-Control', CATALOG_CACHE)
+  sectionCategories(@Param('slug') slug: string): Promise<CategoryView[]> {
+    return this.catalog.sectionCategories(slug);
   }
 
   @Get('lists/:slug')

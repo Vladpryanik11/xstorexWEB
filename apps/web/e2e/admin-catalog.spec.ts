@@ -64,28 +64,19 @@ async function adminSession(page: Page) {
     .addCookies([{ name: 'xs_session', value: token, url: 'http://localhost:3100' }]);
 }
 
-test('app editor fits an iPhone: switches, version cards, toast after saving', async ({ page }) => {
+test('the one-screen admin fits an iPhone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await adminSession(page);
   await page.goto('/admin/apps');
-  await page.getByRole('link', { name: 'Тестовое приложение 1', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Тестовое приложение 1' }),
-  ).toBeVisible();
-  const noScroll = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
-  expect(await noScroll()).toBe(true);
-  await expect(page.getByRole('switch', { name: 'Удалено из App Store' })).toBeVisible();
-  const save = page.getByRole('button', { name: 'Сохранить карточку' });
-  const box = await save.boundingBox();
-  expect(box?.x).toBeGreaterThanOrEqual(0);
-  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
-  const versionSave = page.getByRole('button', { name: 'Сохранить изменения версии' }).first();
-  await versionSave.scrollIntoViewIfNeeded();
-  const vbox = await versionSave.boundingBox();
-  expect((vbox?.x ?? 0) + (vbox?.width ?? 0)).toBeLessThanOrEqual(390);
-  await save.click();
-  await expect(savedToast(page)).toBeVisible();
-  expect(await noScroll()).toBe(true);
+  await expect(page.getByRole('heading', { level: 1, name: 'Приложения' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Выбрать файлы' })).toBeVisible();
+  const row = page.getByRole('listitem', { name: 'Тестовое приложение 1', exact: true });
+  await expect(row.getByRole('combobox', { name: 'Раздел' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // There is no app card any more.
+  await expect(page.getByRole('link', { name: 'Тестовое приложение 1', exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('guests are redirected to the admin login', async ({ page }) => {
@@ -94,28 +85,24 @@ test('guests are redirected to the admin login', async ({ page }) => {
   await expect(page.getByLabel('Код из приложения')).toBeVisible();
 });
 
-test('admin signs in, uploads an IPA and publishes the app', async ({ page }, info) => {
+test('admin drops an IPA, picks a section and the app is in the catalog', async ({
+  page,
+}, info) => {
+  test.setTimeout(90_000);
   await signIn(page);
   const name = `Каталог ${info.project.name}`;
-  await page.goto('/admin/apps/upload');
   await page
-    .locator('input[type=file]')
+    .getByLabel('Выбрать IPA')
     .setInputFiles(fileURLToPath(new URL(`./fixtures/${info.project.name}.ipa`, import.meta.url)));
-  await page.getByRole('link', { name: 'Открыть приложение' }).click({ timeout: 60000 });
-  await page.getByLabel('Основание для распространения').fill('Собственное тестовое приложение');
-  await page
-    .getByRole('combobox', { name: 'Категория', exact: true })
-    .selectOption({ label: 'Утилиты' });
-  await page.getByRole('button', { name: 'Сохранить карточку' }).click();
-  await expect(savedToast(page)).toBeVisible();
-  await page.getByRole('button', { name: 'Опубликовать версию' }).click();
-  await page.getByRole('button', { name: 'Опубликовать приложение' }).click();
-  await expect(page.getByText('Статус: Опубликовано')).toBeVisible();
-  const href = await page.getByRole('link', { name: 'Открыть на сайте' }).getAttribute('href');
-  if (!href) throw new Error('Missing public app link');
-  // The public link opens the app's install sheet over the home page.
-  await page.goto(href);
-  await expect(page.getByRole('dialog', { name })).toBeVisible();
+  const row = page.getByRole('listitem', { name, exact: true });
+  await expect(row).toBeVisible({ timeout: 60000 });
+  await expect(row.getByText('Ждёт раздела')).toBeVisible();
+  await row.getByRole('combobox', { name: 'Раздел' }).selectOption({ label: 'Удалённые' });
+  await expect(row.getByText('Ждёт подкатегории')).toBeVisible();
+  await row.getByRole('combobox', { name: 'Подкатегория' }).selectOption({ label: 'Утилиты' });
+  await expect(row.getByText('В каталоге')).toBeVisible();
+  await page.goto('/removed?c=utility');
+  await expect(page.getByRole('button', { name: new RegExp(`^${name}$`) })).toBeVisible();
 });
 
 test('support can read jobs but cannot open the catalog editor', async ({ page }) => {

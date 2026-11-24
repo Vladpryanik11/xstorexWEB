@@ -35,6 +35,7 @@ export type SeedApp = {
   rating?: number;
   ratingCount?: number;
   removedFromAppStore?: boolean;
+  section?: 'removed' | 'premium';
   accessLevel?: string;
   rightsBasis?: string;
   hiddenReason?: string;

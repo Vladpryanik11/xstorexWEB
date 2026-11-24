@@ -26,4 +26,17 @@ describe('CategoryChips', () => {
     const { container } = render(<CategoryChips categories={categories} />);
     expect(container.querySelectorAll('[data-chip-highlight]')).toHaveLength(0);
   });
+
+  it('filters a section: chips link to ?c= and «Все» resets', () => {
+    render(
+      <CategoryChips
+        categories={categories}
+        active="foto"
+        filterBase="/premium"
+        all={{ href: '/premium', label: 'Все' }}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Фото' })).toHaveAttribute('href', '/premium?c=foto');
+    expect(screen.getByRole('link', { name: 'Все' })).toHaveAttribute('href', '/premium');
+  });
 });

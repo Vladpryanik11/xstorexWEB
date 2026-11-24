@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@xstore/db';
+import { type Prisma, syncAppPublication } from '@xstore/db';
 import {
   type AdminAppDetail,
   type AdminAppListItem,
@@ -59,6 +59,15 @@ export function sniffImage(head: Buffer): 'image/png' | 'image/jpeg' | null {
   return null;
 }
 
+/** A version that can go public: signable and not turned down. */
+const USABLE_VERSION = {
+  encrypted: false,
+  status: { not: 'rejected' },
+} satisfies Prisma.AppVersionWhereInput;
+
+/** Shown when the admin hides an app without saying why (simple upload, 2026-11-24). */
+export const DEFAULT_HIDDEN_REASON = 'Скрыто администратором';
+
 const DETAIL_SELECT = {
   id: true,
   slug: true,
@@ -70,6 +79,7 @@ const DETAIL_SELECT = {
   rightsBasis: true,
   accessLevel: true,
   removedFromAppStore: true,
+  section: true,
   status: true,
   hiddenReason: true,
   rating: true,
@@ -81,7 +91,7 @@ const DETAIL_SELECT = {
   screenshotKeys: true,
   createdAt: true,
   updatedAt: true,
-  _count: { select: { versions: { where: { status: 'published' } } } },
+  _count: { select: { versions: { where: USABLE_VERSION } } },
 } satisfies Prisma.AppSelect;
 
 type DetailRow = Prisma.AppGetPayload<{ select: typeof DETAIL_SELECT }>;
@@ -129,6 +139,7 @@ export class AdminAppsService {
     const q = query.q?.trim();
     const where: Prisma.AppWhereInput = {
       ...(query.status && { status: query.status }),
+      ...(query.section && { section: query.section === 'none' ? null : query.section }),
       ...(q && {
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
@@ -159,8 +170,15 @@ export class AdminAppsService {
         status: true,
         iconKey: true,
         updatedAt: true,
+        section: true,
+        categoryId: true,
         category: { select: { id: true, name: true } },
-        versions: { orderBy: { createdAt: 'desc' }, take: 1, select: { version: true } },
+        versions: {
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: 1,
+          select: { version: true, sizeBytes: true, encrypted: true },
+        },
+        _count: { select: { versions: { where: USABLE_VERSION } } },
       },
     });
     const page = rows.slice(0, ADMIN_PAGE_SIZE);
@@ -173,7 +191,17 @@ export class AdminAppsService {
         status: r.status,
         iconUrl: r.iconKey ? this.storage.mediaUrl(r.iconKey) : null,
         category: r.category,
+        categoryId: r.categoryId,
+        section: r.section,
         latestVersion: r.versions[0]?.version ?? null,
+        sizeBytes: r.versions[0] ? Number(r.versions[0].sizeBytes) : null,
+        encrypted: r.versions[0]?.encrypted ?? false,
+        publishBlockers: publishBlockers({
+          section: r.section,
+          categoryId: r.categoryId,
+          iconKey: r.iconKey,
+          usableVersions: r._count.versions,
+        }),
         updatedAt: r.updatedAt.toISOString(),
       })),
       nextCursor:
@@ -197,40 +225,95 @@ export class AdminAppsService {
     }
     const diff = changes(before, patch);
     if (Object.keys(diff).length === 0) return this.detail(before);
-    let row: DetailRow;
+    const data: Prisma.AppUpdateInput = {
+      ...patch,
+      ...(patch.section !== undefined && { removedFromAppStore: patch.section === 'removed' }),
+    };
     try {
-      row = await this.db.app.update({ where: { id }, data: patch, select: DETAIL_SELECT });
+      await this.db.$transaction(async (tx) => {
+        await tx.app.update({ where: { id }, data });
+        await syncAppPublication(tx, id);
+      });
     } catch (err) {
       if (isUniqueViolation(err)) throw conflict();
       throw err;
     }
     await this.record(actor, 'app.update', id, diff);
-    return this.detail(row);
+    return this.get(id);
   }
 
+  /** Kept for old clients: the app goes public by itself once nothing is missing. */
   async publish(id: string, actor: Actor): Promise<AdminAppDetail> {
     const row = await this.find(id);
     this.assertPublishable(row);
-    const updated = await this.setStatus(id, 'published', null);
+    if (row.status === 'hidden') throw conflict();
+    await this.sync(id);
     await this.record(actor, 'app.publish', id, { from: row.status });
-    return this.detail(updated);
+    return this.get(id);
   }
 
-  async hide(id: string, reason: string, actor: Actor): Promise<AdminAppDetail> {
+  async hide(id: string, reason: string | undefined, actor: Actor): Promise<AdminAppDetail> {
     const row = await this.find(id);
-    const updated = await this.setStatus(id, 'hidden', reason);
-    await this.record(actor, 'app.hide', id, { from: row.status, reason });
+    const why = reason ?? DEFAULT_HIDDEN_REASON;
+    const updated = await this.setStatus(id, 'hidden', why);
+    await this.record(actor, 'app.hide', id, { from: row.status, reason: why });
     return this.detail(updated);
   }
 
-  /** A hidden app goes back to the public catalog, provided it is still publishable. */
+  /** A hidden app goes back to the catalog, or waits as a draft while something is missing. */
   async unhide(id: string, actor: Actor): Promise<AdminAppDetail> {
     const row = await this.find(id);
     if (row.status !== 'hidden') throw conflict();
-    this.assertPublishable(row);
-    const updated = await this.setStatus(id, 'published', null);
+    await this.db.$transaction(async (tx) => {
+      await tx.app.update({ where: { id }, data: { status: 'draft', hiddenReason: null } });
+      await syncAppPublication(tx, id);
+    });
     await this.record(actor, 'app.unhide', id, { reason: row.hiddenReason });
-    return this.detail(updated);
+    return this.get(id);
+  }
+
+  /**
+   * Deletes the app, its versions and their files (IPA originals, icons, signed copies). The
+   * database goes first, so a storage hiccup leaves an orphaned file, never a broken app.
+   */
+  async remove(id: string, actor: Actor): Promise<void> {
+    const row = await this.find(id);
+    const versions = await this.db.appVersion.findMany({
+      where: { appId: id },
+      select: { id: true, ipaKey: true, icon57Key: true, signedBuilds: { select: { key: true } } },
+    });
+    const versionIds = versions.map((v) => v.id);
+    const uploads = await this.db.ipaUpload.findMany({
+      where: { appVersionId: { in: versionIds } },
+      select: { bucket: true, key: true },
+    });
+    await this.db.$transaction([
+      this.db.ipaUpload.deleteMany({ where: { appVersionId: { in: versionIds } } }),
+      this.db.app.delete({ where: { id } }),
+    ]);
+    const media = this.storage.bucket('media');
+    const signed = this.storage.bucket('signed');
+    const files: [string, string][] = [
+      ...uploads.map((u): [string, string] => [u.bucket, u.key]),
+      ...versions.flatMap((v) => [
+        ...(v.icon57Key ? [[media, v.icon57Key] as [string, string]] : []),
+        ...v.signedBuilds.map((b): [string, string] => [signed, b.key]),
+      ]),
+      ...[row.iconKey, row.bannerKey, ...row.screenshotKeys]
+        .filter((k): k is string => Boolean(k))
+        .map((k): [string, string] => [media, k]),
+    ];
+    for (const [bucket, key] of files) {
+      await this.storage.deleteObject(bucket, key).catch(() => undefined);
+    }
+    await this.record(actor, 'app.delete', id, {
+      name: row.name,
+      versions: versions.length,
+    });
+  }
+
+  private sync(id: string) {
+    return this.db.$transaction((tx) => syncAppPublication(tx, id));
   }
 
   async presignMedia(id: string, kind: MediaKind, input: PresignMedia): Promise<MediaUploadTicket> {
@@ -276,11 +359,14 @@ export class AdminAppsService {
       replaced = row.bannerKey;
       data = { bannerKey: key };
     }
-    const updated = await this.db.app.update({ where: { id }, data, select: DETAIL_SELECT });
+    await this.db.$transaction(async (tx) => {
+      await tx.app.update({ where: { id }, data });
+      await syncAppPublication(tx, id);
+    });
     if (replaced && replaced !== key && isAdminMediaKey(replaced))
       await this.storage.deleteObject(bucket, replaced);
     await this.record(actor, 'app.media', id, { kind, key, replaced });
-    return this.detail(updated);
+    return this.get(id);
   }
 
   async deleteScreenshot(id: string, index: number, actor: Actor): Promise<AdminAppDetail> {
@@ -354,10 +440,10 @@ export class AdminAppsService {
 
   private assertPublishable(row: DetailRow): void {
     const blockers = publishBlockers({
-      rightsBasis: row.rightsBasis,
+      section: row.section,
       iconKey: row.iconKey,
       categoryId: row.categoryId,
-      publishedVersions: row._count.versions,
+      usableVersions: row._count.versions,
     });
     if (blockers.length > 0) throw new DomainError(ErrorCode.PUBLISH_BLOCKED, 409, blockers);
   }
@@ -421,10 +507,10 @@ export class AdminAppsService {
       bannerUrl: bannerKey ? this.storage.mediaUrl(bannerKey) : null,
       screenshots: screenshotKeys.map((key) => ({ key, url: this.storage.mediaUrl(key) })),
       publishBlockers: publishBlockers({
-        rightsBasis: row.rightsBasis,
+        section: row.section,
         iconKey,
         categoryId: row.categoryId,
-        publishedVersions: _count.versions,
+        usableVersions: _count.versions,
       }),
       createdAt: createdAt.toISOString(),
       updatedAt: updatedAt.toISOString(),

@@ -8,6 +8,7 @@ import {
   type PresignedParts,
   QueueName,
   type UploadedParts,
+  type UploadListItem,
   type UploadView,
 } from '@xstore/shared';
 import { AuditService } from '../audit/audit.service.js';
@@ -20,6 +21,9 @@ import { checkUploadedParts, MAX_UPLOAD_BYTES, PART_SIZE, planParts } from './pl
 export type Actor = { userId: string; ip?: string };
 
 const IPA_CONTENT_TYPE = 'application/octet-stream';
+
+/** `GET /admin/uploads` looks this many days back. */
+const LIST_DAYS = 7;
 
 const notFound = (): DomainError => new DomainError(ErrorCode.NOT_FOUND, 404);
 const conflict = (): DomainError => new DomainError(ErrorCode.CONFLICT, 409);
@@ -86,6 +90,27 @@ export class UploadsService {
       ip: actor.ip,
     });
     return toUploadView(row);
+  }
+
+  /** Files still on their way into the catalog or turned down in the last 7 days, newest first. */
+  async list(): Promise<UploadListItem[]> {
+    const rows = await this.prisma.client.ipaUpload.findMany({
+      where: {
+        purpose: 'catalog',
+        status: { in: ['uploading', 'uploaded', 'inspecting', 'rejected'] },
+        createdAt: { gte: new Date(Date.now() - LIST_DAYS * 24 * 3600 * 1000) },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 100,
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      fileName: r.fileName,
+      sizeBytes: Number(r.sizeBytes),
+      status: r.status as UploadListItem['status'],
+      rejectCode: r.rejectCode,
+      createdAt: r.createdAt.toISOString(),
+    }));
   }
 
   async get(id: string): Promise<UploadView> {

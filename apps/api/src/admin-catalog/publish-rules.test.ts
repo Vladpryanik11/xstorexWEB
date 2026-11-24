@@ -2,23 +2,19 @@ import { expect, it } from 'vitest';
 import { publishBlockers, versionPublishBlockers } from './publish-rules.js';
 
 const complete = {
-  rightsBasis: 'Лицензия разработчика от 01.11.2026',
+  section: 'removed' as const,
   iconKey: 'apps/a/icon-512.png',
   categoryId: 'cat',
-  publishedVersions: 1,
+  usableVersions: 1,
 };
 
-it('lists every missing field', () => {
+it('lists every missing piece', () => {
   expect(
-    publishBlockers({ rightsBasis: null, iconKey: null, categoryId: null, publishedVersions: 0 }),
-  ).toEqual(['NO_RIGHTS_BASIS', 'NO_ICON', 'NO_PUBLISHED_VERSION', 'NO_CATEGORY']);
+    publishBlockers({ section: null, iconKey: null, categoryId: null, usableVersions: 0 }),
+  ).toEqual(['NO_SECTION', 'NO_CATEGORY', 'NO_ICON', 'NO_VERSION']);
 });
 
-it('a whitespace-only rights basis counts as missing', () => {
-  expect(publishBlockers({ ...complete, rightsBasis: '  \n ' })).toEqual(['NO_RIGHTS_BASIS']);
-});
-
-it('a complete app has no blockers', () => {
+it('a complete app has no blockers, without any rights text', () => {
   expect(publishBlockers(complete)).toEqual([]);
 });
 

@@ -12,37 +12,51 @@ export type CategoryChipsProps = {
   categories: CategoryView[];
   /** Slug of the category being shown, highlighted as the active chip. */
   active?: string;
+  /** A section page whose chips filter it with `?c=<slug>`; category pages otherwise. */
+  filterBase?: string;
+  /** A leading chip that clears the filter, active when no category is. */
+  all?: { href: string; label: string };
 };
+
+const ALL = '';
 
 /**
  * Category chips with one sliding background, adapted from Motion Primitives «Animated Background»
  * (https://motion-primitives.com/docs/animated-background): it rests on the active chip and
  * follows the hovered one.
  */
-export function CategoryChips({ categories, active }: CategoryChipsProps) {
+export function CategoryChips({ categories, active, filterBase, all }: CategoryChipsProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const reduce = useReducedMotion();
   const group = useId();
   if (categories.length === 0) return null;
-  const lit = hovered ?? active ?? null;
+  const current = active ?? (all ? ALL : undefined);
+  const lit = hovered ?? current ?? null;
+  const chips = [
+    ...(all ? [{ slug: ALL, name: all.label, icon: 'apps', href: all.href }] : []),
+    ...categories.map((c) => ({
+      ...c,
+      href: filterBase ? `${filterBase}?c=${encodeURIComponent(c.slug)}` : categoryHref(c.slug),
+    })),
+  ];
 
   return (
     <nav className={styles.chips} aria-label="Категории">
       <LayoutGroup id={group}>
         <ul className={styles.list} onMouseLeave={() => setHovered(null)}>
-          {categories.map((c) => (
+          {chips.map((c) => (
             <li key={c.slug}>
               <Chip
-                href={categoryHref(c.slug)}
+                href={c.href}
                 icon={<CategoryIcon name={c.icon} />}
-                active={c.slug === active}
+                active={c.slug === current}
                 onMouseEnter={() => setHovered(c.slug)}
                 highlight={
                   c.slug === lit ? (
                     <motion.span
                       data-chip-highlight=""
                       className={
-                        c.slug === active
+                        c.slug === current
                           ? `${styles.highlight} ${styles.onActive}`
                           : styles.highlight
                       }

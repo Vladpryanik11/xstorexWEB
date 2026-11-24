@@ -182,8 +182,8 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
 
 test('an app morphs into its sheet; Escape closes it and returns focus', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  // Owner 2026-11-24 12:29: the app shelves left the home page; the catalog keeps them.
-  await page.goto('/catalog');
+  // Owner 2026-11-24: the app shelves left the home page; the two sections keep them.
+  await page.goto('/removed');
   const trigger = page.getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ }).first();
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
@@ -205,21 +205,19 @@ test('catalog sections are shown as icons', async ({ page }) => {
   await expect(grid.getByRole('button', { name: /^Тестовое приложение 1$/ })).toBeVisible();
   await expect(grid.getByRole('button', { name: /^Тестовое приложение 5$/ })).toHaveCount(0);
 
+  // Subcategory chips narrow the section; «Все» brings everything back.
+  const chips = page.getByRole('navigation', { name: 'Категории' });
+  await expect(chips.getByRole('link', { name: 'Все' })).toBeVisible();
+  // Owner 2026-11-24: «Весь каталог» and «Популярные» are gone; old links land on «Удалённые».
   await page.goto('/catalog');
-  // The admin spec may publish more apps into the shared test database: check the seeded ones.
-  const all = page.getByRole('list', { name: 'Весь каталог' });
-  for (const n of [1, 12]) {
-    await expect(
-      all.getByRole('button', { name: new RegExp(`^Тестовое приложение ${n}$`) }),
-    ).toBeVisible();
-  }
+  await expect(page).toHaveURL(/\/removed$/);
   await page.goto('/premium');
   await expect(page.getByText('Здесь пока пусто. Скоро добавим приложения.')).toBeVisible();
 });
 
 test('category chips do not widen the catalog and category pages', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ['/catalog', '/category/igry']) {
+  for (const path of ['/removed', '/category/igry']) {
     await page.goto(path);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,

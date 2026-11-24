@@ -57,7 +57,7 @@ async function readyApp(slug = 'ready-app', versions?: Parameters<typeof seedApp
     status: 'draft',
     categoryId: category.id,
     iconKey: 'apps/x/icon-512.png',
-    rightsBasis: 'Договор с разработчиком № 7',
+    section: 'removed',
     versions,
   });
 }
@@ -107,7 +107,7 @@ describe('apps', () => {
       slug: 'a',
       status: 'draft',
       screenshots: [],
-      publishBlockers: ['NO_RIGHTS_BASIS', 'NO_ICON', 'NO_PUBLISHED_VERSION', 'NO_CATEGORY'],
+      publishBlockers: ['NO_SECTION', 'NO_CATEGORY', 'NO_ICON', 'NO_VERSION'],
     });
     expect((await admin().get('/admin/apps/nope')).status).toBe(404);
   });
@@ -158,15 +158,14 @@ describe('apps', () => {
       slug: 'a',
       name: 'A',
       status: 'draft',
-      rightsBasis: '   ',
-      versions: [{ version: '1.0', status: 'draft' }],
+      versions: [{ version: '1.0', status: 'draft', encrypted: true }],
     });
     const res = await admin().post(`/admin/apps/${id}/publish`);
     expect(res.status).toBe(409);
     expect(res.body).toEqual({
       code: 'PUBLISH_BLOCKED',
       message: 'Нельзя опубликовать: заполните обязательные поля',
-      details: ['NO_RIGHTS_BASIS', 'NO_ICON', 'NO_PUBLISHED_VERSION', 'NO_CATEGORY'],
+      details: ['NO_SECTION', 'NO_CATEGORY', 'NO_ICON', 'NO_VERSION'],
     });
     expect((await db.app.findUniqueOrThrow({ where: { id } })).status).toBe('draft');
   });
@@ -178,7 +177,7 @@ describe('apps', () => {
     expect(published.body.status).toBe('published');
     expect((await publicGet('/catalog/apps/ready-app')).status).toBe(200);
 
-    expect((await admin().post(`/admin/apps/${id}/hide`, { reason: '' })).status).toBe(400);
+    expect((await admin().post(`/admin/apps/${id}/hide`, { reason: ' ' })).status).toBe(400);
     const hidden = await admin().post(`/admin/apps/${id}/hide`, {
       reason: 'Жалоба правообладателя',
     });
@@ -311,7 +310,8 @@ describe('versions', () => {
       { version: '1.0', publishedAt: new Date('2026-10-01T00:00:00Z') },
       { version: '2.0', status: 'draft' },
     ]);
-    await admin().post(`/admin/apps/${id}/publish`);
+    await admin().post(`/admin/apps/${id}/hide`, {});
+    await db.app.update({ where: { id }, data: { status: 'published', hiddenReason: null } });
     expect((await publicGet('/catalog/apps/ready-app')).body.version).toBe('1.0');
 
     const versions = (await admin().get(`/admin/apps/${id}/versions`)).body as {
@@ -335,12 +335,7 @@ describe('versions', () => {
     const actions = (await db.auditLog.findMany({ orderBy: { createdAt: 'asc' } })).map(
       (a) => a.action,
     );
-    expect(actions).toEqual([
-      'app.publish',
-      'version.update',
-      'version.publish',
-      'version.unpublish',
-    ]);
+    expect(actions).toEqual(['app.hide', 'version.update', 'version.publish', 'version.unpublish']);
   });
 });
 

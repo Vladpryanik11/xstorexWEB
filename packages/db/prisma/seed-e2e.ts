@@ -181,6 +181,7 @@ async function main(): Promise<void> {
           rating: first ? 4.5 : 3 + (n % 5) * 0.4,
           ratingCount: first ? 120 : 20 + n,
           removedFromAppStore: n <= 4,
+          section: n <= 4 ? 'removed' : null,
           rightsBasis: 'Тестовые данные',
           status: 'published',
           versions: {

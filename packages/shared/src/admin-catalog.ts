@@ -11,12 +11,15 @@ import {
 } from './catalog.js';
 import { QueueName } from './queues.js';
 
-/** Why an app cannot be published yet; an app publishes only with none. */
+/**
+ * Why an app is not in the catalog yet (simple upload, owner 2026-11-24): it goes public by itself
+ * as soon as there are none.
+ */
 export const PublishBlocker = {
-  NO_RIGHTS_BASIS: 'NO_RIGHTS_BASIS',
-  NO_ICON: 'NO_ICON',
-  NO_PUBLISHED_VERSION: 'NO_PUBLISHED_VERSION',
+  NO_SECTION: 'NO_SECTION',
   NO_CATEGORY: 'NO_CATEGORY',
+  NO_ICON: 'NO_ICON',
+  NO_VERSION: 'NO_VERSION',
 } as const;
 export type PublishBlocker = (typeof PublishBlocker)[keyof typeof PublishBlocker];
 
@@ -32,6 +35,10 @@ export const slugSchema = z
 const text = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) => text(max).nullable();
 
+/** Catalog section: «Удалённые» or «Премиум» (owner 2026-11-24). */
+export const appSectionSchema = z.enum(['removed', 'premium']);
+export type AppSection = z.infer<typeof appSectionSchema>;
+
 /** `PATCH /admin/apps/:id`: the admin types in the card by hand (no iTunes import). */
 export const updateAppSchema = z
   .strictObject({
@@ -43,6 +50,7 @@ export const updateAppSchema = z
     rightsBasis: optionalText(2000),
     accessLevel: accessLevelSchema,
     removedFromAppStore: z.boolean(),
+    section: appSectionSchema.nullable(),
     rating: z.number().min(0).max(5).nullable(),
     ratingCount: z.number().int().min(0).nullable(),
     languages: z.array(z.string().trim().min(1).max(40)).max(50),
@@ -56,7 +64,7 @@ export const updateAppSchema = z
   .refine((patch) => Object.keys(patch).length > 0, 'empty patch');
 export type UpdateApp = z.infer<typeof updateAppSchema>;
 
-export const hideAppSchema = z.strictObject({ reason: text(500) });
+export const hideAppSchema = z.strictObject({ reason: text(500).optional() });
 export type HideApp = z.infer<typeof hideAppSchema>;
 
 export const mediaKindSchema = z.enum(['icon', 'banner', 'screenshot']);
@@ -142,6 +150,8 @@ export type CollectionItems = z.infer<typeof collectionItemsSchema>;
 
 export const adminAppsQuerySchema = z.object({
   status: appStatusSchema.optional(),
+  /** `none` lists apps without a section. */
+  section: z.enum(['removed', 'premium', 'none']).optional(),
   q: z.string().trim().max(64).optional(),
   cursor: z.string().max(500).optional(),
 });
@@ -154,7 +164,14 @@ export type AdminAppListItem = {
   status: AppStatus;
   iconUrl: string | null;
   category: { id: string; name: string } | null;
+  categoryId: string | null;
+  section: AppSection | null;
   latestVersion: string | null;
+  /** Size of the newest version, bytes. */
+  sizeBytes: number | null;
+  /** The newest version is FairPlay-encrypted and can never go public. */
+  encrypted: boolean;
+  publishBlockers: PublishBlocker[];
   /** ISO 8601. */
   updatedAt: string;
 };
@@ -172,6 +189,7 @@ export type AdminAppDetail = {
   rightsBasis: string | null;
   accessLevel: string;
   removedFromAppStore: boolean;
+  section: AppSection | null;
   status: AppStatus;
   hiddenReason: string | null;
   rating: number | null;

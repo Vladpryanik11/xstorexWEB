@@ -1,4 +1,4 @@
-import { type IpaUpload, Prisma } from '@xstore/db';
+import { type IpaUpload, Prisma, syncAppPublication } from '@xstore/db';
 import { type IpaInspect, ipaInspectSchema, slugify, uniqueSlug } from '@xstore/shared';
 import type { WorkerDeps } from '../deps.js';
 
@@ -143,6 +143,10 @@ export async function attachToCatalog(deps: WorkerDeps, upload: IpaUpload): Prom
           data: { iconKey: icon512Key },
         });
       }
+
+      // Simple upload (2026-11-24): the newest version is the public one, and an app already in
+      // the catalog stays there with it.
+      await syncAppPublication(tx, app.id);
 
       const finalInspect: IpaInspect = { ...inspect, icon512Key, icon57Key };
       const linked = await tx.ipaUpload.updateMany({

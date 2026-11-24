@@ -1,21 +1,11 @@
+import { type AppForPublish, appPublishBlockers } from '@xstore/db';
 import type { PublishBlocker, VersionPublishBlocker } from '@xstore/shared';
 
-export type AppForPublish = {
-  rightsBasis: string | null;
-  iconKey: string | null;
-  categoryId: string | null;
-  /** Versions with status `published`. */
-  publishedVersions: number;
-};
+export type { AppForPublish };
 
-/** Everything that keeps an app from being published; an app publishes only with none. */
+/** Everything that keeps an app out of the catalog (spec 2026-11-24 §3). */
 export function publishBlockers(app: AppForPublish): PublishBlocker[] {
-  const out: PublishBlocker[] = [];
-  if (!app.rightsBasis?.trim()) out.push('NO_RIGHTS_BASIS');
-  if (!app.iconKey) out.push('NO_ICON');
-  if (app.publishedVersions < 1) out.push('NO_PUBLISHED_VERSION');
-  if (!app.categoryId) out.push('NO_CATEGORY');
-  return out;
+  return appPublishBlockers(app);
 }
 
 /** A FairPlay-encrypted IPA cannot be signed, so its version never goes public. */

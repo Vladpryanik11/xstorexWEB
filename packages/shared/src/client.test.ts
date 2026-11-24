@@ -81,6 +81,16 @@ describe('endpoints', () => {
       '/api/v1/catalog/sections/removed?cursor=c2',
     ],
     [
+      'section by subcategory',
+      (api: ReturnType<typeof createApiClient>) => api.section('premium', undefined, 'music'),
+      '/api/v1/catalog/sections/premium?category=music',
+    ],
+    [
+      'section subcategories',
+      (api: ReturnType<typeof createApiClient>) => api.sectionCategories('removed'),
+      '/api/v1/catalog/sections/removed/categories',
+    ],
+    [
       'list',
       (api: ReturnType<typeof createApiClient>) => api.list('top'),
       '/api/v1/catalog/lists/top',

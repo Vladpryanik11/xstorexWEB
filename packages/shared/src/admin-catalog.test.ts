@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  adminAppsQuerySchema,
   collectionItemsSchema,
   createCategorySchema,
   hideAppSchema,
@@ -41,11 +42,23 @@ describe('updateAppSchema', () => {
   });
 });
 
-it('hide needs a reason', () => {
+it('hide takes an optional reason', () => {
+  expect(hideAppSchema.parse({})).toEqual({});
   expect(hideAppSchema.safeParse({ reason: '   ' }).success).toBe(false);
   expect(hideAppSchema.parse({ reason: ' Жалоба правообладателя ' })).toEqual({
     reason: 'Жалоба правообладателя',
   });
+});
+
+it('a section is removed, premium or cleared with null', () => {
+  expect(updateAppSchema.parse({ section: 'removed' })).toEqual({ section: 'removed' });
+  expect(updateAppSchema.parse({ section: null })).toEqual({ section: null });
+  expect(updateAppSchema.safeParse({ section: 'popular' }).success).toBe(false);
+});
+
+it('the admin list filters by section, none meaning without one', () => {
+  expect(adminAppsQuerySchema.parse({ section: 'none' })).toEqual({ section: 'none' });
+  expect(adminAppsQuerySchema.safeParse({ section: 'all' }).success).toBe(false);
 });
 
 it('media is png or jpeg up to 5 MB', () => {

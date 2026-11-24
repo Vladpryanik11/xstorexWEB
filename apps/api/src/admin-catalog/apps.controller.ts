@@ -39,7 +39,7 @@ import { AdminAppsService } from './admin-apps.service.js';
 
 const indexSchema = z.coerce.number().int().min(0).max(1000);
 
-/** Admin app cards: metadata typed in by hand, publishing, hiding and media. */
+/** Admin apps: name, icon, section and subcategory; the app goes public by itself (2026-11-24). */
 @Controller('admin/apps')
 @Roles('admin')
 export class AppsController {
@@ -84,6 +84,12 @@ export class AppsController {
   @HttpCode(200)
   unhide(@Param('id') id: string, @Req() req: HttpReq): Promise<AdminAppDetail> {
     return this.apps.unhide(id, actor(req));
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@Param('id') id: string, @Req() req: HttpReq): Promise<void> {
+    return this.apps.remove(id, actor(req));
   }
 
   @Post(':id/media/:kind')
