@@ -19,7 +19,7 @@
   box-sizing: border-box;
   max-width: 18rem;
   margin-inline: auto;
-  padding: 1rem 1rem 0.75rem;
+  padding: 1rem;
   border-radius: var(--x-radius-panel);
   background: linear-gradient(160deg, #0066e0, #0a84ff 60%, #3ea6ff);
   box-shadow: 0 16px 40px rgba(0, 90, 220, 0.25);
@@ -113,20 +113,6 @@
   outline-offset: 3px;
 }
 
-/* Proof right under the pay button (owner 2026-11-21) */
-.proof {
-  margin: 0.75rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
-  text-align: center;
-}
-
-.proof b {
-  color: var(--x-text);
-  font-weight: 600;
-}
-
 /* FAQ */
 .faq {
   display: grid;
@@ -187,13 +173,4 @@
   .title {
     font: var(--x-type-sectionsm);
   }
-}
-
-.plan .proof {
-  margin-top: 0.375rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.plan .proof b {
-  color: var(--x-white);
 }

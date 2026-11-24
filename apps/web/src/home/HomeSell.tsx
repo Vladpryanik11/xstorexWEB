@@ -1,6 +1,5 @@
 import { useId } from 'react';
 import { formatRub } from '../checkout/wizard-step';
-import { AUDIENCE } from './figures';
 import styles from './HomeSell.module.css';
 
 /*
@@ -15,7 +14,7 @@ type Price = { priceRub: number | null };
 function Cta({ priceRub, light }: Price & { light?: boolean }) {
   return (
     <a className={light ? styles.ctaLight : styles.cta} href="/get" data-page-cta="">
-      {priceRub === null ? 'Подключить iPhone' : `Получить доступ за ${formatRub(priceRub)}`}
+      {priceRub === null ? 'Подключить iPhone' : 'Получить доступ'}
     </a>
   );
 }
@@ -30,7 +29,7 @@ export function HomePlan({ priceRub }: Price) {
     <section className={styles.planWrap} aria-labelledby={id}>
       <div className={styles.plan}>
         <h2 id={id} className={styles.eyebrow}>
-          Весь каталог на 1 месяц
+          Весь каталог
         </h2>
         {priceRub !== null ? (
           <p className={styles.price}>
@@ -43,9 +42,6 @@ export function HomePlan({ priceRub }: Price) {
           ))}
         </ul>
         <Cta priceRub={priceRub} light />
-        <p className={styles.proof}>
-          <b>{AUDIENCE}</b> пользователей в месяц
-        </p>
       </div>
     </section>
   );

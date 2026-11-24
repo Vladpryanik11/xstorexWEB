@@ -4,9 +4,9 @@ import { HomeFaq, HomePlan } from './HomeSell';
 
 const price = (s: string) => s.replace(/\s/g, ' ');
 
-it('plan card: price, what is included and a button with the price', () => {
+it('plan card: price, what is included and a button, each said once', () => {
   render(<HomePlan priceRub={590} />);
-  const card = screen.getByRole('region', { name: 'Весь каталог на 1 месяц' });
+  const card = screen.getByRole('region', { name: 'Весь каталог' });
   expect(price(card.querySelector('p')?.textContent ?? '')).toBe('590 ₽ в месяц');
   const items = within(card)
     .getAllByRole('listitem')
@@ -14,11 +14,14 @@ it('plan card: price, what is included and a button with the price', () => {
   // Owner 2026-11-24 13:12, variant Г: three short points as pills in a row, no ticks.
   expect(items).toEqual(['Безлимит', '1 iPhone', 'Гарантия']);
   expect(card.querySelector('li svg')).toBeNull();
-  const cta = within(card).getByRole('link', { name: /Получить доступ за\s590\s₽/ });
+  // Owner 2026-11-24 13:17, variant Г: the price and «в месяц» once each; the audience is on the
+  // first screen already.
+  const cta = within(card).getByRole('link', { name: 'Получить доступ' });
   expect(cta).toHaveAttribute('href', '/get');
   expect(cta).toHaveAttribute('data-page-cta');
-  // Proof right under the pay button (owner 2026-11-21).
-  expect(cta.nextElementSibling).toHaveTextContent(/10 000\+\s*пользователей в месяц/);
+  expect(card.textContent?.match(/590/g)).toHaveLength(1);
+  expect(card.textContent?.match(/месяц/g)).toHaveLength(1);
+  expect(card.textContent).not.toMatch(/10 000/);
 });
 
 it('plan card without a price still sells, with a plain button', () => {
