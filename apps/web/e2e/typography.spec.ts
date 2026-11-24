@@ -74,7 +74,7 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
 });
 
 // Owner 2026-11-24 (variant Б «Синяя, как небо»): the plan card carries the sky of the first
-// screen, its price is Inter Tight like the hero title, the button is white, the card is narrow.
+// screen, the button is white and carries the price (13:57), the card is narrow.
 test('plan card is the blue sky card', async ({ page }) => {
   await page.goto('/');
   const card = page.getByRole('region', { name: 'Весь каталог' }).locator('> div');
@@ -84,19 +84,13 @@ test('plan card is the blue sky card', async ({ page }) => {
   );
   const box = await card.boundingBox();
   expect(box?.width ?? 0).toBeLessThanOrEqual(288);
-  const price = card.locator('p').first();
-  await expect(price).toHaveCSS('font-family', /Inter Tight/i);
-  // 13:26, variant Г: a lighter figure and a quiet, half-clear ₽.
-  await expect(price).toHaveCSS('font-weight', '500');
-  await expect(price).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(price.getByText('₽', { exact: true })).toHaveCSS(
-    'color',
-    'rgba(255, 255, 255, 0.55)',
-  );
-  // 13:33: the ₽ stands a little apart from the figure (4 px more than a space).
-  await expect(price.getByText('₽', { exact: true })).toHaveCSS('margin-left', '4px');
   const cta = card.getByRole('link');
   await expect(cta).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(cta).toHaveCSS('color', 'rgb(0, 113, 227)');
+  // 13:57, variant Б: the price is on the button, «/ мес.» quieter.
+  await expect(cta.getByText('/ мес.', { exact: true })).toHaveCSS(
+    'color',
+    'rgba(0, 113, 227, 0.6)',
+  );
   await expect(cta).toHaveCSS('box-shadow', 'none');
 });

@@ -4,29 +4,24 @@ import { HomeFaq, HomePlan } from './HomeSell';
 
 const price = (s: string) => s.replace(/\s/g, ' ');
 
-it('plan card: price, what is included and a button, each said once', () => {
+it('plan card: what is included and the price on the button, said once', () => {
   render(<HomePlan priceRub={590} />);
   const card = screen.getByRole('region', { name: 'Весь каталог' });
-  expect(price(card.querySelector('p')?.textContent ?? '')).toBe('590 ₽ в месяц');
   const items = within(card)
     .getAllByRole('listitem')
     .map((li) => li.textContent);
   // Owner 2026-11-24 13:12, variant Г: three short points as pills in a row, no ticks.
   expect(items).toEqual(['Безлимит', '1 iPhone', 'Гарантия']);
   expect(card.querySelector('li svg')).toBeNull();
-  // Owner 2026-11-24 13:17, variant Г: the price and «в месяц» once each; the audience is on the
-  // first screen already.
-  const cta = within(card).getByRole('link', { name: 'Получить доступ' });
+  // Owner 2026-11-24 13:57, variant Б: the price only on the white button, said once.
+  const cta = within(card).getByRole('link');
+  expect(price(cta.textContent ?? '')).toBe('590 ₽ / мес.');
   expect(cta).toHaveAttribute('href', '/get');
   expect(cta).toHaveAttribute('data-page-cta');
   expect(card.textContent?.match(/590/g)).toHaveLength(1);
-  expect(card.textContent?.match(/₽/g)).toHaveLength(2);
-  expect(card.textContent?.match(/месяц/g)).toHaveLength(1);
-  expect(card.textContent).not.toMatch(/10 000/);
-  // Owner 2026-11-24 13:26, price variant Г: a quiet ₽ and the price of a day under it.
-  expect(price(card.querySelector('[data-per-day]')?.textContent ?? '')).toBe(
-    'Это около 20 ₽ в день',
-  );
+  expect(card.textContent?.match(/₽/g)).toHaveLength(1);
+  expect(card.textContent?.match(/мес/g)).toHaveLength(1);
+  expect(card.textContent).not.toMatch(/10 000|в день/);
 });
 
 it('plan card without a price still sells, with a plain button', () => {

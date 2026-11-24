@@ -487,8 +487,8 @@ test('under the first screen: the plan, then the questions, on white', async ({ 
 test('home sells the plan and answers the questions', async ({ page, isMobile }) => {
   await page.goto('/');
   const plan = page.getByRole('region', { name: 'Весь каталог' });
-  await expect(plan.getByText(/₽\s*в месяц/)).toBeVisible();
-  const buy = plan.getByRole('link', { name: 'Получить доступ' });
+  const buy = plan.getByRole('link', { name: /₽\s*\/\s*мес\./ });
+  await expect(buy).toBeVisible();
   await expect(buy).toHaveAttribute('href', '/get');
   const faq = page.getByRole('region', { name: 'Частые вопросы' }).locator('summary');
   await expect(faq).toHaveCount(7);

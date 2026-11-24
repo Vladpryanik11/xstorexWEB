@@ -11,12 +11,17 @@ import styles from './HomeSell.module.css';
 
 type Price = { priceRub: number | null };
 
-const rub = new Intl.NumberFormat('ru-RU');
-
 function Cta({ priceRub, light }: Price & { light?: boolean }) {
+  // Owner 2026-11-24 13:57, variant Б: the price is said once, on the button.
   return (
     <a className={light ? styles.ctaLight : styles.cta} href="/get" data-page-cta="">
-      {priceRub === null ? 'Подключить iPhone' : 'Получить доступ'}
+      {priceRub === null ? (
+        'Подключить iPhone'
+      ) : (
+        <>
+          {formatRub(priceRub)} <span className={styles.per}>/ мес.</span>
+        </>
+      )}
     </a>
   );
 }
@@ -33,17 +38,6 @@ export function HomePlan({ priceRub }: Price) {
         <h2 id={id} className={styles.eyebrow}>
           Весь каталог
         </h2>
-        {priceRub !== null ? (
-          <>
-            <p className={styles.price}>
-              {rub.format(priceRub)} <span className={styles.cur}>₽</span>{' '}
-              <span className={styles.per}>в месяц</span>
-            </p>
-            <p className={styles.perDay} data-per-day="">
-              Это около {formatRub(Math.round(priceRub / 30))} в день
-            </p>
-          </>
-        ) : null}
         <ul className={styles.included}>
           {INCLUDED.map((point) => (
             <li key={point}>{point}</li>

@@ -72,10 +72,6 @@
   /* the small iPhone screens in «Как это работает» (owner 2026-11-24, variant А) */
   /* «Как это работает» window titles: the first-screen pair, Inter Tight + Onest (owner 2026-11-24) */
   --x-type-howhead: 600 1.125rem / 1.2 var(--x-font-title);
-  /* Plan card price (owner 2026-11-24, variant Б «Синяя, как небо»). */
-  --x-type-price: 500 1.875rem / 1.05 var(--x-font-title);
-  /* The quiet ₽ beside the price (owner 2026-11-24 13:26, variant Г). */
-  --x-type-pricecur: 500 1rem / 1 var(--x-font-title);
   /* Section titles under the first screen, in the font of the hero title (owner 2026-11-24). */
   --x-type-section: 600 1.75rem / 1.15 var(--x-font-title);
   --x-type-sectionsm: 600 1.375rem / 1.2 var(--x-font-title);
