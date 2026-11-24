@@ -54,11 +54,10 @@
   --x-type-step: 500 1rem / 1 var(--x-font-head);
   --x-type-lead: 400 .9375rem / 1.4 var(--x-font);
   --x-type-leadlg: 400 1.125rem / 1.4 var(--x-font);
-  /* first screen, owner 2026-11-23: lane captions, the three promises, the audience avatars */
+  /* first screen, owner 2026-11-23: lane captions, the three promises */
   --x-type-eyebrow: 600 .8125rem / 1.2 var(--x-font);
   --x-type-promise: 500 .75rem / 1.25 var(--x-font);
   --x-type-promiselg: 500 .875rem / 1.25 var(--x-font);
-  --x-type-avatar: 600 .6875rem / 1 var(--x-font);
   --x-type-note: 500 .875rem / 1.3 var(--x-font);
   --x-type-button: 600 1.25rem / 1.2 var(--x-font);
   /* first screen on a phone, owner 2026-11-24 («сетка Apple», «равномерно» variant 4): the title

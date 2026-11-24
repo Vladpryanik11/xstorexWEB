@@ -208,8 +208,8 @@
   text-align: center;
 }
 
-/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): grey monograms like
-   contacts on iPhone, quiet grey text, the number a little darker. */
+/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): three round photos
+   (owner 2026-11-24 09:20), quiet grey text, the number a little darker. */
 .audience {
   display: flex;
   align-items: center;
@@ -230,20 +230,18 @@
   display: flex;
 }
 
-.avatars > span {
-  display: grid;
-  place-items: center;
+.avatars > img {
+  display: block;
   width: 1.625rem;
   height: 1.625rem;
   margin-left: -0.5rem;
   border-radius: 50%;
-  background: linear-gradient(180deg, #a5abb8, #858994);
+  object-fit: cover;
+  background: #dfe3ea;
   box-shadow: 0 0 0 2px var(--x-white);
-  color: var(--x-white);
-  font: var(--x-type-avatar);
 }
 
-.avatars > span:first-child {
+.avatars > img:first-child {
   margin-left: 0;
 }
 
@@ -313,6 +311,23 @@
   }
 
   .audience {
+    margin-top: 0;
+  }
+}
+
+/* A phone of middle height (iPhone 15 in Safari, 659 px): with «Как это работает?» under the
+   button the first screen no longer fit, so the bottom air, the gap over the link and the icons
+   give a little. */
+@media (max-width: 63.99em) and (max-height: 45em) {
+  .hero {
+    padding-bottom: 1rem;
+  }
+
+  .lanes {
+    --lane-icon: clamp(2.5rem, 6.4svh, 3.75rem);
+  }
+
+  .how {
     margin-top: 0;
   }
 }

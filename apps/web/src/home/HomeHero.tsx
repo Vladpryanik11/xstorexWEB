@@ -31,8 +31,8 @@ const PROMISES = [
   },
 ];
 
-/** Monogram avatars, like contacts without a photo on iPhone. */
-const AVATARS = ['А', 'М', 'Д'];
+/** Three faces in the audience line (owner 2026-11-24 09:20, his photos). */
+const AVATARS = ['/home/avatars/1.webp', '/home/avatars/2.webp', '/home/avatars/3.webp'];
 
 export type { HeroLaneApps };
 
@@ -98,10 +98,9 @@ export function HomeHero({
       <div className={styles.after}>
         <p className={styles.audience} data-hero-audience="">
           <span className={styles.avatars} aria-hidden="true">
-            {AVATARS.map((a) => (
-              <span key={a} data-avatar="">
-                {a}
-              </span>
+            {AVATARS.map((src) => (
+              // biome-ignore lint/performance/noImgElement: three 26px static photos, 2 KB each
+              <img key={src} src={src} alt="" width={26} height={26} data-avatar="" />
             ))}
           </span>
           <span>

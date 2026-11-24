@@ -273,7 +273,7 @@ test('the first screen: lanes, search, button, promises and the audience above t
   await expect(hero.locator('[data-hero-lane]')).toHaveCount(1);
   await expect(hero.locator('[data-lane-caption]')).toHaveCount(0);
   await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
-  // The monogram letters are part of the line's text too; check the words.
+  // The line's words (the photos beside them carry no text).
   await expect(hero.locator('[data-hero-audience]')).toContainText(
     'Более 10 000 пользователей в\u00a0месяц',
   );
@@ -413,6 +413,8 @@ test('the lane stands still under reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const track = page.locator('[data-hero-lane] [data-lane-track]');
+  // The lane first stands on its middle copy once the page is live; only then it must not move.
+  await expect.poll(() => track.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
   const start = await track.evaluate((el) => el.scrollLeft);
   await page.waitForTimeout(3000);
   expect(await track.evaluate((el) => el.scrollLeft)).toBe(start);
