@@ -77,7 +77,7 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
 // screen, the button is white and carries the price (13:57), the card is narrow.
 test('plan card is the blue sky card', async ({ page }) => {
   await page.goto('/');
-  const card = page.getByRole('region', { name: 'Весь каталог' }).locator('> div');
+  const card = page.getByRole('region', { name: 'Весь каталог в одной подписке' }).locator('> div');
   await card.scrollIntoViewIfNeeded();
   expect(await card.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
     /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,

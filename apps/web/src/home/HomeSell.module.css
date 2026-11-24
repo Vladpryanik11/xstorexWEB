@@ -27,11 +27,36 @@
   text-align: center;
 }
 
-.eyebrow {
+.planTitle {
   margin: 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--x-white);
+  font: var(--x-type-plantitle);
+  letter-spacing: -0.01em;
+}
+
+/* A row of real catalog icons and the size of the catalog (owner 2026-11-24 14:04, variant Г). */
+.icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0.625rem 0 0.125rem;
+  padding: 0;
+  list-style: none;
+}
+
+.icons img {
+  display: block;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 22.5%;
+  box-shadow: 0 2px 6px rgba(0, 40, 120, 0.25);
+}
+
+.more {
+  margin-left: 0.25rem;
+  color: rgba(255, 255, 255, 0.9);
   font: var(--x-type-eyebrow);
-  letter-spacing: var(--x-track-small);
 }
 
 /* «/ мес.» beside the price on the button, quieter (owner 2026-11-24 13:57, variant Б). */

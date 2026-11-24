@@ -59,7 +59,7 @@ export default async function HomePage({ searchParams }: Props) {
       {/* Owner 2026-11-24 12:29 (variant Б): the first screen answers the questions, so under it
           only the plan and the questions stay, on white for the sky to flow into. */}
       <div className={styles.flow}>
-        <HomePlan priceRub={priceRub} />
+        <HomePlan priceRub={priceRub} apps={[...removed, ...premium]} />
         <HomeFaq />
       </div>
       <HomeStickyCta />

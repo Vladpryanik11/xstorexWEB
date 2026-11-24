@@ -1,5 +1,7 @@
+import type { AppCard } from '@xstore/shared';
 import { useId } from 'react';
 import { formatRub } from '../checkout/wizard-step';
+import { APPS } from './figures';
 import styles from './HomeSell.module.css';
 
 /*
@@ -30,14 +32,38 @@ function Cta({ priceRub, light }: Price & { light?: boolean }) {
 // as pills in a row; the explanations live in the questions below.
 const INCLUDED = ['Безлимит', '1 iPhone', 'Гарантия'];
 
-export function HomePlan({ priceRub }: Price) {
+/** Icons in the row of the plan card (owner 2026-11-24 14:04, variant Г). */
+const ICONS = 5;
+
+/**
+ * Owner 2026-11-24 14:04, variant Г «Слова + иконки»: the title says it is one subscription, a row
+ * of real catalog icons (the apps of the hero lanes) and the size of the catalog show what is in
+ * it. Without icons the row is not drawn.
+ */
+export function HomePlan({ priceRub, apps }: Price & { apps: AppCard[] }) {
   const id = useId();
+  // An app can sit in both sections of the lanes; its icon is shown once.
+  const seen = new Set<string>();
+  const icons = apps
+    .filter((a) => a.iconUrl && !seen.has(a.slug) && seen.add(a.slug))
+    .slice(0, ICONS);
   return (
     <section className={styles.planWrap} aria-labelledby={id}>
       <div className={styles.plan}>
-        <h2 id={id} className={styles.eyebrow}>
-          Весь каталог
+        <h2 id={id} className={styles.planTitle}>
+          Весь каталог в одной подписке
         </h2>
+        {icons.length > 0 ? (
+          <ul className={styles.icons} aria-label="Приложения каталога">
+            {icons.map((a) => (
+              <li key={a.slug}>
+                {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
+                <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
+              </li>
+            ))}
+            <li className={styles.more}>+{APPS.replace('+', '')}</li>
+          </ul>
+        ) : null}
         <ul className={styles.included}>
           {INCLUDED.map((point) => (
             <li key={point}>{point}</li>

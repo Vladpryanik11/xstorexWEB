@@ -455,7 +455,7 @@ test('the lane stands still under reduced motion', async ({ page }) => {
 test('under the first screen: the plan, then the questions, on white', async ({ page }) => {
   await page.goto('/');
   const ys: number[] = [];
-  for (const name of ['Весь каталог', 'Частые вопросы']) {
+  for (const name of ['Весь каталог в одной подписке', 'Частые вопросы']) {
     const box = await page.getByRole('heading', { name, exact: true }).first().boundingBox();
     ys.push(box?.y ?? -1);
   }
@@ -486,7 +486,7 @@ test('under the first screen: the plan, then the questions, on white', async ({ 
 
 test('home sells the plan and answers the questions', async ({ page, isMobile }) => {
   await page.goto('/');
-  const plan = page.getByRole('region', { name: 'Весь каталог' });
+  const plan = page.getByRole('region', { name: 'Весь каталог в одной подписке' });
   const buy = plan.getByRole('link', { name: /₽\s*\/\s*мес\./ });
   await expect(buy).toBeVisible();
   await expect(buy).toHaveAttribute('href', '/get');
