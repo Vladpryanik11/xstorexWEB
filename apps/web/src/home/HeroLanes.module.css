@@ -1,5 +1,5 @@
-/* Two live lanes of catalog icons (spec 2026-11-23-home-first-screen §3.3, owner 2026-11-23):
-   no frame, from edge to edge of the screen, the second lane shifted by half an icon. */
+/* One live lane of catalog icons (spec 2026-11-23-home-first-screen §3.3; owner 2026-11-24: one
+   lane, no caption): no frame, from edge to edge of the screen. */
 .lanes {
   display: flex;
   flex-direction: column;
@@ -15,23 +15,8 @@
   min-width: 0;
 }
 
-/* Variant В+ (owner 2026-11-23): small capitals, dark blue for 4.5:1 on the sky. */
-.caption {
-  margin: 0;
-  padding-inline: var(--x-gutter);
-  color: #0a4fb0;
-  font: var(--x-type-eyebrow);
-  letter-spacing: 0.06em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
 .view {
   margin-left: -1.125rem;
-}
-
-.lane + .lane .view {
-  margin-left: -3.25rem;
 }
 
 /* Two equal halves: moving by one half brings the second exactly where the first was. */
@@ -89,22 +74,11 @@
   object-fit: cover;
 }
 
-/* Computer: from the left edge of the screen to the right edge of the text column, fading out;
-   captions start at the text. */
+/* Computer: from the left edge of the screen to the right edge of the text column, fading out. */
 @media (min-width: 64em) {
   .lanes {
-    gap: 1.375rem;
     -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
     mask-image: linear-gradient(90deg, #000 82%, transparent);
-  }
-
-  .caption {
-    padding-inline: var(--hero-bleed, 5rem) 0;
-    text-align: left;
-  }
-
-  .lane + .lane .view {
-    margin-left: -3.75rem;
   }
 
   .icon {

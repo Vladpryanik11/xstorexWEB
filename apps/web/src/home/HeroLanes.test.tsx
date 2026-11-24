@@ -12,33 +12,33 @@ it('repeats the apps of a section until the lane is full, skipping apps without 
   expect(laneApps([app('b')], 5)).toEqual([]);
 });
 
-// Spec 2026-11-23-home-first-screen §3.3 (owner 2026-11-23): two lanes, captions above them.
-it('draws the removed lane over the premium lane, each under its caption', () => {
+// Owner 2026-11-24: one lane without a caption, removed and premium apps taking turns.
+it('draws one lane of removed and premium apps in turn, without a caption', () => {
   const { container } = render(
-    <HeroLanes removed={[app('a', '/a.png')]} premium={[app('p', '/p.png')]} />,
+    <HeroLanes
+      removed={[app('a', '/a.png'), app('b', '/b.png'), app('c', '/c.png')]}
+      premium={[app('p', '/p.png'), app('a', '/a.png')]}
+    />,
   );
-  const lanes = [...container.querySelectorAll('[data-hero-lane]')];
-  expect(lanes.map((l) => l.getAttribute('data-hero-lane'))).toEqual(['removed', 'premium']);
-  expect(lanes.map((l) => l.querySelector('[data-lane-caption]')?.textContent)).toEqual([
-    'Удалены из App Store',
-    'Premium',
-  ]);
+  const lanes = container.querySelectorAll('[data-hero-lane]');
+  expect(lanes).toHaveLength(1);
+  expect(container.querySelector('[data-lane-caption]')).toBeNull();
+  const named = [...container.querySelectorAll('[data-lane-track] a')]
+    .filter((l) => l.getAttribute('aria-hidden') !== 'true')
+    .map((l) => l.getAttribute('href'));
+  // A premium app already among the removed ones is not repeated.
+  expect(named).toEqual(['/?app=a', '/?app=p', '/?app=b', '/?app=c']);
 });
 
-// Owner 2026-11-23 18:16 (variant В): the lanes run endlessly, the top one faster.
-it('runs each lane as two equal halves, the removed lane faster than the premium lane', () => {
+it('runs the lane as two equal halves', () => {
   const { container } = render(
     <HeroLanes removed={[app('a', '/a.png')]} premium={[app('p', '/p.png')]} />,
   );
-  const tracks = [...container.querySelectorAll<HTMLElement>('[data-lane-track]')];
-  for (const track of tracks) {
-    const links = track.querySelectorAll('a');
-    expect(links.length % 2).toBe(0);
-    expect(links.length).toBeGreaterThanOrEqual(24);
-  }
-  const seconds = tracks.map((t) => Number.parseFloat(t.style.getPropertyValue('--lane-duration')));
-  expect(seconds[0]).toBeGreaterThan(0);
-  expect(seconds[1]).toBeGreaterThan(seconds[0] as number);
+  const track = container.querySelector<HTMLElement>('[data-lane-track]') as HTMLElement;
+  const links = track.querySelectorAll('a');
+  expect(links.length % 2).toBe(0);
+  expect(links.length).toBeGreaterThanOrEqual(24);
+  expect(Number.parseFloat(track.style.getPropertyValue('--lane-duration'))).toBeGreaterThan(0);
 });
 
 it('opens the install sheet of an app, naming each app once for a screen reader', () => {
@@ -69,8 +69,8 @@ it('stops a running lane on the first touch and opens the app on the next', () =
   expect(fireEvent.click(link)).toBe(true);
 });
 
-it('leaves out a section that has no apps yet', () => {
-  const { container } = render(<HeroLanes removed={[app('a', '/a.png')]} premium={[]} />);
+it('draws the lane from one section while the other has no apps, and nothing without apps', () => {
+  const { container } = render(<HeroLanes removed={[]} premium={[app('p', '/p.png')]} />);
   expect(container.querySelectorAll('[data-hero-lane]')).toHaveLength(1);
   const { container: none } = render(<HeroLanes removed={[]} premium={[]} />);
   expect(none.querySelector('[data-hero-lanes]')).toBeNull();

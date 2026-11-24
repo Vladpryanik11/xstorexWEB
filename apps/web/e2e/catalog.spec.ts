@@ -162,9 +162,11 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   const heroBox = await hero.boundingBox();
   const promises = await hero.getByRole('list', { name: 'Без лишнего' }).boundingBox();
   const skyBottom = (skyBox?.y ?? 0) + (skyBox?.height ?? 0);
-  expect(skyBox?.height ?? 0).toBeGreaterThanOrEqual(800);
+  const heroBottom = (heroBox?.y ?? 0) + (heroBox?.height ?? 0);
+  // 53rem, or down to the end of the hero when the hero is shorter.
+  expect(skyBox?.height ?? 0).toBeGreaterThanOrEqual(Math.min(848, heroBottom) - 1);
   expect(skyBottom).toBeGreaterThan((promises?.y ?? 0) + (promises?.height ?? 0));
-  expect(skyBottom).toBeLessThanOrEqual((heroBox?.y ?? 0) + (heroBox?.height ?? 0));
+  expect(skyBottom).toBeLessThanOrEqual(heroBottom);
   expect(
     await sky.evaluate((el) => {
       const bg = getComputedStyle(el).backgroundImage;
@@ -266,11 +268,9 @@ test('the first screen: lanes, search, button, promises and the audience above t
   const boxes = await Promise.all(parts.map((l) => l.boundingBox()));
   const ys = boxes.map((b) => b?.y ?? -1);
   expect(ys).toEqual([...ys].sort((x, y) => x - y));
-  // Removed apps are seeded, premium is empty in the test catalog: only the removed lane shows.
-  const lane = hero.locator('[data-hero-lane="removed"]');
-  await expect(lane.locator('[data-lane-caption]')).toHaveText('Удалены из App Store');
-  await expect(lane.locator('[data-lane-caption]')).toHaveCSS('color', 'rgb(10, 79, 176)');
-  await expect(hero.locator('[data-hero-lane="premium"]')).toHaveCount(0);
+  // Owner 2026-11-24: one lane of removed and premium apps, no caption above it.
+  await expect(hero.locator('[data-hero-lane]')).toHaveCount(1);
+  await expect(hero.locator('[data-lane-caption]')).toHaveCount(0);
   await expect(hero.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
   // The monogram letters are part of the line's text too; check the words.
   await expect(hero.locator('[data-hero-audience]')).toContainText(
@@ -305,7 +305,7 @@ test('the first-screen search shows a shelf of found apps that opens the install
 }) => {
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
-  const track = hero.locator('[data-hero-lane="removed"] [data-lane-track]');
+  const track = hero.locator('[data-hero-lane] [data-lane-track]');
   await expect(track).not.toHaveCSS('animation-name', 'none');
 
   await hero.getByRole('searchbox').fill('Тестовое приложение 1');
@@ -343,7 +343,7 @@ test('the first-screen search says when the catalog has no such app', async ({ p
 test('the lanes stand still under reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await expect(page.locator('[data-hero-lane="removed"] [data-lane-track]')).toHaveCSS(
+  await expect(page.locator('[data-hero-lane] [data-lane-track]')).toHaveCSS(
     'animation-name',
     'none',
   );

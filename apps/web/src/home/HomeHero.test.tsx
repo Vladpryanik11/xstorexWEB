@@ -24,7 +24,8 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
     'Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке',
   );
   const lanesEl = container.querySelector('[data-hero-lanes]') as Element;
-  expect(screen.getByText('Удалены из App Store')).toBeVisible();
+  expect(lanesEl.querySelectorAll('[data-hero-lane]')).toHaveLength(1);
+  expect(lanesEl.querySelector('[data-lane-caption]')).toBeNull();
   const search = screen.getByRole('search');
   expect(search).toHaveAttribute('action', '/search');
   expect(screen.getByPlaceholderText('Найти свое приложение')).toBeVisible();

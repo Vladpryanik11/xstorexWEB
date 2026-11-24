@@ -26,43 +26,42 @@ export function laneApps(apps: AppCard[], count: number): AppCard[] {
   return Array.from({ length: count }, (_, i) => withIcon[i % withIcon.length] as AppCard);
 }
 
-const LANES = [
-  { key: 'removed', caption: 'Удалены из App Store', speed: 24 },
-  { key: 'premium', caption: 'Premium', speed: 18 },
-] as const;
+/** Removed and premium apps taking turns, each app once (it can sit in both sections). */
+export function mixedApps(removed: AppCard[], premium: AppCard[]): AppCard[] {
+  const seen = new Set<string>();
+  const out: AppCard[] = [];
+  for (let i = 0; i < Math.max(removed.length, premium.length); i++) {
+    for (const a of [removed[i], premium[i]]) {
+      if (a && !seen.has(a.slug)) {
+        seen.add(a.slug);
+        out.push(a);
+      }
+    }
+  }
+  return out;
+}
+
+/** Speed of the lane, px per second. */
+const SPEED = 24;
 
 /**
- * Two live lanes of real catalog icons instead of the banner (spec 2026-11-23-home-first-screen
- * §3.3, owner 2026-11-23): no frame, from edge to edge of the screen, a caption above each. The
- * lanes run endlessly to the left (24 and 18 px/s), stand still under reduced motion and under a
- * mouse; an icon opens its install sheet. A section without apps is left out.
+ * One live lane of real catalog icons instead of the banner (spec 2026-11-23-home-first-screen
+ * §3.3; owner 2026-11-24: one lane, no caption — the title and the subtitle already say «removed»
+ * and «premium»). Removed and premium apps take turns, from edge to edge of the screen, no frame.
+ * The lane runs endlessly to the left, stands still under reduced motion and under a mouse; an
+ * icon opens its install sheet. Without apps nothing is drawn.
  */
 export function HeroLanes({ removed, premium }: { removed: AppCard[]; premium: AppCard[] }) {
-  const apps = { removed, premium };
-  const lanes = LANES.map((l) => ({ ...l, apps: laneApps(apps[l.key], PER_LANE) })).filter(
-    (l) => l.apps.length > 0,
-  );
-  if (lanes.length === 0) return null;
+  const apps = laneApps(mixedApps(removed, premium), PER_LANE);
+  if (apps.length === 0) return null;
   return (
     <div className={styles.lanes} data-hero-lanes="">
-      {lanes.map((l) => (
-        <Lane key={l.key} lane={l.key} caption={l.caption} speed={l.speed} apps={l.apps} />
-      ))}
+      <Lane lane="catalog" speed={SPEED} apps={apps} />
     </div>
   );
 }
 
-function Lane({
-  lane,
-  caption,
-  speed,
-  apps,
-}: {
-  lane: string;
-  caption: string;
-  speed: number;
-  apps: AppCard[];
-}) {
+function Lane({ lane, speed, apps }: { lane: string; speed: number; apps: AppCard[] }) {
   const [paused, setPaused] = useState(false);
   // Set by a touch on a running lane: the click that follows only stops it.
   const swallow = useRef(false);
@@ -99,9 +98,6 @@ function Lane({
       onPointerDown={onPointerDown}
       onClickCapture={onClickCapture}
     >
-      <p className={styles.caption} data-lane-caption="">
-        {caption}
-      </p>
       <div className={styles.view}>
         <div
           className={styles.track}
