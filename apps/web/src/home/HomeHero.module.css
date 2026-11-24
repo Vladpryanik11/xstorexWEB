@@ -263,12 +263,12 @@
   }
 
   .title {
-    font-size: clamp(1.75rem, 5.4svh, 2.5rem);
+    font: var(--x-type-heroflex);
   }
 
   .sub {
     margin-top: 0.75rem;
-    font-size: clamp(0.9375rem, 2.5svh, 1.125rem);
+    font: var(--x-type-leadflex);
   }
 
   .lanes {
@@ -289,7 +289,7 @@
   .cta {
     grid-row: 7;
     min-height: 3rem;
-    font-size: 1.0625rem;
+    font: var(--x-type-buttonsm);
   }
 
   .promises {
@@ -311,7 +311,7 @@
 
   .sub {
     margin-top: 0.5rem;
-    font-size: 0.875rem;
+    font: var(--x-type-leadsm);
   }
 
   .search > * {
@@ -376,7 +376,7 @@
   .cta {
     min-height: 3rem;
     margin-top: 0.75rem;
-    font-size: 1.0625rem;
+    font: var(--x-type-buttonsm);
   }
 
   .promises {

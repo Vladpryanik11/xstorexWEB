@@ -62,6 +62,12 @@
   --x-type-dock: 500 .6875rem / 1.2 var(--x-font);
   --x-type-note: 500 .875rem / 1.3 var(--x-font);
   --x-type-button: 600 1.25rem / 1.2 var(--x-font);
+  /* first screen on a phone, owner 2026-11-24 («сетка Apple», «равномерно» variant 4): the title
+     and the subtitle grow with the screen height; a 17px label on the 48px pill */
+  --x-type-heroflex: 600 clamp(1.75rem, 5.4svh, 2.5rem) / 1.1 var(--x-font-title);
+  --x-type-leadflex: 400 clamp(.9375rem, 2.5svh, 1.125rem) / 1.4 var(--x-font);
+  --x-type-leadsm: 400 .875rem / 1.4 var(--x-font);
+  --x-type-buttonsm: 600 1.0625rem / 1.2 var(--x-font);
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;
