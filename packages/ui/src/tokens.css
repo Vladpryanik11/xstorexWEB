@@ -59,7 +59,6 @@
   --x-type-promise: 500 .75rem / 1.25 var(--x-font);
   --x-type-promiselg: 500 .875rem / 1.25 var(--x-font);
   --x-type-avatar: 600 .6875rem / 1 var(--x-font);
-  --x-type-dock: 500 .6875rem / 1.2 var(--x-font);
   --x-type-note: 500 .875rem / 1.3 var(--x-font);
   --x-type-button: 600 1.25rem / 1.2 var(--x-font);
   /* first screen on a phone, owner 2026-11-24 («сетка Apple», «равномерно» variant 4): the title
@@ -68,6 +67,8 @@
   --x-type-leadflex: 400 clamp(.9375rem, 2.5svh, 1.125rem) / 1.4 var(--x-font);
   --x-type-leadsm: 400 .875rem / 1.4 var(--x-font);
   --x-type-buttonsm: 600 1.0625rem / 1.2 var(--x-font);
+  --x-type-lanename: 500 .8125rem / 1.125rem var(--x-font);
+  --x-type-count: 400 .8125rem / 1.3 var(--x-font);
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;

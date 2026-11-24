@@ -1,68 +1,59 @@
 /* One live lane of catalog icons (spec 2026-11-23-home-first-screen §3.3; owner 2026-11-24: one
-   lane, no caption): no frame, from edge to edge of the screen. */
+   lane, no caption; «как Dock в macOS»): no frame, from edge to edge of the screen. */
 .lanes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
   width: 100%;
-  /* Cut the lane at the screen edges only: the icon shadows below stay whole (a cut shadow drew a
-     line across the sky under the lane, owner 2026-11-24 «весь экран»). */
-  overflow-x: clip;
+  /* The scroller below clips itself; the shadows of the icons stay whole inside its padding. */
   overflow-y: visible;
 }
 
 .lane {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  align-items: center;
   min-width: 0;
 }
 
-.view {
-  margin-left: -1.125rem;
-}
-
-/* Two equal halves: moving by one half brings the second exactly where the first was. */
+/* Scrolled by a finger; the room above holds the larger, lifted middle icon (on a short screen it
+   would cover the subtitle otherwise), the room below the shadows, given back to the layout. */
 .track {
+  --pad-top: calc(var(--lane-icon, 3.375rem) * 0.55);
+  --pad-bottom: 0.875rem;
   display: flex;
-  gap: 0.75rem;
-  width: max-content;
-  animation: lane var(--lane-duration, 50s) linear infinite;
+  align-items: center;
+  width: 100%;
+  margin-bottom: calc(var(--pad-bottom) * -1);
+  padding-block: var(--pad-top) var(--pad-bottom);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-@keyframes lane {
-  to {
-    transform: translateX(calc(-50% - 0.375rem));
-  }
+.track::-webkit-scrollbar {
+  display: none;
 }
 
-.lane[data-paused] .track {
-  animation-play-state: paused;
-}
-
-/* Under a mouse the lane stands still, so an icon is easy to hit. */
-@media (hover: hover) and (pointer: fine) {
-  .lane:hover .track {
-    animation-play-state: paused;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .track {
-    animation: none;
-  }
+.track:active {
+  cursor: grabbing;
 }
 
 .item {
   flex: none;
-  display: block;
+  display: grid;
+  place-items: center;
+  /* An icon and its share of the gap: the Dock pushes the neighbours out from here. */
+  width: calc(var(--lane-icon, 3.375rem) * 1.22);
   border-radius: 22.5%;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .item:focus-visible {
-  outline: 2px solid var(--x-blue-ring);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .icon {
@@ -74,19 +65,55 @@
   background: var(--x-sky-50);
   box-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.06),
-    0 4px 12px rgba(10, 40, 100, 0.1);
+    0 4px 12px rgba(10, 40, 100, 0.12);
   object-fit: cover;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  transition: box-shadow 0.2s ease;
+}
+
+/* The app the search found, in the middle of the lane. */
+.item[data-hit] .icon {
+  box-shadow:
+    0 0 0 3px var(--x-white),
+    0 0 0 5px var(--x-cta),
+    0 8px 18px rgba(10, 40, 100, 0.2);
+}
+
+.item:focus-visible .icon {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+/* The name of the middle app, under the lane. */
+.name {
+  min-height: 1.125rem;
+  margin: 0.125rem 0 0;
+  color: rgba(14, 26, 51, 0.72);
+  font: var(--x-type-lanename);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    transition: none;
+  }
 }
 
 /* Computer: from the left edge of the screen to the right edge of the text column, fading out. */
 @media (min-width: 64em) {
-  .lanes {
+  .track {
     -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
     mask-image: linear-gradient(90deg, #000 82%, transparent);
   }
 
   .icon {
-    width: 3.5rem;
-    height: 3.5rem;
+    --lane-icon: 3.5rem;
+  }
+
+  .item {
+    width: calc(3.5rem * 1.22);
   }
 }

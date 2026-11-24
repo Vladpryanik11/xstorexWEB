@@ -297,10 +297,13 @@ test('the first screen: lanes, search, button, promises and the audience above t
     expect(Math.abs((heroBox?.height ?? 0) - (viewport?.height ?? 0))).toBeLessThanOrEqual(1);
     const sub = await hero.getByText(/Премиум подписки/).boundingBox();
     const bottom = (b: typeof sub | undefined) => (b?.y ?? 0) + (b?.height ?? 0);
+    // The grey «200+» line belongs to the search (owner 2026-11-24, А3): the air above the button
+    // is counted from it.
+    const count = await hero.locator('[data-hero-count]').boundingBox();
     const gaps = [
       (boxes[0]?.y ?? 0) - bottom(sub),
       (boxes[1]?.y ?? 0) - bottom(boxes[0]),
-      (boxes[2]?.y ?? 0) - bottom(boxes[1]),
+      (boxes[2]?.y ?? 0) - bottom(count),
     ];
     for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
     expect(gaps[0] ?? 0).toBeGreaterThan(16);
@@ -317,30 +320,55 @@ test('the first screen: lanes, search, button, promises and the audience above t
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-// Owner 2026-11-23 18:16, variant В (spec 2026-11-23-home-first-screen §3.3–3.4): the lanes run,
-// and typing swaps them for a shelf of the apps found in the whole catalog.
-test('the first-screen search shows a shelf of found apps that opens the install sheet', async ({
+// Owner 2026-11-24, «Лента как Dock» (spec 2026-11-23-home-first-screen): the lane drifts on its
+// own, the middle icon is larger, and typing a name moves that app to the middle of the lane.
+test('the first-screen lane is a Dock: it drifts, and the search brings the app to its middle', async ({
   page,
 }) => {
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
   const track = hero.locator('[data-hero-lane] [data-lane-track]');
-  await expect(track).not.toHaveCSS('animation-name', 'none');
+  const left = () => track.evaluate((el) => el.scrollLeft);
+  const start = await left();
+  await expect.poll(left, { timeout: 6000 }).not.toBe(start);
+  // The 200+ line sits right under the search, in grey.
+  const count = hero.locator('[data-hero-count]');
+  await expect(count).toHaveText('200+ приложений');
+  await expect(count).toHaveCSS('color', 'rgb(110, 110, 115)');
+  const [field, line] = await Promise.all([
+    hero.getByRole('search').boundingBox(),
+    count.boundingBox(),
+  ]);
+  const gap = (line?.y ?? 0) - ((field?.y ?? 0) + (field?.height ?? 0));
+  expect(gap).toBeGreaterThanOrEqual(12);
+  expect(gap).toBeLessThanOrEqual(16);
 
   await hero.getByRole('searchbox').fill('Тестовое приложение 1');
-  const dock = hero.getByTestId('hero-dock');
-  const found = dock.locator('a[data-dock-app]').first();
-  await expect(found).toHaveAttribute('href', '/?app=testovoe-prilozhenie-1');
-  await expect(hero.locator('[data-hero-finder]')).toHaveAttribute('data-searching', '');
-  await expect(hero.getByRole('search')).toContainText('Нашли');
-  // The shelf stays above the field, where the iPhone keyboard does not reach.
-  const [shelf, field] = await Promise.all([
-    dock.boundingBox(),
-    hero.getByRole('search').boundingBox(),
-  ]);
-  expect((shelf?.y ?? 0) + (shelf?.height ?? 0)).toBeLessThanOrEqual(field?.y ?? 0);
+  const hit = track.locator('a[data-hit]');
+  await expect(hit.first()).toHaveAttribute('href', '/?app=testovoe-prilozhenie-1');
+  await expect(hero.locator('[data-lane-name]')).toHaveText('Тестовое приложение 1');
+  // In the middle of the lane, and larger than its neighbours.
+  const middle = await track.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const hits = [...el.querySelectorAll('a[data-hit] img')].map((i) => i.getBoundingClientRect());
+    const near = hits.sort(
+      (a, b) =>
+        Math.abs(a.x + a.width / 2 - (box.x + box.width / 2)) -
+        Math.abs(b.x + b.width / 2 - (box.x + box.width / 2)),
+    )[0];
+    const any = el.querySelector('a:not([data-hit]) img')?.getBoundingClientRect();
+    return {
+      off: Math.abs((near?.x ?? 0) + (near?.width ?? 0) / 2 - (box.x + box.width / 2)),
+      ratio: (near?.width ?? 0) / (any?.width ?? 1),
+      x: (near?.x ?? 0) + (near?.width ?? 0) / 2,
+      y: (near?.y ?? 0) + (near?.height ?? 0) / 2,
+    };
+  });
+  expect(middle.off).toBeLessThanOrEqual(4);
+  expect(middle.ratio).toBeGreaterThan(1.3);
 
-  await found.click();
+  // A tap on the ringed icon in the middle opens its install sheet.
+  await page.mouse.click(middle.x, middle.y);
   await expect(page.getByRole('dialog', { name: 'Тестовое приложение 1' })).toBeVisible();
 });
 
@@ -348,24 +376,19 @@ test('the first-screen search says when the catalog has no such app', async ({ p
   await page.goto('/');
   const hero = page.locator('[data-home-hero]');
   await hero.getByRole('searchbox').fill('Такого нет точно');
-  const dock = hero.getByTestId('hero-dock');
-  await expect(dock).toContainText('Такого приложения пока нет в каталоге');
-  await expect(dock.getByRole('link', { name: 'Весь каталог' })).toHaveAttribute(
-    'href',
-    '/catalog',
-  );
+  const count = hero.locator('[data-hero-count]');
+  await expect(count).toHaveText('Такого приложения пока нет в каталоге');
   await hero.getByRole('searchbox').fill('');
-  await expect(dock).toHaveCount(0);
-  await expect(hero.locator('[data-hero-lanes]')).toBeVisible();
+  await expect(count).toHaveText('200+ приложений');
 });
 
-test('the lanes stand still under reduced motion', async ({ page }) => {
+test('the lane stands still under reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await expect(page.locator('[data-hero-lane] [data-lane-track]')).toHaveCSS(
-    'animation-name',
-    'none',
-  );
+  const track = page.locator('[data-hero-lane] [data-lane-track]');
+  const start = await track.evaluate((el) => el.scrollLeft);
+  await page.waitForTimeout(3000);
+  expect(await track.evaluate((el) => el.scrollLeft)).toBe(start);
 });
 
 test('home blocks follow the «Проверь и купи» order', async ({ page }) => {

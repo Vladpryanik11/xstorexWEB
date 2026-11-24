@@ -109,7 +109,7 @@
   margin-top: 1.125rem;
 }
 
-.search > * {
+.search > :first-child {
   max-width: none;
   min-height: 3rem;
 }
@@ -277,7 +277,7 @@
   .lanes {
     grid-row: 4;
     margin-top: 0;
-    --lane-icon: clamp(2.75rem, 8.6svh, 4rem);
+    --lane-icon: clamp(2.5rem, 7.2svh, 3.75rem);
   }
 
   .search {
@@ -285,7 +285,7 @@
     margin-top: 0;
   }
 
-  .search > * {
+  .search > :first-child {
     min-height: 2.75rem;
   }
 
@@ -319,8 +319,27 @@
     font-weight: 500;
   }
 
-  .search > * {
+  .search > :first-child {
     min-height: 2.5rem;
+  }
+
+  /* The grey «200+» line a little closer to the field than the approved 14 px. */
+  .search > p {
+    margin-top: 0.5rem;
+  }
+
+  .lanes {
+    --lane-icon: 2.5rem;
+  }
+
+  /* No room to spare: the lifted middle icon reaches into the air under the subtitle (it stays
+     clear of the letters), and the name of the middle app is left out. */
+  .lanes [data-lane-track] {
+    margin-top: calc(var(--pad-top) * -1);
+  }
+
+  .lanes [data-lane-name] {
+    display: none;
   }
 
   .cta {

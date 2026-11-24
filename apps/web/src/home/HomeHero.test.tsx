@@ -20,14 +20,22 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
     level: 1,
     name: 'Удаленные из App\u00a0Store снова доступны',
   });
-  const sub = screen.getByText(
-    'Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке',
-  );
+  // Owner 2026-11-24: the same words in three lines, without the dash.
+  const sub = container.querySelector('[data-hero-sub]') as HTMLElement;
+  expect(sub.innerHTML.split('<br>')).toEqual([
+    'Премиум подписки на музыку,',
+    'фоторедакторы, платные игры',
+    'уже в подписке',
+  ]);
   const lanesEl = container.querySelector('[data-hero-lanes]') as Element;
   expect(lanesEl.querySelectorAll('[data-hero-lane]')).toHaveLength(1);
   expect(lanesEl.querySelector('[data-lane-caption]')).toBeNull();
   const search = screen.getByRole('search');
   expect(search).toHaveAttribute('action', '/search');
+  // Owner 2026-11-24 (А3): a grey line right under the search.
+  const count = container.querySelector('[data-hero-count]') as HTMLElement;
+  expect(count).toHaveTextContent('200+ приложений');
+  expect(follows(search, count)).toBe(true);
   expect(screen.getByPlaceholderText('Найти свое приложение')).toBeVisible();
   const cta = screen.getByRole('link', { name: 'Подключить iPhone' });
   expect(cta).toHaveAttribute('href', '/get');

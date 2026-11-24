@@ -54,8 +54,13 @@ export function HomeHero({
       <div className={styles.inner}>
         <div className={styles.sky} aria-hidden="true" data-hero-sky="" />
         <h1 className={styles.title}>Удаленные из App&nbsp;Store снова доступны</h1>
-        <p className={styles.sub}>
-          Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке
+        {/* Owner 2026-11-24: the same words in three lines, without the dash. */}
+        <p className={styles.sub} data-hero-sub="">
+          Премиум подписки на музыку,
+          <br />
+          фоторедакторы, платные игры
+          <br />
+          уже в подписке
         </p>
         <HeroFinder lanes={lanes} lanesClassName={styles.lanes} searchClassName={styles.search} />
         <a className={styles.cta} href="/get" data-hero-cta>
