@@ -60,6 +60,22 @@ it('shows a small screen and a short instruction on each step', () => {
   expect(dialog).toHaveTextContent('Гарантия на весь срок подписки');
 });
 
+// Owner 2026-11-24 10:34: «нужно донести что это безопасно» — the two steps that may worry people
+// say plainly what they do and do not give us.
+it('says why Developer Mode and the profile are safe', () => {
+  render(<HowSheet />);
+  fireEvent.click(screen.getByRole('button', { name: 'Как это работает?' }));
+  const slides = within(screen.getByRole('dialog')).getAllByRole('group');
+  const safe = (k: number) => slides[k]?.querySelector('[data-how-safe]')?.textContent;
+  expect(safe(1)).toBe(
+    'Это встроенная настройка Apple. Доступа к вашему iPhone она нам не даёт, выключить её можно там же.',
+  );
+  expect(safe(2)).toBe(
+    'Профиль передаёт только модель iPhone, версию iOS и номер устройства. Фото, сообщения, пароли и Apple ID нам не видны.',
+  );
+  expect(slides[0]?.querySelector('[data-how-safe]')).toBeNull();
+});
+
 it('goes through the steps with «Дальше» and ends with the button to connect an iPhone', () => {
   render(<HowSheet />);
   fireEvent.click(screen.getByRole('button', { name: 'Как это работает?' }));

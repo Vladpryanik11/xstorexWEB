@@ -5,7 +5,14 @@ import styles from './HowItWorks.module.css';
 /** The steps after the payment (owner 2026-11-24 10:12–10:30): the same titles and texts in the
  * window under the first-screen button and in this section. `how` (a short instruction, point by
  * point) and `note` are shown in the window only. */
-export const HOW_STEPS: { title: string; text: string; how?: string[]; note?: string }[] = [
+export const HOW_STEPS: {
+  title: string;
+  text: string;
+  how?: string[];
+  note?: string;
+  /** Why the step is safe (owner 2026-11-24 10:34), shown in the window. */
+  safe?: string;
+}[] = [
   {
     title: 'Оплатите подписку',
     text: 'Нужна только почта, без регистрации.',
@@ -19,6 +26,7 @@ export const HOW_STEPS: { title: string; text: string; how?: string[]; note?: st
       '«Режим разработчика» → включите',
       'После перезагрузки нажмите «Включить»',
     ],
+    safe: 'Это встроенная настройка Apple. Доступа к вашему iPhone она нам не даёт, выключить её можно там же.',
   },
   {
     title: 'Подключите iPhone',
@@ -28,6 +36,7 @@ export const HOW_STEPS: { title: string; text: string; how?: string[]; note?: st
       'Настройки → «Профиль загружен»',
       'Нажмите «Установить»',
     ],
+    safe: 'Профиль передаёт только модель iPhone, версию iOS и номер устройства. Фото, сообщения, пароли и Apple ID нам не видны.',
   },
   {
     title: 'Дождитесь письма',

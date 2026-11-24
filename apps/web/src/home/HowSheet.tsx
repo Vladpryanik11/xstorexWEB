@@ -124,6 +124,14 @@ export function HowSheet({ className }: { className?: string }) {
                       ))}
                     </ol>
                   ) : null}
+                  {s.safe ? (
+                    <p className={styles.safe} data-how-safe="">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6l-7-3Z" />
+                      </svg>
+                      <span>{s.safe}</span>
+                    </p>
+                  ) : null}
                   {s.note ? <p className={styles.note}>{s.note}</p> : null}
                 </section>
               ))}
