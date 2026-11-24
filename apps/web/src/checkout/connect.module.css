@@ -3,7 +3,7 @@
 /* three pictures: rows on a phone, three columns from 48em (iPad) */
 .guide {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -11,35 +11,17 @@
 
 .shot {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
+  gap: 0.625rem;
   min-width: 0;
 }
 
-/* own drawing of a device: a dark rim around the screen, iPad squarer */
-.device {
-  overflow: hidden;
-  padding: 0.25rem;
-  /* the rim follows the screen's corner: field radius plus the rim width */
-  border-radius: calc(var(--x-radius-field) + 0.25rem);
-  background: var(--x-text);
-  box-shadow: var(--x-shadow-sm);
-}
-
-.device[data-family="ipad"] {
-  border-radius: var(--x-radius-field);
-}
-
-.screen {
+/* A screenshot cropped to the place to tap (owner 2026-11-24, variant А). */
+.photo {
   display: block;
   width: 100%;
   height: auto;
   border-radius: var(--x-radius-field);
-}
-
-.device[data-family="ipad"] .screen {
-  border-radius: calc(var(--x-radius-field) - 0.25rem);
+  box-shadow: 0 0 0 1px #e6ebf2;
 }
 
 .caption {
@@ -63,83 +45,6 @@
   color: var(--x-quiet-fg);
   font: var(--x-type-cap);
   letter-spacing: var(--x-track-small);
-}
-
-/* drawing parts (SVG user units: 180 wide) */
-.paper {
-  fill: var(--x-ice);
-}
-
-.bar,
-.lineSoft {
-  fill: var(--x-sky-50);
-}
-
-.line {
-  fill: var(--x-sky-200);
-}
-
-.soft {
-  fill: var(--x-sky-200);
-}
-
-.icon {
-  fill: var(--x-blue);
-}
-
-.blueFill {
-  fill: var(--x-blue);
-}
-
-.dim {
-  fill: var(--x-scrim);
-}
-
-.sheet {
-  fill: var(--x-white);
-}
-
-.rule {
-  stroke: var(--x-hair);
-  stroke-width: 1;
-}
-
-.tap {
-  fill: var(--x-white);
-  stroke: var(--x-blue);
-  stroke-width: 2.5;
-}
-
-.onBlue,
-.small,
-.muted,
-.key,
-.heading {
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
-}
-
-.onBlue {
-  fill: var(--x-white);
-}
-
-.small,
-.key {
-  fill: var(--x-text);
-}
-
-.key {
-  fill: var(--x-blue);
-  font-weight: 600;
-}
-
-.muted {
-  fill: var(--x-text-2);
-}
-
-.heading {
-  font: var(--x-type-h3);
-  fill: var(--x-text);
 }
 
 /* «Вернитесь в Safari…» and other quiet notices */
@@ -193,21 +98,11 @@
 
 @media (min-width: 48em) {
   .guide {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .shot {
-    grid-template-columns: minmax(0, 1fr);
     align-content: start;
-    justify-items: center;
-  }
-
-  .device {
-    width: min(100%, 8.5rem);
-  }
-
-  .device[data-family="ipad"] {
-    width: min(100%, 10rem);
   }
 }
 
