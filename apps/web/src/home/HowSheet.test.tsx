@@ -34,7 +34,7 @@ it('shows a small screen of each step and the honest lines', () => {
     expect(shot).toHaveAttribute('aria-hidden', 'true');
   }
   expect(slides[1]).toHaveTextContent('Профиль загружен');
-  expect(slides[1]).toHaveTextContent('Готовим iPhone обычно до 24 часов, пришлём письмо.');
+  expect(slides[1]).toHaveTextContent('Готовим iPhone обычно 2–3 часа в рабочее время, пришлём письмо.');
   expect(dialog).toHaveTextContent('Гарантия на весь срок подписки');
 });
 
