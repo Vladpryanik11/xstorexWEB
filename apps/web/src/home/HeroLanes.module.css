@@ -71,15 +71,15 @@
   will-change: transform;
   pointer-events: none;
   -webkit-user-drag: none;
-  transition: box-shadow 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
 }
 
-/* The app the search found, in the middle of the lane. */
-.item[data-hit] .icon {
-  box-shadow:
-    0 0 0 3px var(--x-white),
-    0 0 0 5px var(--x-cta),
-    0 8px 18px rgba(10, 40, 100, 0.2);
+/* While searching, the apps found stay bright and the others fade (owner 2026-11-24). */
+.item[data-dim] .icon {
+  opacity: 0.35;
+  filter: saturate(0.4) blur(1px);
 }
 
 .item:focus-visible .icon {

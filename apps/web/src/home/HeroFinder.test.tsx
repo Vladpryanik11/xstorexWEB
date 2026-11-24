@@ -48,6 +48,10 @@ it('finds an app of the lane at once, without asking the catalog', async () => {
   expect(hits()).toEqual([]);
   await type('телеграм');
   expect(new Set(hits())).toEqual(new Set(['/?app=telegram']));
+  // The other apps fade; the field says how many were found.
+  const dims = [...document.querySelectorAll('[data-dim]')].map((d) => d.getAttribute('href'));
+  expect(new Set(dims)).toEqual(new Set(['/?app=okko']));
+  expect(screen.getByRole('search')).toHaveTextContent('Нашли 1');
   expect(search).not.toHaveBeenCalled();
   expect(count()).toHaveTextContent('200+ приложений');
   await type('');

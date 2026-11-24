@@ -344,8 +344,12 @@ test('the first-screen lane is a Dock: it drifts, and the search brings the app 
   expect(gap).toBeLessThanOrEqual(16);
 
   await hero.getByRole('searchbox').fill('Тестовое приложение 1');
-  const hit = track.locator('a[data-hit]');
-  await expect(hit.first()).toHaveAttribute('href', '/?app=testovoe-prilozhenie-1');
+  // The apps found stay bright, the others fade; the field says how many were found.
+  await expect(
+    track.locator('a[data-hit][href="/?app=testovoe-prilozhenie-1"]').first(),
+  ).toBeAttached();
+  await expect(track.locator('a[data-dim]').first()).toBeAttached();
+  await expect(hero.getByRole('search')).toContainText('Нашли');
   await expect(hero.locator('[data-lane-name]')).toHaveText('Тестовое приложение 1');
   // In the middle of the lane, and larger than its neighbours.
   const middle = await track.evaluate((el) => {

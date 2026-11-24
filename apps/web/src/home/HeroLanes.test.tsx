@@ -1,7 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import type { AppCard } from '@xstore/shared';
 import { expect, it } from 'vitest';
-import { dockScales, HeroLanes, laneApps, matchApp } from './HeroLanes';
+import { dockScales, HeroLanes, laneApps, matchApp, matchApps } from './HeroLanes';
 
 const app = (slug: string, iconUrl?: string, name = `App ${slug}`) =>
   ({ slug, name, iconUrl }) as AppCard;
@@ -72,15 +72,19 @@ it('names the app in the middle of the lane under it, for the eye only', () => {
   expect(name).toHaveAttribute('aria-hidden', 'true');
 });
 
-// The search moves the app it found to the middle of the lane and rings it.
-it('rings every copy of the app the search found', () => {
+// The search moves the app it found to the middle; the apps found stay bright and the others
+// fade (owner 2026-11-24: «так было прикольно», no blue ring).
+it('keeps the apps the search found bright and dims the others', () => {
   const removed = [app('a', '/a.png'), app('b', '/b.png')];
   const { container, rerender } = render(<HeroLanes removed={removed} premium={[]} />);
-  expect(container.querySelectorAll('[data-hit]')).toHaveLength(0);
-  act(() => rerender(<HeroLanes removed={removed} premium={[]} focus="b" />));
+  expect(container.querySelectorAll('[data-hit], [data-dim]')).toHaveLength(0);
+  act(() => rerender(<HeroLanes removed={removed} premium={[]} focus="b" found={['b']} />));
   const hits = [...container.querySelectorAll('[data-hit]')];
+  const dims = [...container.querySelectorAll('[data-dim]')];
   expect(hits.length).toBeGreaterThan(0);
   for (const h of hits) expect(h.getAttribute('href')).toBe('/?app=b');
+  expect(dims.length).toBeGreaterThan(0);
+  for (const d of dims) expect(d.getAttribute('href')).toBe('/?app=a');
 });
 
 it('draws the lane from one section while the other has no apps, and nothing without apps', () => {
@@ -119,4 +123,7 @@ it('finds an app of the lane by its name or address, in any case, with common sp
   expect(matchApp(apps, 'Тестовое приложение 10')).toBe('app-10');
   expect(matchApp(apps, 'тикток')).toBeNull();
   expect(matchApp(apps, '  ')).toBeNull();
+  // Every app of the lane that fits, the best one first.
+  expect(matchApps(apps, 'тестовое приложение 1')).toEqual(['app-1', 'app-10']);
+  expect(matchApps(apps, 'тикток')).toEqual([]);
 });

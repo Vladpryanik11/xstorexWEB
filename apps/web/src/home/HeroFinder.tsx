@@ -6,7 +6,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { browserApi } from '../checkout/browser-api';
 import { APPS } from './figures';
 import styles from './HeroFinder.module.css';
-import { HeroLanes, matchApp, mixedApps } from './HeroLanes';
+import { HeroLanes, matchApps, mixedApps } from './HeroLanes';
 
 /** The API searches from two letters (`searchQuerySchema`). */
 const MIN = 2;
@@ -48,7 +48,8 @@ export function HeroFinder({
   const latest = useRef('');
 
   const q = query.trim().slice(0, MAX);
-  const inLane = matchApp(mixedApps(lanes.removed, lanes.premium), q);
+  const laneFound = matchApps(mixedApps(lanes.removed, lanes.premium), q);
+  const inLane = laneFound[0] ?? null;
   const asksCatalog = q.length >= MIN && inLane === null;
 
   useEffect(() => {
@@ -99,6 +100,7 @@ export function HeroFinder({
           removed={lanes.removed}
           premium={lanes.premium}
           focus={inLane}
+          found={inLane ? laneFound : null}
           paused={q.length > 0}
         />
       </div>
@@ -107,6 +109,7 @@ export function HeroFinder({
           action="/search"
           placeholder="Найти свое приложение"
           onQueryChange={setQuery}
+          trailing={inLane ? <span aria-hidden="true">Нашли {laneFound.length}</span> : null}
         />
         <p className={styles.count} data-hero-count="" aria-live="polite">
           {line}

@@ -85,12 +85,12 @@ const SPELLINGS: Record<string, string> = {
 };
 
 /**
- * The app of the lane the query names: an exact name first, then a name that starts with it,
- * then any name or address that holds it. `null` when there is none.
+ * Every app of the lane the query names, the best first: exact names, then names that start with
+ * it, then any name or address that holds it. Common spellings («телеграм») count too.
  */
-export function matchApp(apps: AppCard[], query: string): string | null {
+export function matchApps(apps: AppCard[], query: string): string[] {
   const typed = norm(query);
-  if (!typed) return null;
+  if (!typed) return [];
   const tries = [typed];
   for (const [said, written] of Object.entries(SPELLINGS)) {
     if (typed.length >= 2 && (said.startsWith(typed) || typed.startsWith(said))) {
@@ -98,14 +98,21 @@ export function matchApp(apps: AppCard[], query: string): string | null {
     }
   }
   const names = apps.map((a) => ({ slug: a.slug, name: norm(a.name), path: norm(a.slug) }));
+  const out: string[] = [];
+  const add = (slug: string) => {
+    if (!out.includes(slug)) out.push(slug);
+  };
   for (const q of tries) {
-    const hit =
-      names.find((a) => a.name === q) ??
-      names.find((a) => a.name.startsWith(q)) ??
-      names.find((a) => a.name.includes(q) || a.path.includes(q));
-    if (hit) return hit.slug;
+    for (const a of names) if (a.name === q) add(a.slug);
+    for (const a of names) if (a.name.startsWith(q)) add(a.slug);
+    for (const a of names) if (a.name.includes(q) || a.path.includes(q)) add(a.slug);
   }
-  return null;
+  return out;
+}
+
+/** The best app of the lane for the query, `null` when none fits. */
+export function matchApp(apps: AppCard[], query: string): string | null {
+  return matchApps(apps, query)[0] ?? null;
 }
 
 /**
@@ -114,17 +121,20 @@ export function matchApp(apps: AppCard[], query: string): string | null {
  * (or a mouse) scrolls it without an end; the icon in the middle is larger and its neighbours
  * shrink towards the edges, like the Dock of macOS; the name of the middle app is under the lane.
  * Untouched, it drifts slowly to the left; under reduced motion it stands. `focus` moves that app
- * to the middle and rings it. An icon opens its install sheet. Without apps nothing is drawn.
+ * to the middle; while searching, the apps in `found` stay bright and the others fade. An icon opens its install sheet. Without apps nothing is drawn.
  */
 export function HeroLanes({
   removed,
   premium,
   focus = null,
+  found = null,
   paused = false,
 }: {
   removed: AppCard[];
   premium: AppCard[];
   focus?: string | null;
+  /** Apps the search found in the lane; `null` while nobody searches. */
+  found?: string[] | null;
   /** The search field has text: the lane does not drift. */
   paused?: boolean;
 }) {
@@ -133,12 +143,22 @@ export function HeroLanes({
   if (one.length === 0) return null;
   return (
     <div className={styles.lanes} data-hero-lanes="">
-      <Lane apps={one} focus={focus} paused={paused} />
+      <Lane apps={one} focus={focus} found={found} paused={paused} />
     </div>
   );
 }
 
-function Lane({ apps, focus, paused }: { apps: AppCard[]; focus: string | null; paused: boolean }) {
+function Lane({
+  apps,
+  focus,
+  found,
+  paused,
+}: {
+  apps: AppCard[];
+  focus: string | null;
+  found: string[] | null;
+  paused: boolean;
+}) {
   const scroller = useRef<HTMLDivElement>(null);
   const name = useRef<HTMLParagraphElement>(null);
   const live = useRef({
@@ -338,7 +358,8 @@ function Lane({ apps, focus, paused }: { apps: AppCard[]; focus: string | null; 
             draggable={false}
             data-slot=""
             data-slug={app.slug}
-            data-hit={focus === app.slug ? '' : undefined}
+            data-hit={found?.includes(app.slug) ? '' : undefined}
+            data-dim={found && !found.includes(app.slug) ? '' : undefined}
             aria-hidden={named ? undefined : true}
             tabIndex={named ? undefined : -1}
           >
