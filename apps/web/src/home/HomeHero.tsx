@@ -4,8 +4,6 @@ import { HeroFinder, type HeroLaneApps } from './HeroFinder';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
 
-const STEPS = ['Подключи', 'Активируй', 'Скачивай'];
-
 /** Line icons for the three promises, drawn for Xstorex (no Apple logo; a plain shield, no check). */
 const PROMISES = [
   {
@@ -40,8 +38,8 @@ export type { HeroLaneApps };
 /**
  * First screen of the home page (spec 2026-11-23-home-first-screen, owner 2026-11-22/23):
  * promise on a bright sky with white text, two edge-to-edge lanes of removed and premium apps,
- * search, the «Подключить iPhone» button, three promises and the audience; the three steps
- * follow right under the first screen.
+ * search, the «Подключить iPhone» button, three promises and the audience (owner 2026-11-24: the
+ * three steps left the first screen; «Как это работает» further down keeps them).
  */
 export function HomeHero({
   collections,
@@ -51,7 +49,6 @@ export function HomeHero({
   lanes: HeroLaneApps;
 }) {
   const promisesId = useId();
-  const stepsId = useId();
   return (
     <section className={styles.hero} data-home-hero>
       <div className={styles.inner}>
@@ -102,18 +99,6 @@ export function HomeHero({
             Более <b className={styles.audienceNum}>10 000</b> пользователей в&nbsp;месяц
           </span>
         </p>
-        <span id={stepsId} hidden>
-          Три шага
-        </span>
-        <ol className={styles.steps} aria-labelledby={stepsId}>
-          {STEPS.map((s, i) => (
-            <li key={s} className={styles.step}>
-              <b className={styles.num}>{i + 1}</b>
-              {s}
-            </li>
-          ))}
-        </ol>
-        <p className={styles.site}>Установка прямо с сайта</p>
       </div>
     </section>
   );

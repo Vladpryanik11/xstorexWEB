@@ -289,9 +289,8 @@ test('the first screen: lanes, search, button, promises and the audience above t
     expect(cta?.width).toBeGreaterThan(300);
     const proof = boxes[4];
     expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(660);
-    // The three steps start under the first screen.
-    const steps = await hero.getByRole('list', { name: 'Три шага' }).boundingBox();
-    expect(steps?.y ?? 0).toBeGreaterThan(proof?.y ?? 0);
+    // Owner 2026-11-24: no three steps on the first screen any more.
+    await expect(hero.getByRole('list', { name: 'Три шага' })).toHaveCount(0);
   } else {
     expect(boxes[0]?.x).toBe(0);
   }

@@ -189,7 +189,7 @@
 }
 
 .after {
-  /* Above the sky, which reaches into the audience line and the steps. */
+  /* Above the sky, which reaches into the audience line. */
   position: relative;
   z-index: 1;
   box-sizing: content-box;
@@ -239,51 +239,6 @@
 
 .avatars > span:first-child {
   margin-left: 0;
-}
-
-/* Three steps right under the first screen. */
-.steps {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  font: var(--x-type-note);
-}
-
-.step + .step::before {
-  content: "→";
-  position: absolute;
-  top: 0.625rem;
-  left: -2rem;
-  color: var(--x-text-3);
-  font: var(--x-type-ui);
-}
-
-.num {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  box-sizing: border-box;
-  border: 1.5px solid var(--x-text);
-  border-radius: 50%;
-  font: var(--x-type-step);
-}
-
-.site {
-  margin: 0.75rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-lead);
 }
 
 /* Computer: two columns, text on the left, the picture slot on the right (picture postponed:
@@ -376,15 +331,6 @@
 
   .audience {
     margin-top: 2.5rem;
-  }
-
-  .steps {
-    gap: 6rem;
-    margin-top: 3rem;
-  }
-
-  .step + .step::before {
-    left: -3.5rem;
   }
 }
 

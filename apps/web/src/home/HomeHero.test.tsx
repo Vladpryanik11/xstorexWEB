@@ -59,17 +59,12 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
   );
 });
 
-it('three steps and «Установка прямо с сайта» right under the first screen', () => {
+// Owner 2026-11-24: the three steps leave the first screen (the «Как это работает» section stays).
+it('ends the first screen with the audience line, without the three steps', () => {
   render(<HomeHero collections={collections} lanes={lanes} />);
-  const steps = screen.getByRole('list', { name: 'Три шага' });
-  expect(
-    within(steps)
-      .getAllByRole('listitem')
-      .map((li) => li.textContent),
-  ).toEqual(['1Подключи', '2Активируй', '3Скачивай']);
-  const site = screen.getByText('Установка прямо с сайта');
-  expect(follows(screen.getByText('10 000'), steps)).toBe(true);
-  expect(follows(steps, site)).toBe(true);
+  expect(screen.queryByRole('list', { name: 'Три шага' })).toBeNull();
+  expect(screen.queryByText('Подключи')).toBeNull();
+  expect(screen.queryByText('Установка прямо с сайта')).toBeNull();
 });
 
 it('keeps the sky and the computer picture away from screen readers', () => {
