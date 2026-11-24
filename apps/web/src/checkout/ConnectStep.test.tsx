@@ -103,6 +103,39 @@ describe('ConnectStep', () => {
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('iPhone');
   });
 
+  // Owner 2026-11-24 11:43, variant Б: right after the payment a screen of its own turns on
+  // Developer Mode; «Готово, дальше» leads on to the profile.
+  it('asks to turn on Developer Mode first, with screenshots, then leads to the profile', () => {
+    render(
+      <ConnectStep
+        access={noDevice}
+        result={null}
+        device="ios"
+        family="iphone"
+        devMode="ask"
+        getAccess={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Включите режим разработчика' })).toBeVisible();
+    const steps = screen
+      .getAllByRole('listitem')
+      .filter((li) => li.closest('[data-dev-mode]'))
+      .map((li) => [li.textContent, li.querySelector('img')?.getAttribute('src') ?? null]);
+    expect(steps).toEqual([
+      ['1Откройте Настройки и найдите «Режим разработчика»', '/get/dev-1.webp'],
+      ['2Включите переключатель', '/get/dev-2.webp'],
+      ['3Нажмите «Перезагрузить»', '/get/dev-3.webp'],
+      ['4После перезагрузки нажмите «Включить» и введите код-пароль iPhone', null],
+    ]);
+    expect(screen.getByText(/Доступа к вашему iPhone эта настройка нам не даёт/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Готово, дальше' })).toHaveAttribute(
+      'href',
+      '/get/iphone?dev=ok',
+    );
+    expect(screen.queryByRole('link', { name: 'Подключить iPhone' })).toBeNull();
+    expect(screen.getByTestId('connect-status')).toHaveTextContent('Включите режим разработчика');
+  });
+
   it('under the connect link: «Работает только в Safari»', () => {
     render(<ConnectStep access={noDevice} result={null} device="ios" getAccess={vi.fn()} />);
     expect(screen.getByText('Работает только в Safari')).toBeVisible();
@@ -157,7 +190,7 @@ describe('ConnectStep', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(errorMessages.DEVICE_OWNED);
     expect(screen.getByRole('link', { name: 'Попробовать снова' })).toHaveAttribute(
       'href',
-      '/get/iphone',
+      '/get/iphone?dev=ok',
     );
   });
 

@@ -140,3 +140,14 @@
   letter-spacing: var(--x-track-small);
   text-align: center;
 }
+
+/* Why Developer Mode is safe (owner 2026-11-24 10:34), as in «Как это работает». */
+.safe {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--x-radius-field);
+  background: var(--x-sky-50);
+  color: var(--x-text);
+  font: var(--x-type-cap);
+  letter-spacing: var(--x-track-small);
+}

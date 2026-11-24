@@ -49,3 +49,41 @@ export function ConnectGuide({ family }: { family: DeviceFamily }) {
     </ol>
   );
 }
+
+/**
+ * Developer Mode, the screen before the profile (owner 2026-11-24 11:39–11:43, variant Б): his
+ * screenshots found through the Settings search, the place to tap ringed in blue; the prompt after
+ * the restart is said in words only (owner 11:42).
+ */
+export function DevModeGuide({ family }: { family: DeviceFamily }) {
+  const name = familyName(family);
+  const steps: { caption: string; src?: string; w?: number; h?: number }[] = [
+    {
+      caption: 'Откройте Настройки и найдите «Режим разработчика»',
+      src: '/get/dev-1.webp',
+      w: 590,
+      h: 278,
+    },
+    { caption: 'Включите переключатель', src: '/get/dev-2.webp', w: 590, h: 182 },
+    { caption: 'Нажмите «Перезагрузить»', src: '/get/dev-3.webp', w: 466, h: 400 },
+    { caption: `После перезагрузки нажмите «Включить» и введите код-пароль ${name}` },
+  ];
+  return (
+    <ol className={styles.guide}>
+      {steps.map(({ caption, src, w, h }, i) => (
+        <li key={caption} className={styles.shot}>
+          <p className={styles.caption}>
+            <span className={styles.num} aria-hidden="true">
+              {i + 1}
+            </span>
+            <span>{caption}</span>
+          </p>
+          {src ? (
+            // biome-ignore lint/performance/noImgElement: three small static screenshots
+            <img className={styles.photo} src={src} alt="" width={w} height={h} loading="lazy" />
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
