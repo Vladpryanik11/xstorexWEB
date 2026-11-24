@@ -18,6 +18,8 @@ export function HowSheet({ className }: { className?: string }) {
   const opener = useRef<HTMLButtonElement>(null);
   const closer = useRef<HTMLButtonElement>(null);
   const track = useRef<HTMLDivElement>(null);
+  // While «Дальше» scrolls to a step, the scroll events in between do not turn the step back.
+  const target = useRef<number | null>(null);
   const last = HOW_STEPS.length - 1;
 
   const close = () => {
@@ -45,6 +47,11 @@ export function HowSheet({ className }: { className?: string }) {
 
   const go = (i: number) => {
     setStep(i);
+    target.current = i;
+    // A swipe that stops the smooth scroll midway turns the steps again after a moment.
+    setTimeout(() => {
+      if (target.current === i) target.current = null;
+    }, 1000);
     const el = track.current;
     if (el && typeof el.scrollTo === 'function') {
       el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
@@ -56,6 +63,10 @@ export function HowSheet({ className }: { className?: string }) {
     const el = track.current;
     if (!el || el.clientWidth === 0) return;
     const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (target.current !== null) {
+      if (i !== target.current) return;
+      target.current = null;
+    }
     if (i !== step) setStep(Math.max(0, Math.min(last, i)));
   };
 
