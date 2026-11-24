@@ -334,10 +334,18 @@ test('the name of the middle app stands right under its icon', async ({ page }) 
       if (!big || !n) return 99;
       return Math.abs(big.x + big.width / 2 - (n.x + n.width / 2));
     });
+  // The lane draws itself after the icons load.
+  await expect.poll(off).toBeLessThanOrEqual(1.5);
   for (let i = 0; i < 4; i++) {
     expect(await off()).toBeLessThanOrEqual(1.5);
     await page.waitForTimeout(700);
   }
+  // Variant Б3 (owner 12:57): white, the font of the title, a soft blue shadow.
+  const name = hero.locator('[data-lane-name]');
+  await expect(name).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(name).toHaveCSS('font-weight', '600');
+  await expect(name).toHaveCSS('font-family', /Inter Tight/);
+  await expect(name).toHaveCSS('text-shadow', /rgba\(0, 70, 180, 0\.45\)/);
 });
 
 // Owner 2026-11-24, «Лента как Dock» (spec 2026-11-23-home-first-screen): the lane drifts on its

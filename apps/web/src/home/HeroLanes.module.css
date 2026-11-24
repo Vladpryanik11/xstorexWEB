@@ -87,12 +87,15 @@
   outline-offset: 2px;
 }
 
-/* The name of the middle app, under the lane. */
+/* The name of the middle app, right under its icon (owner 2026-11-24 12:57, variant Б3): white
+   in the font of the title, with a soft blue shadow, like the title on the sky. */
 .name {
-  min-height: 1.125rem;
-  margin: 0.125rem 0 0;
-  color: rgba(14, 26, 51, 0.72);
+  min-height: 1.25rem;
+  margin: 0.375rem 0 0;
+  color: var(--x-white);
   font: var(--x-type-lanename);
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 8px rgba(0, 70, 180, 0.45);
   white-space: nowrap;
 }
 
