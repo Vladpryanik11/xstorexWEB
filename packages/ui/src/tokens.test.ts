@@ -91,6 +91,8 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-type-pricesm', '600 2.5rem / 1.05 var(--x-font-title)'],
     ['--x-type-section', '600 1.75rem / 1.15 var(--x-font-title)'],
     ['--x-type-sectionsm', '600 1.375rem / 1.2 var(--x-font-title)'],
+    ['--x-type-footbrand', '600 1.125rem / 1.2 var(--x-font-title)'],
+    ['--x-type-footlink', '400 .9375rem / 1.35 var(--x-font)'],
     ['--x-cta', '#0071e3'],
     ['--x-cta-pressed', '#0062c4'],
   ])('%s = %s', (name, value) => {
