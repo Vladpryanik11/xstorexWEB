@@ -90,6 +90,8 @@ test('plan card is the blue sky card', async ({ page }) => {
   await expect(price).toHaveCSS('font-weight', '500');
   await expect(price).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(price.getByText('₽')).toHaveCSS('color', 'rgba(255, 255, 255, 0.55)');
+  // 13:33: the ₽ stands a little apart from the figure (4 px more than a space).
+  await expect(price.getByText('₽')).toHaveCSS('margin-left', '4px');
   const cta = card.getByRole('link');
   await expect(cta).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(cta).toHaveCSS('color', 'rgb(0, 113, 227)');
