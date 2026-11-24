@@ -257,11 +257,12 @@
 
   .inner {
     flex: 1 0 auto;
-    /* «Низ», variant А (owner 2026-11-24): the free space goes above the lane, the search and the
-       button; the audience line follows the promises at 16px. */
+    /* «Низ», variant А (owner 2026-11-24): the free space goes in equal parts above the lane,
+       above the search, above the button and under it, so the button stands in the middle between
+       the «200+» line and the promises (owner 09:09); the audience line follows the promises. */
     grid-template-rows:
-      auto auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto auto
-      1rem;
+      auto auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto
+      minmax(1rem, 1fr) auto 1rem;
   }
 
   .title {
@@ -297,8 +298,8 @@
   }
 
   .promises {
-    grid-row: 9;
-    margin-top: 1rem;
+    grid-row: 10;
+    margin-top: 0;
   }
 
   .audience {
@@ -346,8 +347,10 @@
     min-height: 2.75rem;
   }
 
-  .promises {
-    margin-top: 0.5rem;
+  .inner {
+    grid-template-rows:
+      auto auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto
+      minmax(0.75rem, 1fr) auto 1rem;
   }
 }
 

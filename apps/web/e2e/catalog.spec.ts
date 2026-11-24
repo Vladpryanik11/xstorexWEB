@@ -304,6 +304,8 @@ test('the first screen: lanes, search, button, promises and the audience above t
       (boxes[0]?.y ?? 0) - bottom(sub),
       (boxes[1]?.y ?? 0) - bottom(boxes[0]),
       (boxes[2]?.y ?? 0) - bottom(count),
+      // Owner 2026-11-24 09:09: the button stands in the middle between the line and the promises.
+      (boxes[3]?.y ?? 0) - bottom(boxes[2]),
     ];
     for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
     expect(gaps[0] ?? 0).toBeGreaterThan(16);
