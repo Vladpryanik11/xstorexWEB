@@ -15,7 +15,8 @@ test('first visit: app window → /get → email → pay on fake page → access
   isMobile,
 }, testInfo) => {
   const email = buyerEmail(testInfo, 'first');
-  await page.goto('/');
+  // Owner 2026-11-24 12:29: the app shelves left the home page; the catalog keeps them.
+  await page.goto('/catalog');
   await page
     .getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ })
     .first()
@@ -75,7 +76,8 @@ test('first visit: app window → /get → email → pay on fake page → access
 test('desktop: pay from computer, access page works', async ({ page, isMobile }, testInfo) => {
   test.skip(isMobile, 'a computer-only scenario');
   const email = buyerEmail(testInfo, 'desktop');
-  await page.goto('/');
+  // Owner 2026-11-24 12:29: the app shelves left the home page; the catalog keeps them.
+  await page.goto('/catalog');
   await page
     .getByRole('button', { name: /^Тестовое приложение 2(?!\d)/ })
     .first()

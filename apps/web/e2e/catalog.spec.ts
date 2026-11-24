@@ -46,7 +46,7 @@ test('the header «Как это работает» opens the window over the ho
       .click();
   const dialog = page.getByRole('dialog', { name: 'Как это работает' });
   await expect(dialog).toBeVisible();
-  await page.keyboard.press('Escape');
+  await dialog.getByRole('button', { name: 'Закрыть' }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('region', { name: 'Как это работает' })).toHaveCount(0);
@@ -182,7 +182,8 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
 
 test('an app morphs into its sheet; Escape closes it and returns focus', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  // Owner 2026-11-24 12:29: the app shelves left the home page; the catalog keeps them.
+  await page.goto('/catalog');
   const trigger = page.getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ }).first();
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
@@ -234,7 +235,15 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   // The header carries its own «Подключить» (owner 2026-11-23); count the page buttons only.
   const buttons = page.locator('main').getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
-  await page.getByRole('heading', { name: 'Частые вопросы' }).scrollIntoViewIfNeeded();
+  // Owner 2026-11-24 12:29: under the hero only the plan and the questions. With the answers open
+  // the questions are long enough for the bar to show between the plan button and the footer.
+  const faq = page.getByRole('region', { name: 'Частые вопросы' });
+  for (const q of await faq.locator('summary').all()) await q.click();
+  // Just past the plan button: it is off screen above, the footer still below.
+  await page.evaluate(() => {
+    const cta = document.querySelector('[data-page-cta]');
+    if (cta) window.scrollTo(0, cta.getBoundingClientRect().bottom + window.scrollY + 4);
+  });
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(1);
