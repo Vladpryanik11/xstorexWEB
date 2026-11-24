@@ -290,8 +290,9 @@ test('the first screen: lanes, search, button, promises and the audience above t
     expect(cta?.width).toBeGreaterThan(300);
     const proof = boxes[4];
     expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(viewport?.height ?? 0);
-    // Owner 2026-11-24 («равномерно», variant 4): the hero is one screen tall and its free space
-    // goes in equal parts above the lane, above the search and above the audience line.
+    // Owner 2026-11-24 («равномерно», variant 4; «низ», variant А): the hero is one screen tall and
+    // its free space goes in equal parts above the lane, above the search and above the button; the
+    // audience line sits right under the promises.
     const heroBox = await hero.boundingBox();
     expect(Math.abs((heroBox?.height ?? 0) - (viewport?.height ?? 0))).toBeLessThanOrEqual(1);
     const sub = await hero.getByText(/Премиум подписки/).boundingBox();
@@ -299,9 +300,13 @@ test('the first screen: lanes, search, button, promises and the audience above t
     const gaps = [
       (boxes[0]?.y ?? 0) - bottom(sub),
       (boxes[1]?.y ?? 0) - bottom(boxes[0]),
-      (boxes[4]?.y ?? 0) - bottom(boxes[3]),
+      (boxes[2]?.y ?? 0) - bottom(boxes[1]),
     ];
     for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
+    expect(gaps[0] ?? 0).toBeGreaterThan(16);
+    const underPromises = (boxes[4]?.y ?? 0) - bottom(boxes[3]);
+    expect(underPromises).toBeGreaterThanOrEqual(14);
+    expect(underPromises).toBeLessThanOrEqual(26);
     // The lane is cut at the screen edges only, so the icon shadows below are not cut into a line.
     await expect(hero.locator('[data-hero-lanes]')).toHaveCSS('overflow-y', 'visible');
     // Owner 2026-11-24: no three steps on the first screen any more.
