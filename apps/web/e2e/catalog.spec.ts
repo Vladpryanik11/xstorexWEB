@@ -389,8 +389,9 @@ test('the first-screen lane is a Dock: it drifts, and the search brings the app 
   await expect(page.getByRole('dialog', { name: 'Тестовое приложение 1' })).toBeVisible();
 });
 
-// Owner 2026-11-24 09:12: «Как это работает?» opens the steps over the page.
-test('«Как это работает?» under the button opens the steps without leaving the page', async ({
+// Owner 2026-11-24 09:12: «Как это работает?» opens a window over the page; 11:56 it explains the
+// service on one screen.
+test('«Как это работает?» under the button opens the window without leaving the page', async ({
   page,
 }) => {
   await page.goto('/');
@@ -399,7 +400,7 @@ test('«Как это работает?» under the button opens the steps witho
   const dialog = page.getByRole('dialog', { name: 'Как это работает' });
   await expect(dialog).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
-  for (let k = 0; k < 3; k++) await dialog.getByRole('button', { name: 'Дальше' }).click();
+  await expect(dialog.getByRole('list', { name: 'Почему это безопасно' })).toBeVisible();
   await expect(dialog.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
     'href',
     '/get',
