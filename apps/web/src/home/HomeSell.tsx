@@ -20,9 +20,9 @@ function Cta({ priceRub, light }: Price & { light?: boolean }) {
   );
 }
 
-// Owner 2026-11-24 13:08, variant 2 «Только главное»: three short points; the explanations
-// live in the questions below.
-const INCLUDED = ['Безлимит', 'Ваше устройство', 'Гарантия до последнего дня'];
+// Owner 2026-11-24 13:08 (variant 2 «Только главное») and 13:12 (variant Г): three short points
+// as pills in a row; the explanations live in the questions below.
+const INCLUDED = ['Безлимит', '1 iPhone', 'Гарантия'];
 
 export function HomePlan({ priceRub }: Price) {
   const id = useId();
@@ -39,12 +39,7 @@ export function HomePlan({ priceRub }: Price) {
         ) : null}
         <ul className={styles.included}>
           {INCLUDED.map((point) => (
-            <li key={point}>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6 12.5l4 4 8-9" />
-              </svg>
-              {point}
-            </li>
+            <li key={point}>{point}</li>
           ))}
         </ul>
         <Cta priceRub={priceRub} light />
