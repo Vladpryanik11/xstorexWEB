@@ -90,8 +90,9 @@
 /* The name of the middle app, right under its icon (owner 2026-11-24 12:57, variant Б3): white
    in the font of the title, with a soft blue shadow, like the title on the sky. */
 .name {
+  /* The same height as before (1.25rem): the first screen is exactly one phone screen. */
   min-height: 1.25rem;
-  margin: 0.375rem 0 0;
+  margin: 0;
   color: var(--x-white);
   font: var(--x-type-lanename);
   letter-spacing: -0.01em;
