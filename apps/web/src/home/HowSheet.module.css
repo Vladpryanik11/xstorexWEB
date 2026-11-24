@@ -443,12 +443,12 @@
 /* A phone of middle height (iPhone 15 in Safari): the small screen shrinks so the whole window fits. */
 @media (max-height: 45em) {
   .shot {
-    height: 6.5rem;
+    height: 5.75rem;
     margin-bottom: 0.125rem;
   }
 
   .screen {
-    zoom: 0.66;
+    zoom: 0.58;
   }
 
   .slide {
