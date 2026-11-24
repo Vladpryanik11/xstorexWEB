@@ -374,6 +374,8 @@
   /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
   /* Owner 2026-11-24 («сетка Apple»): a 48px pill, 17px label. */
   .cta {
+    /* The picture column makes the rows taller; the pill keeps its 48px. */
+    align-self: start;
     min-height: 3rem;
     margin-top: 0.75rem;
     font: var(--x-type-buttonsm);
