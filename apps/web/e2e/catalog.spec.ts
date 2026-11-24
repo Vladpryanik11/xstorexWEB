@@ -296,7 +296,7 @@ test('the first screen: lanes, search, button, promises and the audience above t
     const heroBox = await hero.boundingBox();
     expect(Math.abs((heroBox?.height ?? 0) - (viewport?.height ?? 0))).toBeLessThanOrEqual(1);
     const sub = await hero.getByText(/Премиум подписки/).boundingBox();
-    const bottom = (b: typeof sub) => (b?.y ?? 0) + (b?.height ?? 0);
+    const bottom = (b: typeof sub | undefined) => (b?.y ?? 0) + (b?.height ?? 0);
     const gaps = [
       (boxes[0]?.y ?? 0) - bottom(sub),
       (boxes[1]?.y ?? 0) - bottom(boxes[0]),
