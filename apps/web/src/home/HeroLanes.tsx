@@ -116,6 +116,41 @@ export function matchApp(apps: AppCard[], query: string): string | null {
 }
 
 /**
+ * How far each icon moves out to make room for the larger ones around the middle, like the Dock
+ * of macOS. `d` is the distance of each icon from the middle of the lane, `sc` its scale, `size`
+ * the icon. The icons push their neighbours out by their extra size; then the whole row is moved
+ * back so that the point in the middle of the lane stays where it was. Pushing out from the
+ * nearest icon instead made the lane jump by ~19 px each time the next icon became the nearest
+ * (owner 2026-11-24 21:53, «дёргание, когда иконка становится большой»).
+ */
+export function dockShifts(d: number[], sc: number[], size: number): number[] {
+  const n = d.length;
+  if (n === 0) return [];
+  let near = 0;
+  d.forEach((v, k) => {
+    if (Math.abs(v) < Math.abs(d[near] as number)) near = k;
+  });
+  const extra = (k: number) => size * ((sc[k] as number) - 1);
+  const shift = new Array<number>(n).fill(0);
+  for (let k = near + 1; k < n; k++) {
+    shift[k] = (shift[k - 1] as number) + (extra(k - 1) + extra(k)) / 2;
+  }
+  for (let k = near - 1; k >= 0; k--) {
+    shift[k] = (shift[k + 1] as number) - (extra(k + 1) + extra(k)) / 2;
+  }
+  // The middle of the lane lies between the nearest icon and its neighbour on the other side:
+  // move everything back by the shift found there, so that point stays put.
+  const dn = d[near] as number;
+  const other = dn > 0 ? near - 1 : near + 1;
+  let anchor = 0;
+  if (dn !== 0 && other >= 0 && other < n) {
+    const dOther = d[other] as number;
+    anchor = ((shift[other] as number) * (0 - dn)) / (dOther - dn);
+  }
+  return shift.map((v) => v - anchor);
+}
+
+/**
  * One live lane of real catalog icons (spec 2026-11-23-home-first-screen §3.3, «Лента как Dock»,
  * owner 2026-11-24): removed and premium apps take turns from edge to edge of the screen. A finger
  * (or a mouse) scrolls it without an end; the icon in the middle is larger and its neighbours
@@ -239,19 +274,8 @@ function Lane({
       d.forEach((v, k) => {
         if (Math.abs(v) < Math.abs(d[near] as number)) near = k;
       });
-      // The nearest icon stays; the others move out by the extra size of those in between.
+      const shift = dockShifts(d, sc, sw * 0.82);
       const size = sw * 0.82;
-      const shift = new Array<number>(slots.length).fill(0);
-      for (let k = near + 1; k < slots.length; k++) {
-        shift[k] =
-          (shift[k - 1] as number) +
-          (size * ((sc[k - 1] as number) - 1 + ((sc[k] as number) - 1))) / 2;
-      }
-      for (let k = near - 1; k >= 0; k--) {
-        shift[k] =
-          (shift[k + 1] as number) -
-          (size * ((sc[k + 1] as number) - 1 + ((sc[k] as number) - 1))) / 2;
-      }
       // Only the icons in view move by the part of a pixel; the others keep their place, so the
       // browser repaints only what is on screen.
       const view = half + sw * 2;
@@ -271,7 +295,7 @@ function Lane({
       }
       // The name stands right under the middle icon, which drifts off the middle of the lane.
       if (name.current) {
-        name.current.style.transform = `translateX(${(d[near] ?? 0) + nudge}px)`;
+        name.current.style.transform = `translateX(${(d[near] ?? 0) + (shift[near] ?? 0) + nudge}px)`;
       }
     };
 
