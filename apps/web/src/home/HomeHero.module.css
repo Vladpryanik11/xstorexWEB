@@ -6,9 +6,6 @@
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
   /* «Поднять повыше» (owner 2026-11-23): the title sits 16px under the menu button. */
   --hero-top: calc(var(--hero-under-pill) + 0.25rem);
-  /* «Как у Apple», Б (owner 2026-11-24): the title has no shadow; the subtitle has a haze right under
-     the letters, no offset, so it reads better and the trick does not show (variant В). */
-  --hero-shadow-small: 0 0 1px rgba(0, 30, 100, 0.12), 0 0 22px rgba(0, 30, 100, 0.3);
   position: relative;
   overflow: clip;
   padding: var(--hero-top) 0 2rem;
@@ -47,16 +44,16 @@
   left: 0;
   /* Never past the hero: it clips, and a cut edge would show. */
   height: min(53rem, 100%);
-  /* Owner 2026-11-24 («как у Apple», Б): the top is deeper, Apple blue, so white text reads on its
-     own. */
+  /* Owner 2026-11-24 («как у Apple», Б, clean variant 2): the top is deeper, Apple blue, and reaches
+     past the subtitle, so white text reads on its own with no shadow at all. */
   background: linear-gradient(
     180deg,
     #0066e0 0%,
-    #0a84ff 14%,
-    #3ec6ff 32%,
-    #8fd8ff 48%,
-    #c9ecff 62%,
-    #e3f5ff 76%,
+    #0a84ff 20%,
+    #2aa8ff 36%,
+    #7fd0ff 50%,
+    #c9ecff 64%,
+    #e3f5ff 77%,
     #f5fbff 88%,
     rgba(255, 255, 255, 0) 100%
   );
@@ -95,7 +92,6 @@
   font: var(--x-type-lead);
   /* Owner 2026-11-24 (Б): a step heavier. */
   font-weight: 500;
-  text-shadow: var(--hero-shadow-small);
   text-wrap: balance;
 }
 

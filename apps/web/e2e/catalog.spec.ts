@@ -140,20 +140,18 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   // Owner 2026-11-23: «Яркое небо, белый текст» (spec 2026-11-23-home-first-screen §4).
   const sky = hero.locator('[data-hero-sky]');
   expect(await sky.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
-    /rgb\(0, 102, 224\).*rgb\(10, 132, 255\).*rgb\(62, 198, 255\)/,
+    /rgb\(0, 102, 224\) 0%.*rgb\(10, 132, 255\) 20%.*rgb\(42, 168, 255\) 36%/,
   );
   expect((await sky.boundingBox())?.y).toBe(0);
   const phone = hero.locator('[data-hero-phone]');
   await expect(phone).toBeHidden();
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
-  // Owner 2026-11-24 («как у Apple», Б): a deeper sky carries the white text. The title has no
-  // shadow; the subtitle has an unnoticeable night-blue haze right under the letters, no offset.
+  // Owner 2026-11-24 («как у Apple», Б; «грязновато» → чистый вариант 2): no shadow or haze on
+  // the text at all; the deep blue reaches down past the subtitle instead.
   expect(await title.evaluate((el) => getComputedStyle(el).textShadow)).toBe('none');
   const subtitle = hero.getByText(/Премиум подписки/);
-  expect(await subtitle.evaluate((el) => getComputedStyle(el).textShadow)).toBe(
-    'rgba(0, 30, 100, 0.12) 0px 0px 1px, rgba(0, 30, 100, 0.3) 0px 0px 22px',
-  );
+  expect(await subtitle.evaluate((el) => getComputedStyle(el).textShadow)).toBe('none');
   await expect(subtitle).toHaveCSS('font-weight', '500');
   await expect(subtitle).toHaveCSS('color', 'rgb(255, 255, 255)');
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
