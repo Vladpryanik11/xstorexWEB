@@ -1,5 +1,4 @@
 import { ApiClientError, type AppCard, type AppDetail } from '@xstore/shared';
-import { SearchField } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
 import { Fragment } from 'react';
 import { serverApi } from '../../src/api/server';
@@ -73,15 +72,6 @@ export default async function HomePage({ searchParams }: Props) {
       <div className={styles.flow}>
         <HomeBenefits />
         <div className={styles.check}>
-          <section className={styles.find} aria-labelledby="home-find">
-            <h2 id="home-find" className={styles.findTitle}>
-              Ищете конкретное приложение?
-            </h2>
-            <p className={styles.findLead}>Проверьте, есть ли оно в каталоге.</p>
-            <div className={styles.findField}>
-              <SearchField action="/search" />
-            </div>
-          </section>
           <SectionTiles />
         </div>
         <HomeStats />

@@ -241,13 +241,100 @@
   margin-left: 0;
 }
 
+/* Phone (owner 2026-11-24, «равномерно», variant 4 on the «сетка Apple» sizes): the first screen
+   is exactly one phone screen. Its free space goes in equal parts above the lane, above the search
+   and above the audience line (the 1fr rows), and the icons and the text grow with the screen
+   height. Mockup: /mnt/project-files/screenshots/2026-11-24-air/rovno-*.png. */
+@media (max-width: 63.99em) {
+  .hero {
+    --hero-top: calc(var(--hero-under-pill) - 0.5rem);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    padding-bottom: 1.5rem;
+  }
+
+  .inner {
+    flex: 1 0 auto;
+    grid-template-rows:
+      auto auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto auto auto
+      minmax(1rem, 1fr);
+  }
+
+  .title {
+    font-size: clamp(1.75rem, 5.4svh, 2.5rem);
+  }
+
+  .sub {
+    margin-top: 0.75rem;
+    font-size: clamp(0.9375rem, 2.5svh, 1.125rem);
+  }
+
+  .lanes {
+    grid-row: 4;
+    margin-top: 0;
+    --lane-icon: clamp(2.75rem, 8.6svh, 4rem);
+  }
+
+  .search {
+    grid-row: 6;
+    margin-top: 0;
+  }
+
+  .search > * {
+    min-height: 2.75rem;
+  }
+
+  .cta {
+    grid-row: 7;
+    min-height: 3rem;
+    font-size: 1.0625rem;
+  }
+
+  .promises {
+    grid-row: 8;
+    margin-top: 1rem;
+  }
+
+  .audience {
+    margin-top: 0;
+  }
+}
+
+/* A short screen (iPhone SE in Safari): everything a step smaller so it still fits. */
+@media (max-width: 63.99em) and (max-height: 38.75em) {
+  .hero {
+    --hero-top: calc(var(--hero-under-pill) - 1rem);
+    padding-bottom: 1rem;
+  }
+
+  .sub {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .search > * {
+    min-height: 2.5rem;
+  }
+
+  .cta {
+    min-height: 2.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .promises {
+    margin-top: 0.5rem;
+  }
+}
+
 /* Computer: two columns, text on the left, the picture slot on the right (picture postponed:
    the iPhone with the mini catalog stays there). 96 px from the pill to the heading. */
 @media (min-width: 64em) {
   .hero {
     /* «Выше» (owner 2026-11-23): 32px from the pill to the heading. From the screen edge to the
        text column: the lanes start at the screen edge. */
-    --hero-top: calc(var(--hero-under-pill) + 2rem);
+    --hero-top: calc(var(--hero-under-pill) + 1rem);
     --hero-bleed: calc(
       (100vw - min(100vw, var(--x-page-max) + 2 * var(--x-gutter))) /
       2 +
@@ -269,29 +356,32 @@
   }
 
   .sub {
-    margin-top: 1.25rem;
+    margin-top: 1rem;
     font: var(--x-type-leadlg);
   }
 
   .lanes {
     justify-self: start;
     width: calc(100% + var(--hero-bleed));
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     margin-left: calc(-1 * var(--hero-bleed));
   }
 
   .search {
-    margin-top: 1.75rem;
+    margin-top: 2rem;
   }
 
   /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
+  /* Owner 2026-11-24 («сетка Apple»): a 48px pill, 17px label. */
   .cta {
-    margin-top: 1.125rem;
+    min-height: 3rem;
+    margin-top: 0.75rem;
+    font-size: 1.0625rem;
   }
 
   .promises {
     gap: 0.75rem;
-    margin-top: 1.125rem;
+    margin-top: 1rem;
   }
 
   .promise {
@@ -330,7 +420,7 @@
   }
 
   .audience {
-    margin-top: 2.5rem;
+    margin-top: 3rem;
   }
 }
 

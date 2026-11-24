@@ -64,8 +64,9 @@
 
 .icon {
   display: block;
-  width: 3.375rem;
-  height: 3.375rem;
+  /* The hero sets --lane-icon from the screen height (owner 2026-11-24). */
+  width: var(--lane-icon, 3.375rem);
+  height: var(--lane-icon, 3.375rem);
   border-radius: 22.5%;
   background: var(--x-sky-50);
   box-shadow:
@@ -82,7 +83,7 @@
   }
 
   .icon {
-    width: 4rem;
-    height: 4rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 }

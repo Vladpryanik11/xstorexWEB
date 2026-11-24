@@ -9,7 +9,9 @@ test('home shows collections and an app opens its install sheet', async ({ page,
     page.getByRole('heading', { level: 1, name: 'Удаленные из App Store снова доступны' }),
   ).toBeVisible();
   await expect(page.locator('[data-hero-cta]')).toHaveAttribute('href', '/get');
-  await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toBeVisible();
+  // Owner 2026-11-24: the second search «Ищете конкретное приложение?» left the home page.
+  await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toHaveCount(0);
+  await expect(page.getByRole('search')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
   await page
     .getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ })
@@ -283,12 +285,24 @@ test('the first screen: lanes, search, button, promises and the audience above t
     const lanes = boxes[0];
     expect(lanes?.x).toBe(0);
     expect(lanes?.width).toBe(viewport?.width);
-    // Apple-like pill В+, size Д (owner 2026-11-23): 56px; the audience ends above the 660px fold.
+    // Owner 2026-11-24 («сетка Apple»): a 48px pill; the whole first screen is one phone screen.
     const cta = boxes[2];
-    expect(cta?.height).toBe(56);
+    expect(cta?.height).toBe(48);
     expect(cta?.width).toBeGreaterThan(300);
     const proof = boxes[4];
-    expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(660);
+    expect((proof?.y ?? 9999) + (proof?.height ?? 0)).toBeLessThanOrEqual(viewport?.height ?? 0);
+    // Owner 2026-11-24 («равномерно», variant 4): the hero is one screen tall and its free space
+    // goes in equal parts above the lane, above the search and above the audience line.
+    const heroBox = await hero.boundingBox();
+    expect(Math.abs((heroBox?.height ?? 0) - (viewport?.height ?? 0))).toBeLessThanOrEqual(1);
+    const sub = await hero.getByText(/Премиум подписки/).boundingBox();
+    const bottom = (b: typeof sub) => (b?.y ?? 0) + (b?.height ?? 0);
+    const gaps = [
+      (boxes[0]?.y ?? 0) - bottom(sub),
+      (boxes[1]?.y ?? 0) - bottom(boxes[0]),
+      (boxes[4]?.y ?? 0) - bottom(boxes[3]),
+    ];
+    for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
     // Owner 2026-11-24: no three steps on the first screen any more.
     await expect(hero.getByRole('list', { name: 'Три шага' })).toHaveCount(0);
   } else {
@@ -351,7 +365,6 @@ test('the lanes stand still under reduced motion', async ({ page }) => {
 test('home blocks follow the «Проверь и купи» order', async ({ page }) => {
   await page.goto('/');
   const names = [
-    'Ищете конкретное приложение?',
     'Как это работает',
     'Почему Xstorex',
     'Весь каталог на 1 месяц',

@@ -11,7 +11,7 @@
   padding: 1rem 0 3.5rem;
 }
 
-/* «Is my app here?»: the search and the four sections read as one block. */
+/* The four sections (owner 2026-11-24: the second search «Ищете конкретное приложение?» left). */
 .check,
 .catalog {
   display: grid;
@@ -24,44 +24,6 @@
 
 .catalog {
   gap: 2rem;
-}
-
-.find {
-  padding-inline: var(--x-gutter);
-  text-align: center;
-}
-
-.findField {
-  max-width: 36rem;
-  margin-inline: auto;
-}
-
-.findTitle {
-  margin: 0;
-  font: var(--x-type-h1);
-  letter-spacing: var(--x-track-head);
-}
-
-.findLead {
-  margin: 0.5rem 0 1.25rem;
-  color: var(--x-text-2);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-/* Phone: block titles one step and on the left edge. */
-@media (max-width: 47.99em) {
-  .find {
-    text-align: left;
-  }
-
-  .findTitle {
-    font: var(--x-type-h2);
-  }
-
-  .findLead {
-    margin: 0.375rem 0 1rem;
-  }
 }
 
 @media (min-width: 48em) {
