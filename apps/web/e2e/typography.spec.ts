@@ -92,5 +92,6 @@ test('plan card is the blue sky card', async ({ page }) => {
     'color',
     'rgba(0, 113, 227, 0.6)',
   );
+  await expect(cta.getByText('/ мес.', { exact: true })).toHaveCSS('margin-left', '5px');
   await expect(cta).toHaveCSS('box-shadow', 'none');
 });

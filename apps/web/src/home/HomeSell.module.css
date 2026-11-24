@@ -36,6 +36,8 @@
 
 /* «/ мес.» beside the price on the button, quieter (owner 2026-11-24 13:57, variant Б). */
 .per {
+  /* The button is a flex box, so the space before it collapses. */
+  margin-left: 0.3125rem;
   color: rgba(0, 113, 227, 0.6);
   font-weight: 500;
 }
