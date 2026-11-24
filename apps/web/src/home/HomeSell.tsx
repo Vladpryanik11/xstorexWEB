@@ -11,6 +11,8 @@ import styles from './HomeSell.module.css';
 
 type Price = { priceRub: number | null };
 
+const rub = new Intl.NumberFormat('ru-RU');
+
 function Cta({ priceRub, light }: Price & { light?: boolean }) {
   return (
     <a className={light ? styles.ctaLight : styles.cta} href="/get" data-page-cta="">
@@ -32,9 +34,15 @@ export function HomePlan({ priceRub }: Price) {
           Весь каталог
         </h2>
         {priceRub !== null ? (
-          <p className={styles.price}>
-            {formatRub(priceRub)} <span>в месяц</span>
-          </p>
+          <>
+            <p className={styles.price}>
+              {rub.format(priceRub)} <span className={styles.cur}>₽</span>{' '}
+              <span className={styles.per}>в месяц</span>
+            </p>
+            <p className={styles.perDay} data-per-day="">
+              Это около {formatRub(Math.round(priceRub / 30))} в день
+            </p>
+          </>
         ) : null}
         <ul className={styles.included}>
           {INCLUDED.map((point) => (

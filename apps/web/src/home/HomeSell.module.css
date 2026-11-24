@@ -34,17 +34,34 @@
   letter-spacing: var(--x-track-small);
 }
 
+/* The price, so that it does not look expensive (owner 2026-11-24 13:26, variant Г, research
+   reports/2026-11-24-podacha-ceny-issledovanie.md): a smaller, lighter figure, a small
+   half-clear ₽ raised beside it, and the price of a day under it. */
 .price {
   margin: 0.125rem 0 0;
   font: var(--x-type-price);
-  letter-spacing: -0.015em;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-.price span {
-  color: rgba(255, 255, 255, 0.8);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
+.cur {
+  margin-left: -0.125rem;
+  color: rgba(255, 255, 255, 0.55);
+  font: var(--x-type-pricecur);
+  vertical-align: 0.6em;
+}
+
+.per {
+  color: rgba(255, 255, 255, 0.7);
+  font: var(--x-type-ui);
+  letter-spacing: var(--x-track-small);
+}
+
+.perDay {
+  margin: 0.1875rem 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font: var(--x-type-count);
+  font-weight: 500;
+  letter-spacing: var(--x-track-small);
 }
 
 .included {

@@ -20,8 +20,13 @@ it('plan card: price, what is included and a button, each said once', () => {
   expect(cta).toHaveAttribute('href', '/get');
   expect(cta).toHaveAttribute('data-page-cta');
   expect(card.textContent?.match(/590/g)).toHaveLength(1);
+  expect(card.textContent?.match(/₽/g)).toHaveLength(2);
   expect(card.textContent?.match(/месяц/g)).toHaveLength(1);
   expect(card.textContent).not.toMatch(/10 000/);
+  // Owner 2026-11-24 13:26, price variant Г: a quiet ₽ and the price of a day under it.
+  expect(price(card.querySelector('[data-per-day]')?.textContent ?? '')).toBe(
+    'Это около 20 ₽ в день',
+  );
 });
 
 it('plan card without a price still sells, with a plain button', () => {
