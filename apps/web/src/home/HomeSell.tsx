@@ -20,11 +20,9 @@ function Cta({ priceRub, light }: Price & { light?: boolean }) {
   );
 }
 
-const INCLUDED = [
-  ['Безлимит.', 'Ставьте любые приложения каталога, сколько захотите'],
-  ['Ваше устройство.', 'Один iPhone на подписку'],
-  ['Гарантия до последнего дня.', 'Что‑то перестало открываться — вернём доступ за наш счёт'],
-];
+// Owner 2026-11-24 13:08, variant 2 «Только главное»: three short points; the explanations
+// live in the questions below.
+const INCLUDED = ['Безлимит', 'Ваше устройство', 'Гарантия до последнего дня'];
 
 export function HomePlan({ priceRub }: Price) {
   const id = useId();
@@ -40,14 +38,12 @@ export function HomePlan({ priceRub }: Price) {
           </p>
         ) : null}
         <ul className={styles.included}>
-          {INCLUDED.map(([b, t]) => (
-            <li key={b}>
+          {INCLUDED.map((point) => (
+            <li key={point}>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M6 12.5l4 4 8-9" />
               </svg>
-              <span>
-                <b>{b}</b> {t}
-              </span>
+              {point}
             </li>
           ))}
         </ul>

@@ -83,7 +83,7 @@ test('plan card is the blue sky card', async ({ page }) => {
     /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,
   );
   const box = await card.boundingBox();
-  expect(box?.width ?? 0).toBeLessThanOrEqual(384);
+  expect(box?.width ?? 0).toBeLessThanOrEqual(288);
   const price = card.locator('p').first();
   await expect(price).toHaveCSS('font-family', /Inter Tight/i);
   await expect(price).toHaveCSS('font-weight', '600');

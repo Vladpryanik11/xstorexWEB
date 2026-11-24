@@ -11,8 +11,8 @@ it('plan card: price, what is included and a button with the price', () => {
   const items = within(card)
     .getAllByRole('listitem')
     .map((li) => li.textContent);
-  expect(items).toHaveLength(3);
-  expect(items[2]).toContain('Гарантия до последнего дня');
+  // Owner 2026-11-24 13:08, variant 2 «Только главное»: three short points, no explanations.
+  expect(items).toEqual(['Безлимит', 'Ваше устройство', 'Гарантия до последнего дня']);
   const cta = within(card).getByRole('link', { name: /Получить доступ за\s590\s₽/ });
   expect(cta).toHaveAttribute('href', '/get');
   expect(cta).toHaveAttribute('data-page-cta');
