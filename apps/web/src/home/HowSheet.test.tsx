@@ -16,8 +16,26 @@ it('opens a window of steps over the page instead of leaving it', () => {
     'Шаг 2 из 3',
     'Шаг 3 из 3',
   ]);
-  expect(slides[0]).toHaveTextContent('Оплатите');
-  expect(slides[2]).toHaveTextContent('Установите');
+  expect(slides[0]).toHaveTextContent('Оплатите подписку');
+  expect(slides[1]).toHaveTextContent('Подключите iPhone');
+  expect(slides[2]).toHaveTextContent('Устанавливайте приложения');
+});
+
+// Owner 2026-11-24 10:12, variant А: each step shows a small iPhone screen of what the person will
+// see there; the second step says honestly that the iPhone takes up to a day to get ready.
+it('shows a small screen of each step and the honest lines', () => {
+  render(<HowSheet />);
+  fireEvent.click(screen.getByRole('button', { name: 'Как это работает?' }));
+  const dialog = screen.getByRole('dialog');
+  const slides = within(dialog).getAllByRole('group');
+  for (const s of slides) {
+    const shot = s.querySelector('[data-how-screen]');
+    expect(shot).not.toBeNull();
+    expect(shot).toHaveAttribute('aria-hidden', 'true');
+  }
+  expect(slides[1]).toHaveTextContent('Профиль загружен');
+  expect(slides[1]).toHaveTextContent('Готовим iPhone обычно до 24 часов, пришлём письмо.');
+  expect(dialog).toHaveTextContent('Гарантия на весь срок подписки');
 });
 
 it('goes through the steps with «Дальше» and ends with the button to connect an iPhone', () => {

@@ -34,7 +34,7 @@ test('home shows collections and an app opens its install sheet', async ({ page,
 test('home explains how it works and has no install banner', async ({ page }) => {
   await page.goto('/');
   const how = page.getByRole('region', { name: 'Как это работает' });
-  for (const step of ['Оплатите', 'Подключите iPhone', 'Установите']) {
+  for (const step of ['Оплатите подписку', 'Подключите iPhone', 'Устанавливайте приложения']) {
     await expect(how.getByRole('heading', { name: step })).toBeVisible();
   }
   await expect(

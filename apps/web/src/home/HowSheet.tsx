@@ -8,7 +8,8 @@ import styles from './HowSheet.module.css';
  * «Как это работает?» under the button of the first screen (owner 2026-11-24 09:11–09:12): a small
  * blue line that opens a window over the page with the three steps, swiped through one by one, so
  * nobody leaves the first screen. «Дальше» turns the step; the last one ends with the button to
- * connect an iPhone. Closes with the cross, a tap outside or Escape.
+ * connect an iPhone. Closes with the cross, a tap outside or Escape. Each step shows a small iPhone
+ * screen of what the person will see there (owner 2026-11-24 10:12, variant А).
  */
 export function HowSheet({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
@@ -108,11 +109,15 @@ export function HowSheet({ className }: { className?: string }) {
                   aria-roledescription="шаг"
                   aria-label={`Шаг ${i + 1} из ${HOW_STEPS.length}`}
                 >
-                  <span className={styles.number} aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <h3 className={styles.stepTitle}>{s.title}</h3>
+                  <StepScreen step={i} />
+                  <h3 className={styles.stepTitle}>
+                    <span className={styles.number} aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    {s.title}
+                  </h3>
                   <p className={styles.text}>{s.text}</p>
+                  {s.note ? <p className={styles.note}>{s.note}</p> : null}
                 </section>
               ))}
             </div>
@@ -137,9 +142,57 @@ export function HowSheet({ className }: { className?: string }) {
                 Подключить iPhone
               </a>
             )}
+            <p className={styles.guarantee}>Гарантия на весь срок подписки</p>
           </div>
         </div>
       ) : null}
     </>
   );
 }
+
+/** A small iPhone screen of the step, drawn in the site's colours; for the eye only. */
+function StepScreen({ step }: { step: number }) {
+  return (
+    <div className={styles.shot} data-how-screen="" aria-hidden="true">
+      <div className={styles.screen}>
+        {step === 0 ? (
+          <>
+            <span className={styles.screenHead}>Оплата</span>
+            <span>Подписка на месяц, 1 iPhone</span>
+            <span className={styles.field}>Ваша почта</span>
+            <span className={styles.pill}>Оплатить</span>
+          </>
+        ) : step === 1 ? (
+          <>
+            <span className={styles.screenHead}>Настройки</span>
+            <span className={styles.row}>
+              <i className={styles.rowIcon} data-tone="green" />
+              Профиль загружен
+            </span>
+            <span className={styles.row}>
+              <i className={styles.rowIcon} />
+              Основные
+            </span>
+            <span className={styles.row}>
+              <i className={styles.rowIcon} data-tone="blue" />
+              Экран и яркость
+            </span>
+            <span className={styles.pill}>Установить</span>
+          </>
+        ) : (
+          <>
+            <span className={styles.screenHead}>Каталог</span>
+            <span className={styles.apps}>
+              {APP_TONES.map((c) => (
+                <i key={c} style={{ background: c }} />
+              ))}
+            </span>
+            <span className={styles.pill}>Установить</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const APP_TONES = ['#2aa4ff', '#ff5a5f', '#34c759', '#ffb340', '#8e5cff', '#0e1a33'];
