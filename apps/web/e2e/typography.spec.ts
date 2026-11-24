@@ -95,3 +95,19 @@ test('plan card is the blue sky card', async ({ page }) => {
   await expect(cta.getByText('/ мес.', { exact: true })).toHaveCSS('margin-left', '5px');
   await expect(cta).toHaveCSS('box-shadow', 'none');
 });
+
+// Owner 2026-11-24 14:18, variant Б: the «Оплата» step speaks the language of the home page —
+// white page, Inter Tight title, the blue plan card, the Apple blue button with the price once.
+test('the «Оплата» step looks like the home page', async ({ page }) => {
+  await page.goto('/get');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  const title = page.getByRole('heading', { level: 1 });
+  expect(await title.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Inter Tight/);
+  const card = page.getByText('Весь каталог в одной подписке', { exact: true }).locator('..');
+  expect(await card.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,
+  );
+  const pay = page.getByRole('button', { name: /^Оплатить .* \/ мес\.$/ });
+  await expect(pay).toHaveCSS('background-color', 'rgb(0, 113, 227)');
+  await expect(pay).toHaveCSS('box-shadow', 'none');
+});

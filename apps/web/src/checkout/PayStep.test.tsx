@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ApiClientError, type CheckoutRequest, ErrorCode } from '@xstore/shared';
+import { ApiClientError, type AppCard, type CheckoutRequest, ErrorCode } from '@xstore/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PayStep } from './PayStep';
 import { CHECKOUT_KEY_STORAGE } from './wizard-step';
@@ -24,8 +24,15 @@ beforeEach(() => {
 describe('PayStep', () => {
   it('shows the plan facts and links the terms', () => {
     setup();
-    expect(screen.getByText('1 месяц')).toBeInTheDocument();
-    expect(screen.getByText('для одного iPhone')).toBeInTheDocument();
+    // Owner 2026-11-24 14:18, variant Б: the plan card of the home page, the price only on the button.
+    expect(screen.getByText('Весь каталог в одной подписке')).toBeInTheDocument();
+    const included = screen.getByRole('list', { name: 'Что входит' });
+    expect([...included.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      'Безлимит',
+      '1 iPhone',
+      'Гарантия',
+    ]);
+    expect(document.body.textContent?.match(/299/g)).toHaveLength(1);
     expect(screen.getByText('Подписка начнётся сразу после оплаты')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'условиями' })).toHaveAttribute('href', '/terms');
     expect(screen.getByRole('link', { name: 'обработкой персональных данных' })).toHaveAttribute(
@@ -57,9 +64,22 @@ describe('PayStep', () => {
     expect(button).not.toHaveAttribute('aria-describedby');
   });
 
-  it('button reads «Оплатить 299 ₽» for the price 299', () => {
+  it('button reads «Оплатить 299 ₽ / мес.» for the price 299', () => {
     const { button } = setup();
-    expect(button.textContent?.replace(/\s/g, ' ')).toBe('Оплатить 299 ₽');
+    expect(button.textContent?.replace(/\s/g, ' ')).toBe('Оплатить 299 ₽ / мес.');
+  });
+
+  it('shows five catalog icons and the size of the catalog, none without apps', () => {
+    const apps = ['a', 'b', 'c', 'd', 'e', 'f'].map(
+      (slug) => ({ slug, name: slug, iconUrl: `/i/${slug}.png` }) as AppCard,
+    );
+    const { unmount } = render(<PayStep plan={plan} apps={apps} />);
+    const row = screen.getByRole('list', { name: 'Приложения каталога' });
+    expect(row.querySelectorAll('img')).toHaveLength(5);
+    expect(row.textContent).toBe('+200');
+    unmount();
+    setup();
+    expect(screen.queryByRole('list', { name: 'Приложения каталога' })).toBeNull();
   });
 
   it('pressing again sends the same checkoutKey', async () => {

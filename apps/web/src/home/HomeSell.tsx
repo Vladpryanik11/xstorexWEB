@@ -32,43 +32,59 @@ function Cta({ priceRub, light }: Price & { light?: boolean }) {
 // as pills in a row; the explanations live in the questions below.
 const INCLUDED = ['Безлимит', '1 iPhone', 'Гарантия'];
 
+export const PLAN_TITLE = 'Весь каталог в одной подписке';
+
 /** Icons in the row of the plan card (owner 2026-11-24 14:04, variant Г). */
 const ICONS = 5;
 
 /**
- * Owner 2026-11-24 14:04, variant Г «Слова + иконки»: the title says it is one subscription, a row
- * of real catalog icons (the apps of the hero lanes) and the size of the catalog show what is in
- * it. Without icons the row is not drawn.
+ * A row of real catalog icons (the apps of the hero lanes, each once) and the size of the
+ * catalog. Without icons nothing is drawn. Shared by the home plan card and the «Оплата» step.
  */
-export function HomePlan({ priceRub, apps }: Price & { apps: AppCard[] }) {
-  const id = useId();
-  // An app can sit in both sections of the lanes; its icon is shown once.
+export function PlanIcons({ apps }: { apps: AppCard[] }) {
   const seen = new Set<string>();
   const icons = apps
     .filter((a) => a.iconUrl && !seen.has(a.slug) && seen.add(a.slug))
     .slice(0, ICONS);
+  if (icons.length === 0) return null;
+  return (
+    <ul className={styles.icons} aria-label="Приложения каталога">
+      {icons.map((a) => (
+        <li key={a.slug}>
+          {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
+          <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
+        </li>
+      ))}
+      <li className={styles.more}>+{APPS.replace('+', '')}</li>
+    </ul>
+  );
+}
+
+/** «Безлимит · 1 iPhone · Гарантия» as white glass pills. */
+export function PlanIncluded() {
+  return (
+    <ul className={styles.included} aria-label="Что входит">
+      {INCLUDED.map((point) => (
+        <li key={point}>{point}</li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Owner 2026-11-24 14:04, variant Г «Слова + иконки»: the title says it is one subscription, a row
+ * of real catalog icons and the size of the catalog show what is in it.
+ */
+export function HomePlan({ priceRub, apps }: Price & { apps: AppCard[] }) {
+  const id = useId();
   return (
     <section className={styles.planWrap} aria-labelledby={id}>
       <div className={styles.plan}>
         <h2 id={id} className={styles.planTitle}>
-          Весь каталог в одной подписке
+          {PLAN_TITLE}
         </h2>
-        {icons.length > 0 ? (
-          <ul className={styles.icons} aria-label="Приложения каталога">
-            {icons.map((a) => (
-              <li key={a.slug}>
-                {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
-                <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
-              </li>
-            ))}
-            <li className={styles.more}>+{APPS.replace('+', '')}</li>
-          </ul>
-        ) : null}
-        <ul className={styles.included}>
-          {INCLUDED.map((point) => (
-            <li key={point}>{point}</li>
-          ))}
-        </ul>
+        <PlanIcons apps={apps} />
+        <PlanIncluded />
         <Cta priceRub={priceRub} light />
       </div>
     </section>
