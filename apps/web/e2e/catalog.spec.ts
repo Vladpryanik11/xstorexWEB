@@ -34,7 +34,13 @@ test('home shows collections and an app opens its install sheet', async ({ page,
 test('home explains how it works and has no install banner', async ({ page }) => {
   await page.goto('/');
   const how = page.getByRole('region', { name: 'Как это работает' });
-  for (const step of ['Оплатите подписку', 'Подключите iPhone', 'Устанавливайте приложения']) {
+  for (const step of [
+    'Оплатите подписку',
+    'Включите режим разработчика',
+    'Подключите iPhone',
+    'Дождитесь письма',
+    'Устанавливайте приложения',
+  ]) {
     await expect(how.getByRole('heading', { name: step })).toBeVisible();
   }
   await expect(
@@ -394,8 +400,7 @@ test('«Как это работает?» under the button opens the steps witho
   const dialog = page.getByRole('dialog', { name: 'Как это работает' });
   await expect(dialog).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
-  await dialog.getByRole('button', { name: 'Дальше' }).click();
-  await dialog.getByRole('button', { name: 'Дальше' }).click();
+  for (let k = 0; k < 4; k++) await dialog.getByRole('button', { name: 'Дальше' }).click();
   await expect(dialog.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
     'href',
     '/get',

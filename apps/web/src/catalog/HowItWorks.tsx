@@ -2,21 +2,42 @@ import { SectionTitle } from '@xstore/ui';
 import { useId } from 'react';
 import styles from './HowItWorks.module.css';
 
-/** The three steps of the purchase (owner 2026-11-24 10:12): the same words in the window under the
- * first-screen button and in this section. `note` is shown in the window only. */
-export const HOW_STEPS: { title: string; text: string; note?: string }[] = [
+/** The steps after the payment (owner 2026-11-24 10:12–10:30): the same titles and texts in the
+ * window under the first-screen button and in this section. `how` (a short instruction, point by
+ * point) and `note` are shown in the window only. */
+export const HOW_STEPS: { title: string; text: string; how?: string[]; note?: string }[] = [
   {
     title: 'Оплатите подписку',
-    text: 'Нужна только почта, без регистрации. Доступ ко всему каталогу начинается сразу.',
+    text: 'Нужна только почта, без регистрации.',
+    how: ['Нажмите «Подключить iPhone»', 'Введите почту и оплатите'],
+  },
+  {
+    title: 'Включите режим разработчика',
+    text: 'Это нужно один раз.',
+    how: [
+      'Настройки → Конфиденциальность и безопасность',
+      '«Режим разработчика» → включите',
+      'После перезагрузки нажмите «Включить»',
+    ],
   },
   {
     title: 'Подключите iPhone',
-    text: 'Откройте сайт в Safari и установите профиль: Настройки → «Профиль загружен» → «Установить». Без Apple ID и без компьютера.',
-    note: 'Готовим iPhone обычно 2–3 часа в рабочее время, пришлём письмо.',
+    text: 'Установите профиль, так мы узнаем ваш iPhone.',
+    how: [
+      'Откройте сайт в Safari и нажмите «Подключить iPhone»',
+      'Настройки → «Профиль загружен»',
+      'Нажмите «Установить»',
+    ],
+  },
+  {
+    title: 'Дождитесь письма',
+    text: 'Обычно 2–3 часа в рабочее время.',
+    note: 'Придёт письмо, что приложения готовы к установке.',
   },
   {
     title: 'Устанавливайте приложения',
-    text: 'Нажмите «Установить» прямо на сайте, и приложение появится на экране «Домой».',
+    text: 'Нажмите «Установить» у любого приложения на сайте.',
+    note: 'Приложения подписаны сертификатом разработчика Apple для вашего iPhone, поэтому ставятся без App Store и Apple ID.',
   },
 ];
 

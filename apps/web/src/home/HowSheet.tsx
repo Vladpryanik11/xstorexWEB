@@ -117,6 +117,13 @@ export function HowSheet({ className }: { className?: string }) {
                     {s.title}
                   </h3>
                   <p className={styles.text}>{s.text}</p>
+                  {s.how ? (
+                    <ol className={styles.how}>
+                      {s.how.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ol>
+                  ) : null}
                   {s.note ? <p className={styles.note}>{s.note}</p> : null}
                 </section>
               ))}
@@ -154,45 +161,66 @@ export function HowSheet({ className }: { className?: string }) {
 function StepScreen({ step }: { step: number }) {
   return (
     <div className={styles.shot} data-how-screen="" aria-hidden="true">
-      <div className={styles.screen}>
-        {step === 0 ? (
-          <>
-            <span className={styles.screenHead}>Оплата</span>
-            <span>Подписка на месяц, 1 iPhone</span>
-            <span className={styles.field}>Ваша почта</span>
-            <span className={styles.pill}>Оплатить</span>
-          </>
-        ) : step === 1 ? (
-          <>
-            <span className={styles.screenHead}>Настройки</span>
-            <span className={styles.row}>
-              <i className={styles.rowIcon} data-tone="green" />
-              Профиль загружен
-            </span>
-            <span className={styles.row}>
-              <i className={styles.rowIcon} />
-              Основные
-            </span>
-            <span className={styles.row}>
-              <i className={styles.rowIcon} data-tone="blue" />
-              Экран и яркость
-            </span>
-            <span className={styles.pill}>Установить</span>
-          </>
-        ) : (
-          <>
-            <span className={styles.screenHead}>Каталог</span>
-            <span className={styles.apps}>
-              {APP_TONES.map((c) => (
-                <i key={c} style={{ background: c }} />
-              ))}
-            </span>
-            <span className={styles.pill}>Установить</span>
-          </>
-        )}
-      </div>
+      <div className={styles.screen}>{SCREENS[step]}</div>
     </div>
   );
 }
 
 const APP_TONES = ['#2aa4ff', '#ff5a5f', '#34c759', '#ffb340', '#8e5cff', '#0e1a33'];
+
+const SCREENS = [
+  <>
+    <span className={styles.screenHead}>Оплата</span>
+    <span>Подписка на месяц, 1 iPhone</span>
+    <span className={styles.field}>Ваша почта</span>
+    <span className={styles.pill}>Оплатить</span>
+  </>,
+  <>
+    <span className={styles.screenHead}>Конфиденциальность и безопасность</span>
+    <span className={styles.row}>
+      <i className={styles.rowIcon} data-tone="blue" />
+      Службы геолокации
+    </span>
+    <span className={styles.row}>
+      <i className={styles.rowIcon} />
+      Режим разработчика
+      <i className={styles.toggle} />
+    </span>
+    <span className={styles.row}>
+      <i className={styles.rowIcon} data-tone="green" />
+      Режим блокировки
+    </span>
+  </>,
+  <>
+    <span className={styles.screenHead}>Настройки</span>
+    <span className={styles.row}>
+      <i className={styles.rowIcon} data-tone="green" />
+      Профиль загружен
+    </span>
+    <span className={styles.row}>
+      <i className={styles.rowIcon} />
+      Основные
+    </span>
+    <span className={styles.pill}>Установить</span>
+  </>,
+  <>
+    <span className={styles.screenHead}>Почта</span>
+    <span className={styles.mail}>
+      <b>Xstorex</b>
+      Приложения готовы к установке
+    </span>
+    <span className={styles.mail} data-read="">
+      <b>Xstorex</b>
+      iPhone подключён
+    </span>
+  </>,
+  <>
+    <span className={styles.screenHead}>Каталог</span>
+    <span className={styles.apps}>
+      {APP_TONES.map((c) => (
+        <i key={c} style={{ background: c }} />
+      ))}
+    </span>
+    <span className={styles.pill}>Установить</span>
+  </>,
+];

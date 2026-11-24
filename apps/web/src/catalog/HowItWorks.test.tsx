@@ -2,21 +2,21 @@ import { render, screen, within } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { HowItWorks } from './HowItWorks';
 
-it('shows three numbered steps and the rights line', () => {
+it('shows five numbered steps and the rights line', () => {
   render(<HowItWorks />);
   const region = screen.getByRole('region', { name: 'Как это работает' });
   const steps = within(region).getAllByRole('listitem');
-  expect(steps).toHaveLength(3);
+  expect(steps).toHaveLength(5);
   expect(steps.map((s) => within(s).getByRole('heading', { level: 3 }).textContent)).toEqual([
     'Оплатите подписку',
+    'Включите режим разработчика',
     'Подключите iPhone',
+    'Дождитесь письма',
     'Устанавливайте приложения',
   ]);
-  // Owner 2026-11-24 10:12: the same words as the «Как это работает?» window.
+  // Owner 2026-11-24 10:12–10:30: the same steps as the «Как это работает?» window.
   expect(
-    within(steps[0] as HTMLElement).getByText(
-      'Нужна только почта, без регистрации. Доступ ко всему каталогу начинается сразу.',
-    ),
+    within(steps[0] as HTMLElement).getByText('Нужна только почта, без регистрации.'),
   ).toBeVisible();
   expect(
     within(region).getByText(
