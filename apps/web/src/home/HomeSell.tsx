@@ -1,6 +1,7 @@
+import type { AppCard } from '@xstore/shared';
 import { useId } from 'react';
 import { formatRub } from '../checkout/wizard-step';
-import { APPS, AUDIENCE } from './figures';
+import { APPS } from './figures';
 import styles from './HomeSell.module.css';
 
 /*
@@ -13,113 +14,90 @@ import styles from './HomeSell.module.css';
 type Price = { priceRub: number | null };
 
 function Cta({ priceRub, light }: Price & { light?: boolean }) {
+  // Owner 2026-11-24 13:57, variant Б: the price is said once, on the button.
   return (
     <a className={light ? styles.ctaLight : styles.cta} href="/get" data-page-cta="">
-      {priceRub === null ? 'Подключить iPhone' : `Получить доступ за ${formatRub(priceRub)}`}
+      {priceRub === null ? (
+        'Подключить iPhone'
+      ) : (
+        <>
+          {formatRub(priceRub)} <span className={styles.per}>/ мес.</span>
+        </>
+      )}
     </a>
   );
 }
 
-const INCLUDED = [
-  ['Безлимит.', 'Ставьте любые приложения каталога, сколько захотите'],
-  ['Ваше устройство.', 'Один iPhone на подписку'],
-  ['Гарантия до последнего дня.', 'Что‑то перестало открываться — вернём доступ за наш счёт'],
-];
+// Owner 2026-11-24 13:08 (variant 2 «Только главное») and 13:12 (variant Г): three short points
+// as pills in a row; the explanations live in the questions below.
+const INCLUDED = ['Безлимит', '1 iPhone', 'Гарантия'];
 
-export function HomePlan({ priceRub }: Price) {
+export const PLAN_TITLE = 'Весь каталог в одной подписке';
+
+/** Icons in the row of the plan card (owner 2026-11-24 14:04, variant Г). */
+const ICONS = 5;
+
+/**
+ * A row of real catalog icons (the apps of the hero lanes, each once) and the size of the
+ * catalog. Without icons nothing is drawn. Shared by the home plan card and the «Оплата» step.
+ */
+export function PlanIcons({ apps }: { apps: AppCard[] }) {
+  const seen = new Set<string>();
+  const icons = apps
+    .filter((a) => a.iconUrl && !seen.has(a.slug) && seen.add(a.slug))
+    .slice(0, ICONS);
+  if (icons.length === 0) return null;
+  return (
+    <ul className={styles.icons} aria-label="Приложения каталога">
+      {icons.map((a) => (
+        <li key={a.slug}>
+          {/* biome-ignore lint/performance/noImgElement: small catalog icons from S3 */}
+          <img src={a.iconUrl ?? ''} alt="" width={34} height={34} loading="lazy" />
+        </li>
+      ))}
+      <li className={styles.more}>+{APPS.replace('+', '')}</li>
+    </ul>
+  );
+}
+
+/** «Безлимит · 1 iPhone · Гарантия» as white glass pills. */
+export function PlanIncluded() {
+  return (
+    <ul className={styles.included} aria-label="Что входит">
+      {INCLUDED.map((point) => (
+        <li key={point}>{point}</li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Owner 2026-11-24 14:04, variant Г «Слова + иконки»: the title says it is one subscription, a row
+ * of real catalog icons and the size of the catalog show what is in it.
+ */
+export function HomePlan({ priceRub, apps }: Price & { apps: AppCard[] }) {
   const id = useId();
   return (
     <section className={styles.planWrap} aria-labelledby={id}>
       <div className={styles.plan}>
-        <h2 id={id} className={styles.eyebrow}>
-          Весь каталог на 1 месяц
+        <h2 id={id} className={styles.planTitle}>
+          {PLAN_TITLE}
         </h2>
-        {priceRub !== null ? (
-          <p className={styles.price}>
-            {formatRub(priceRub)} <span>в месяц</span>
-          </p>
-        ) : null}
-        <ul className={styles.included}>
-          {INCLUDED.map(([b, t]) => (
-            <li key={b}>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6 12.5l4 4 8-9" />
-              </svg>
-              <span>
-                <b>{b}</b> {t}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <Cta priceRub={priceRub} />
-        <p className={styles.proof}>
-          <b>{AUDIENCE}</b> пользователей в месяц
-        </p>
+        <PlanIcons apps={apps} />
+        <PlanIncluded />
+        <Cta priceRub={priceRub} light />
       </div>
     </section>
   );
 }
 
-const STATS = [
-  [APPS, 'приложений'],
-  [AUDIENCE, 'пользователей в месяц'],
-  ['0 ₽', 'доплат по гарантии'],
-];
-
-/** Row of figures between the search and «Как это работает» (owner 2026-11-21). */
-export function HomeStats() {
-  return (
-    <div className={styles.statsWrap}>
-      <ul className={styles.stats} aria-label="Xstorex в цифрах">
-        {STATS.map(([n, t]) => (
-          <li key={t} className={styles.stat}>
-            <b>{n}</b> <span>{t}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-const REASONS = [
-  [
-    'То, что удалили из App Store',
-    'Приложения, которые больше нигде не скачать, ставятся как раньше.',
-  ],
-  [
-    'Без лишних программ и аккаунтов',
-    'Всё работает в Safari. Не нужно ставить ещё одно приложение или давать нам Apple ID.',
-  ],
-  [
-    'Только честные копии',
-    'У каждого приложения есть право на распространение. Никаких взломов и модов с вирусами.',
-  ],
-  ['Живые люди в поддержке', 'Перестало открываться? Напишите нам, восстановим без доплаты.'],
-];
-
-export function HomeWhy() {
-  const id = useId();
-  return (
-    <section className={styles.block} aria-labelledby={id}>
-      <h2 id={id} className={styles.title}>
-        Почему Xstorex
-      </h2>
-      <ul className={styles.why}>
-        {REASONS.map(([t, p]) => (
-          <li key={t}>
-            <h3>{t}</h3>
-            <p>{p}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
+/** Owner 2026-11-24 12:20–12:29 (home variant Б): the first question says why it is safe, in the
+ * words of the «Как это работает» window; the reasons of the removed «Почему Xstorex» became the
+ * last three questions. */
 const QUESTIONS = [
   [
-    'Это не взлом? С iPhone ничего не случится?',
-    'Нет. iPhone не взламываем, Apple ID не просим. Приложения ставятся тем же способом, каким компании раздают программы своим сотрудникам.',
+    'Это безопасно?',
+    'Да. Доступа к iPhone у нас нет: фото, сообщения, пароли и Apple ID мы не видим. Приложения подписаны официальным сертификатом разработчика Apple. Профиль и режим разработчика — обычные настройки Apple, удалить или выключить их можно в любой момент. Ставим только официальные файлы приложений, без сторонних программ и взломанных версий.',
   ],
   [
     'А если приложение перестанет открываться?',
@@ -133,6 +111,15 @@ const QUESTIONS = [
     'Мне нужен компьютер?',
     'Нет. Оплатить можно с любого устройства, а приложения ставятся на iPhone.',
   ],
+  [
+    'Что если приложение удалили из App Store?',
+    'Оно остаётся в нашем каталоге. Ставите его с сайта, как раньше.',
+  ],
+  [
+    'Сколько ждать после подключения iPhone?',
+    'Обычно 2–3 часа в рабочее время. Когда всё готово, придёт письмо.',
+  ],
+  ['Как связаться с поддержкой?', 'Напишите нам на почту. Отвечаем в рабочие часы.'],
 ];
 
 export function HomeFaq() {
@@ -149,25 +136,6 @@ export function HomeFaq() {
             <p>{a}</p>
           </details>
         ))}
-      </div>
-    </section>
-  );
-}
-
-export function HomeFinal({ priceRub }: Price) {
-  const id = useId();
-  return (
-    <section className={styles.finalWrap} aria-labelledby={id}>
-      <div className={styles.final}>
-        <div>
-          <h2 id={id}>Ваши приложения уже ждут</h2>
-          <p>
-            {priceRub !== null
-              ? `Весь каталог за ${formatRub(priceRub)} в месяц. Гарантия на весь срок подписки.`
-              : 'Весь каталог в одной подписке. Гарантия на весь срок подписки.'}
-          </p>
-        </div>
-        <Cta priceRub={priceRub} light />
       </div>
     </section>
   );

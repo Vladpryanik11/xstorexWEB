@@ -15,6 +15,7 @@ const api = {
   getAccess: vi.fn<() => Promise<AccessResponse>>(),
   getPlan: vi.fn(),
   app: vi.fn(),
+  section: vi.fn(),
 };
 vi.mock('../../../src/api/server', () => ({ serverApi: async () => api }));
 
@@ -23,6 +24,8 @@ const searchParams = Promise.resolve({});
 beforeEach(() => {
   api.getPlan.mockResolvedValue({ code: 'month', title: 'Месяц', durationDays: 30, priceRub: 299 });
   api.app.mockRejectedValue(new Error('not used'));
+  // The plan card icons; the step opens without them.
+  api.section.mockRejectedValue(new Error('catalog is down'));
 });
 
 describe('/get', () => {

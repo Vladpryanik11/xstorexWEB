@@ -67,7 +67,8 @@ describe('ConnectStep', () => {
     expect(screen.queryByRole('button', { name: /Установить/ })).toBeNull();
   });
 
-  it('iPhone: three pictures with captions and the connect link', () => {
+  // Owner 2026-11-24 11:10–11:20: his own screenshots, cropped to the place to tap, four steps.
+  it('iPhone: four screenshots with captions and the connect link', () => {
     render(
       <ConnectStep
         access={noDevice}
@@ -78,14 +79,61 @@ describe('ConnectStep', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Подключить iPhone' })).toBeInTheDocument();
-    expect(screen.getByText('Нажмите «Подключить iPhone» и «Разрешить»')).toBeInTheDocument();
-    expect(screen.getByText('Откройте Настройки → «Профиль загружен»')).toBeInTheDocument();
-    expect(screen.getByText('Нажмите «Установить» и вернитесь в Safari')).toBeInTheDocument();
+    const steps = screen.getAllByRole('listitem').filter((li) => li.querySelector('img'));
+    expect(steps.map((li) => li.textContent)).toEqual([
+      '1Нажмите «Подключить iPhone», затем «Разрешить»',
+      '2Откройте Настройки → «Профиль загружен»',
+      '3Нажмите «Установить» вверху справа',
+      '4Ещё раз «Установить» и вернитесь в Safari',
+    ]);
+    expect(steps.map((li) => li.querySelector('img')?.getAttribute('src'))).toEqual([
+      '/get/connect-1.webp',
+      '/get/connect-2.webp',
+      '/get/connect-3.webp',
+      '/get/connect-4.webp',
+    ]);
+    // Owner 11:31: the step text above its screenshot.
+    for (const li of steps) {
+      expect(li.firstElementChild?.tagName).toBe('P');
+    }
     expect(screen.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
       'href',
       '/api/v1/enrollment/profile',
     );
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('iPhone');
+  });
+
+  // Owner 2026-11-24 11:43, variant Б: right after the payment a screen of its own turns on
+  // Developer Mode; «Готово, дальше» leads on to the profile.
+  it('asks to turn on Developer Mode first, with screenshots, then leads to the profile', () => {
+    render(
+      <ConnectStep
+        access={noDevice}
+        result={null}
+        device="ios"
+        family="iphone"
+        devMode="ask"
+        getAccess={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Включите режим разработчика' })).toBeVisible();
+    const steps = screen
+      .getAllByRole('listitem')
+      .filter((li) => li.closest('[data-dev-mode]'))
+      .map((li) => [li.textContent, li.querySelector('img')?.getAttribute('src') ?? null]);
+    expect(steps).toEqual([
+      ['1Откройте Настройки и найдите «Режим разработчика»', '/get/dev-1.webp'],
+      ['2Включите переключатель', '/get/dev-2.webp'],
+      ['3Нажмите «Перезагрузить»', '/get/dev-3.webp'],
+      ['4После перезагрузки нажмите «Включить» и введите код-пароль iPhone', null],
+    ]);
+    expect(screen.getByText(/Доступа к вашему iPhone эта настройка нам не даёт/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Готово, дальше' })).toHaveAttribute(
+      'href',
+      '/get/iphone?dev=ok',
+    );
+    expect(screen.queryByRole('link', { name: 'Подключить iPhone' })).toBeNull();
+    expect(screen.getByTestId('connect-status')).toHaveTextContent('Включите режим разработчика');
   });
 
   it('under the connect link: «Работает только в Safari»', () => {
@@ -121,7 +169,7 @@ describe('ConnectStep', () => {
     );
     expect(screen.getByRole('heading', { name: 'Подключить iPad' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Подключить iPad' })).toBeInTheDocument();
-    expect(screen.getByText('Нажмите «Подключить iPad» и «Разрешить»')).toBeInTheDocument();
+    expect(screen.getByText('Нажмите «Подключить iPad», затем «Разрешить»')).toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('iPad');
     expect(screen.queryByText(/iPhone/)).toBeNull();
   });
@@ -142,7 +190,7 @@ describe('ConnectStep', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(errorMessages.DEVICE_OWNED);
     expect(screen.getByRole('link', { name: 'Попробовать снова' })).toHaveAttribute(
       'href',
-      '/get/iphone',
+      '/get/iphone?dev=ok',
     );
   });
 

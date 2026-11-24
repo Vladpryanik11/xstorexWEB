@@ -3,8 +3,7 @@ import { useId } from 'react';
 import { HeroFinder, type HeroLaneApps } from './HeroFinder';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
-
-const STEPS = ['Подключи', 'Активируй', 'Скачивай'];
+import { HowSheet } from './HowSheet';
 
 /** Line icons for the three promises, drawn for Xstorex (no Apple logo; a plain shield, no check). */
 const PROMISES = [
@@ -32,16 +31,16 @@ const PROMISES = [
   },
 ];
 
-/** Monogram avatars, like contacts without a photo on iPhone. */
-const AVATARS = ['А', 'М', 'Д'];
+/** Three photos in the audience line, each head whole inside its circle (owner 2026-11-24 09:28). */
+const AVATARS = ['/home/avatars/1.webp', '/home/avatars/2.webp', '/home/avatars/3.webp'];
 
 export type { HeroLaneApps };
 
 /**
  * First screen of the home page (spec 2026-11-23-home-first-screen, owner 2026-11-22/23):
  * promise on a bright sky with white text, two edge-to-edge lanes of removed and premium apps,
- * search, the «Подключить iPhone» button, three promises and the audience; the three steps
- * follow right under the first screen.
+ * search, the «Подключить iPhone» button, three promises and the audience (owner 2026-11-24: the
+ * three steps left the first screen; «Как это работает» further down keeps them).
  */
 export function HomeHero({
   collections,
@@ -51,19 +50,26 @@ export function HomeHero({
   lanes: HeroLaneApps;
 }) {
   const promisesId = useId();
-  const stepsId = useId();
   return (
     <section className={styles.hero} data-home-hero>
       <div className={styles.inner}>
         <div className={styles.sky} aria-hidden="true" data-hero-sky="" />
         <h1 className={styles.title}>Удаленные из App&nbsp;Store снова доступны</h1>
-        <p className={styles.sub}>
-          Премиум подписки на музыку, фоторедакторы, платные игры — уже в подписке
+        {/* Owner 2026-11-24: the same words in three lines, without the dash. */}
+        <p className={styles.sub} data-hero-sub="">
+          Премиум подписки на музыку,
+          <br />
+          фоторедакторы, платные игры
+          <br />
+          уже в подписке
         </p>
         <HeroFinder lanes={lanes} lanesClassName={styles.lanes} searchClassName={styles.search} />
         <a className={styles.cta} href="/get" data-hero-cta>
           Подключить iPhone
         </a>
+        {/* Owner 2026-11-24 09:11–09:12: a small blue question right under the button; it opens the
+            steps over the page. */}
+        <HowSheet className={styles.how} />
         <span id={promisesId} hidden>
           Без лишнего
         </span>
@@ -92,28 +98,15 @@ export function HomeHero({
       <div className={styles.after}>
         <p className={styles.audience} data-hero-audience="">
           <span className={styles.avatars} aria-hidden="true">
-            {AVATARS.map((a) => (
-              <span key={a} data-avatar="">
-                {a}
-              </span>
+            {AVATARS.map((src) => (
+              // biome-ignore lint/performance/noImgElement: three 26px static photos, 2 KB each
+              <img key={src} src={src} alt="" width={26} height={26} data-avatar="" />
             ))}
           </span>
           <span>
             Более <b className={styles.audienceNum}>10 000</b> пользователей в&nbsp;месяц
           </span>
         </p>
-        <span id={stepsId} hidden>
-          Три шага
-        </span>
-        <ol className={styles.steps} aria-labelledby={stepsId}>
-          {STEPS.map((s, i) => (
-            <li key={s} className={styles.step}>
-              <b className={styles.num}>{i + 1}</b>
-              {s}
-            </li>
-          ))}
-        </ol>
-        <p className={styles.site}>Установка прямо с сайта</p>
       </div>
     </section>
   );

@@ -1,76 +1,17 @@
-/* Everything under the hero, in the «Проверь и купи» order (owner 2026-11-21, spec v2 §3.1).
-   One gap between blocks: 56 px on a phone, 72 px from 48em. Children pad themselves by the
-   gutter, like the header's inner box. */
+/* Under the hero (owner 2026-11-24 12:29, variant Б): the plan and the questions on white, so the
+   sky of the first screen flows into them. One gap: 56 px on a phone, 72 px from 48em. Children
+   pad themselves by the gutter, like the header's inner box. */
 .flow {
-  box-sizing: content-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 3.5rem;
-  max-width: calc(var(--x-page-max) + 2 * var(--x-gutter));
-  margin-inline: auto;
   padding: 1rem 0 3.5rem;
-}
-
-/* «Is my app here?»: the search and the four sections read as one block. */
-.check,
-.catalog {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.check {
-  gap: 1.25rem;
-}
-
-.catalog {
-  gap: 2rem;
-}
-
-.find {
-  padding-inline: var(--x-gutter);
-  text-align: center;
-}
-
-.findField {
-  max-width: 36rem;
-  margin-inline: auto;
-}
-
-.findTitle {
-  margin: 0;
-  font: var(--x-type-h1);
-  letter-spacing: var(--x-track-head);
-}
-
-.findLead {
-  margin: 0.5rem 0 1.25rem;
-  color: var(--x-text-2);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-/* Phone: block titles one step and on the left edge. */
-@media (max-width: 47.99em) {
-  .find {
-    text-align: left;
-  }
-
-  .findTitle {
-    font: var(--x-type-h2);
-  }
-
-  .findLead {
-    margin: 0.375rem 0 1rem;
-  }
+  background: var(--x-white);
 }
 
 @media (min-width: 48em) {
   .flow {
     gap: 4.5rem;
     padding-top: 2rem;
-  }
-
-  .catalog {
-    gap: 2.5rem;
   }
 }

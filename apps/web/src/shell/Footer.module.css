@@ -3,8 +3,10 @@
  * Literal colours that are not tokens are the reference's own footer values.
  */
 
+/* Owner 2026-11-24 12:43: white, no gradient; a hairline parts it from the page above. */
 .footer {
-  background: var(--x-sky-50);
+  border-top: var(--x-hairline) solid var(--x-hair);
+  background: var(--x-white);
   color: var(--x-text);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
@@ -30,8 +32,8 @@
   align-items: center;
   gap: 0.625rem;
   color: var(--x-text);
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
+  font: var(--x-type-footbrand);
+  letter-spacing: -0.015em;
   text-decoration: none;
 }
 
@@ -51,9 +53,9 @@
 .tagline {
   max-width: 22rem;
   margin: 1rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
+  color: #6e6e73;
+  font: var(--x-type-leadsm);
+  letter-spacing: 0;
 }
 
 .social {
@@ -104,10 +106,10 @@
 
 .link {
   display: block;
-  padding-block: 0.375rem;
-  color: var(--x-text);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
+  padding-block: 0.3125rem;
+  color: #1d1d1f;
+  font: var(--x-type-footlink);
+  letter-spacing: 0;
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -132,9 +134,9 @@
 
 .small {
   margin: 0;
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
+  color: #6e6e73;
+  font: var(--x-type-count);
+  letter-spacing: 0;
 }
 
 @media (min-width: 48em) {

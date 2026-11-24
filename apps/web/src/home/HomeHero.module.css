@@ -6,9 +6,6 @@
   --hero-under-pill: calc(4.25rem + env(safe-area-inset-top, 0px));
   /* «Поднять повыше» (owner 2026-11-23): the title sits 16px under the menu button. */
   --hero-top: calc(var(--hero-under-pill) + 0.25rem);
-  /* Shadow «5+» (owner 2026-11-23): a 1px dark-blue edge, plus a soft ultramarine depth on the title. */
-  --hero-shadow-big: 0 1px 1px rgba(11, 26, 74, 0.3), 0 6px 12px rgba(20, 73, 224, 0.22);
-  --hero-shadow-small: 0 1px 1px rgba(11, 26, 74, 0.38);
   position: relative;
   overflow: clip;
   padding: var(--hero-top) 0 2rem;
@@ -34,29 +31,33 @@
   grid-column: 1;
 }
 
-/* Bright sky: #1E8FFF on top, cyan, pale, white before the search. Bleeds to the page edges and
-   up under the pill; two soft spots stay still (owner 2026-11-23: no motion). */
-.sky {
+/* Bright sky «Мягкий переход» (owner 2026-11-24): twice as tall as before (it used to end at the
+   search), the top stays #1E8FFF → #3EC6FF and the fade to white runs along an eased curve down to
+   the audience line. It lies under every block of the hero (absolute, behind the content), bleeds
+   to the page edges and up under the pill; two soft spots stay still (owner 2026-11-23: no motion).
+   Mockup: /mnt/project-files/screenshots/2026-11-24-sky-longer/, variant В. */
+.inner > .sky {
+  position: absolute;
   z-index: 0;
-  grid-row: 1 / 4;
-  grid-column: 1 / -1;
-  align-self: stretch;
-  justify-self: stretch;
-  margin: calc(-1 * var(--hero-top)) calc(50% - 50vw) 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  /* Never past the hero: it clips, and a cut edge would show. */
+  height: min(53rem, 100%);
+  /* Owner 2026-11-24 («как у Apple», Б, clean variant 2): the top is deeper, Apple blue, and reaches
+     past the subtitle, so white text reads on its own with no shadow at all. */
   background: linear-gradient(
     180deg,
-    #1e8fff 0%,
-    #3ec6ff 34%,
-    #c4e8ff 66%,
+    #0066e0 0%,
+    #0a84ff 20%,
+    #2aa8ff 36%,
+    #7fd0ff 50%,
+    #c9ecff 64%,
+    #e3f5ff 77%,
+    #f5fbff 88%,
     rgba(255, 255, 255, 0) 100%
   );
   pointer-events: none;
-}
-
-.inner > .sky {
-  position: relative;
-  z-index: 0;
-  grid-column: 1 / -1;
 }
 
 .sky::before {
@@ -71,6 +72,7 @@
     0% 0%,
     100% 0%;
   mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  opacity: 0.5;
 }
 
 .title {
@@ -78,9 +80,8 @@
   margin: 0;
   color: var(--x-white);
   font: var(--x-type-hero);
-  /* Owner 2026-11-23 («ближе к Apple»): a little air between letters (−0.5 %). */
-  letter-spacing: -0.005em;
-  text-shadow: var(--hero-shadow-big);
+  /* Owner 2026-11-24 («как у Apple», Б): tighter, −1.5 %. */
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
@@ -89,7 +90,8 @@
   margin: 1rem 0 0;
   color: var(--x-white);
   font: var(--x-type-lead);
-  text-shadow: var(--hero-shadow-small);
+  /* Owner 2026-11-24 (Б): a step heavier. */
+  font-weight: 500;
   text-wrap: balance;
 }
 
@@ -107,7 +109,7 @@
   margin-top: 1.125rem;
 }
 
-.search > * {
+.search > :first-child {
   max-width: none;
   min-height: 3rem;
 }
@@ -142,10 +144,16 @@
   outline-offset: 3px;
 }
 
+/* «Как это работает?» under the button (owner 2026-11-24 09:11–09:12); it opens the steps. */
+.how {
+  grid-row: 6;
+  margin-top: 0.375rem;
+}
+
 /* Three promises under the button (owner 2026-11-23, variant А): white tiles, a blue line icon
    on the left, two lines of text. */
 .promises {
-  grid-row: 6;
+  grid-row: 7;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.375rem;
@@ -187,6 +195,9 @@
 }
 
 .after {
+  /* Above the sky, which reaches into the audience line. */
+  position: relative;
+  z-index: 1;
   box-sizing: content-box;
   display: flex;
   flex-direction: column;
@@ -197,8 +208,8 @@
   text-align: center;
 }
 
-/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): grey monograms like
-   contacts on iPhone, quiet grey text, the number a little darker. */
+/* «Более 10 000 пользователей в месяц» (owner 2026-11-23, variant 1+): three photos
+   (owner 2026-11-24 09:28, each head whole in its circle), quiet grey text, the number a little darker. */
 .audience {
   display: flex;
   align-items: center;
@@ -219,66 +230,157 @@
   display: flex;
 }
 
-.avatars > span {
-  display: grid;
-  place-items: center;
+.avatars > img {
+  display: block;
   width: 1.625rem;
   height: 1.625rem;
-  margin-left: -0.5rem;
+  margin-left: -0.25rem;
   border-radius: 50%;
-  background: linear-gradient(180deg, #a5abb8, #858994);
+  object-fit: cover;
+  background: #dfe3ea;
   box-shadow: 0 0 0 2px var(--x-white);
-  color: var(--x-white);
-  font: var(--x-type-avatar);
 }
 
-.avatars > span:first-child {
+.avatars > img:first-child {
   margin-left: 0;
 }
 
-/* Three steps right under the first screen. */
-.steps {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  list-style: none;
+/* Phone (owner 2026-11-24, «равномерно», variant 4 on the «сетка Apple» sizes): the first screen
+   is exactly one phone screen. Its free space goes in equal parts above the lane, above the search
+   and above the audience line (the 1fr rows), and the icons and the text grow with the screen
+   height. Mockup: /mnt/project-files/screenshots/2026-11-24-air/rovno-*.png. */
+@media (max-width: 63.99em) {
+  .hero {
+    --hero-top: calc(var(--hero-under-pill) - 0.5rem);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    padding-bottom: 1.5rem;
+  }
+
+  .inner {
+    flex: 1 0 auto;
+    /* «Низ», variant А (owner 2026-11-24): the free space goes above the lane, the search, the
+       button and under «Как это работает?»; the button stands a fifth above the middle between the
+       «200+» line and the promises (owner 09:09–09:11); the audience line follows the promises. */
+    grid-template-rows:
+      auto auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 0.8fr)
+      auto auto minmax(0.75rem, 1.2fr) auto 1rem;
+  }
+
+  .title {
+    font: var(--x-type-heroflex);
+  }
+
+  .sub {
+    margin-top: 0.75rem;
+    font: var(--x-type-leadflex);
+    font-weight: 500;
+  }
+
+  .lanes {
+    grid-row: 4;
+    margin-top: 0;
+    --lane-icon: clamp(2.5rem, 6.8svh, 3.75rem);
+  }
+
+  .search {
+    grid-row: 6;
+    margin-top: 0;
+  }
+
+  .search > :first-child {
+    min-height: 2.75rem;
+  }
+
+  .cta {
+    grid-row: 8;
+    min-height: 3rem;
+    margin-top: 0;
+    font: var(--x-type-buttonsm);
+  }
+
+  .how {
+    grid-row: 9;
+  }
+
+  .promises {
+    grid-row: 11;
+    margin-top: 0;
+  }
+
+  .audience {
+    margin-top: 0;
+  }
 }
 
-.step {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  font: var(--x-type-note);
+/* A phone of middle height (iPhone 15 in Safari, 659 px): with «Как это работает?» under the
+   button the first screen no longer fit, so the bottom air, the gap over the link and the icons
+   give a little. */
+@media (max-width: 63.99em) and (max-height: 45em) {
+  .hero {
+    padding-bottom: 1rem;
+  }
+
+  .lanes {
+    --lane-icon: clamp(2.5rem, 6.4svh, 3.75rem);
+  }
+
+  .how {
+    margin-top: 0;
+  }
 }
 
-.step + .step::before {
-  content: "→";
-  position: absolute;
-  top: 0.625rem;
-  left: -2rem;
-  color: var(--x-text-3);
-  font: var(--x-type-ui);
-}
+/* A short screen (iPhone SE in Safari): everything a step smaller so it still fits. */
+@media (max-width: 63.99em) and (max-height: 38.75em) {
+  .hero {
+    --hero-top: calc(var(--hero-under-pill) - 1rem);
+    padding-bottom: 1rem;
+  }
 
-.num {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  box-sizing: border-box;
-  border: 1.5px solid var(--x-text);
-  border-radius: 50%;
-  font: var(--x-type-step);
-}
+  .sub {
+    margin-top: 0.5rem;
+    font: var(--x-type-leadsm);
+    font-weight: 500;
+  }
 
-.site {
-  margin: 0.75rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-lead);
+  .search > :first-child {
+    min-height: 2.5rem;
+  }
+
+  /* The grey «200+» line a little closer to the field than the approved 14 px. */
+  .search > p {
+    margin-top: 0.5rem;
+  }
+
+  .lanes {
+    --lane-icon: 2.5rem;
+  }
+
+  /* No room to spare: the lifted middle icon reaches into the air under the subtitle (it stays
+     clear of the letters), and the name of the middle app is left out. */
+  .lanes [data-lane-track] {
+    margin-top: calc(var(--pad-top) * -1);
+  }
+
+  .lanes [data-lane-name] {
+    display: none;
+  }
+
+  .cta {
+    min-height: 2.75rem;
+  }
+
+  .how {
+    margin-top: 0;
+  }
+
+  .inner {
+    grid-template-rows:
+      auto auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 0.8fr)
+      auto auto minmax(0.5rem, 1.2fr) auto 1rem;
+  }
 }
 
 /* Computer: two columns, text on the left, the picture slot on the right (picture postponed:
@@ -287,7 +389,7 @@
   .hero {
     /* «Выше» (owner 2026-11-23): 32px from the pill to the heading. From the screen edge to the
        text column: the lanes start at the screen edge. */
-    --hero-top: calc(var(--hero-under-pill) + 2rem);
+    --hero-top: calc(var(--hero-under-pill) + 1rem);
     --hero-bleed: calc(
       (100vw - min(100vw, var(--x-page-max) + 2 * var(--x-gutter))) /
       2 +
@@ -309,29 +411,35 @@
   }
 
   .sub {
-    margin-top: 1.25rem;
+    margin-top: 1rem;
     font: var(--x-type-leadlg);
+    font-weight: 500;
   }
 
   .lanes {
     justify-self: start;
     width: calc(100% + var(--hero-bleed));
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     margin-left: calc(-1 * var(--hero-bleed));
   }
 
   .search {
-    margin-top: 1.75rem;
+    margin-top: 2rem;
   }
 
   /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
+  /* Owner 2026-11-24 («сетка Apple»): a 48px pill, 17px label. */
   .cta {
-    margin-top: 1.125rem;
+    /* The picture column makes the rows taller; the pill keeps its 48px. */
+    align-self: start;
+    min-height: 3rem;
+    margin-top: 0.75rem;
+    font: var(--x-type-buttonsm);
   }
 
   .promises {
     gap: 0.75rem;
-    margin-top: 1.125rem;
+    margin-top: 1rem;
   }
 
   .promise {
@@ -340,20 +448,14 @@
     font: var(--x-type-promiselg);
   }
 
-  /* Taller sky on a computer: the white text keeps the saturated part. */
-  .sky {
-    background: linear-gradient(
-      180deg,
-      #1e8fff 0%,
-      #3ec6ff 62%,
-      #c4e8ff 90%,
-      rgba(255, 255, 255, 0) 100%
-    );
+  /* On a computer the sky ends before the hero does (880px, owner 2026-11-24). */
+  .inner > .sky {
+    height: min(55rem, 100%);
   }
 
   .visual {
     display: grid;
-    grid-row: 1 / 7;
+    grid-row: 1 / 8;
     grid-column: 2;
     place-items: center;
     align-self: center;
@@ -365,16 +467,7 @@
   }
 
   .audience {
-    margin-top: 2.5rem;
-  }
-
-  .steps {
-    gap: 6rem;
     margin-top: 3rem;
-  }
-
-  .step + .step::before {
-    left: -3.5rem;
   }
 }
 

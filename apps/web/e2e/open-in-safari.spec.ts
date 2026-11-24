@@ -46,6 +46,11 @@ test('Chrome on iPhone → «Осталось открыть в Safari» → Saf
     const phone = await safari.newPage();
     await phone.goto(`${link.pathname}${link.hash}`);
     await expect(phone).toHaveURL(/\/get\/iphone$/);
+    // Developer Mode comes first (owner 2026-11-24, variant Б), then the profile.
+    await expect(
+      phone.getByRole('heading', { level: 1, name: 'Включите режим разработчика' }),
+    ).toBeVisible();
+    await phone.getByRole('link', { name: 'Готово, дальше' }).click();
     await expect(phone.getByRole('heading', { level: 1, name: 'Подключить iPhone' })).toBeVisible();
     await expect(phone.getByText('Работает только в Safari')).toBeVisible();
 

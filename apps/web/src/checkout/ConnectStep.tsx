@@ -12,7 +12,7 @@ import { formatReadyBy } from '../access/wait-time';
 import type { DeviceKind } from '../app-page/device';
 import { InstallButton } from '../install/InstallButton';
 import { browserApi } from './browser-api';
-import { ConnectGuide } from './ConnectGuide';
+import { ConnectGuide, DevModeGuide } from './ConnectGuide';
 import styles from './checkout.module.css';
 import own from './connect.module.css';
 import {
@@ -48,11 +48,16 @@ export type ConnectStepProps = {
   timeZone?: string;
   /** Step 3: the app the buyer paid from (`GET /install/chosen`), installed right here. */
   chosen?: { slug: string; name: string } | null;
+  /** Owner 2026-11-24, variant Б: `ask` shows the Developer Mode screen before the profile
+   * (`/get/iphone` without `?dev=ok`); `done` goes straight to the profile. */
+  devMode?: 'ask' | 'done';
 };
 
 const defaultGetAccess = () => browserApi().getAccess();
 const defaultNavigate = (url: string) => window.location.assign(url);
 const SIGNIN = '/signin?next=/get/iphone';
+/** The profile part of step 2, after Developer Mode is on. */
+export const DEV_MODE_DONE = '/get/iphone?dev=ok';
 
 function readWaiting(): number | null {
   try {
@@ -144,6 +149,7 @@ export function ConnectStep({
   now: fixedNow,
   timeZone,
   chosen = null,
+  devMode = 'done',
 }: ConnectStepProps) {
   const now = useNow(fixedNow);
   const detected = useBrowserDevice();
@@ -171,6 +177,7 @@ export function ConnectStep({
     (device === null || app === null) &&
     (step === 'guide' || step === 'waiting' || step === 'open_on_phone');
   const error = step === 'error' && result ? connectErrorText(result) : '';
+  const askDevMode = step === 'guide' && devMode === 'ask';
 
   // A reload or a discarded Safari tab while iOS installs keeps waiting.
   useEffect(() => {
@@ -259,12 +266,30 @@ export function ConnectStep({
   return (
     <div className={styles.wizard}>
       <p role="status" aria-live="polite" className={styles.srOnly} data-testid="connect-status">
-        {deviceUnknown ? '' : statusText(step, name, error, updating)}
+        {deviceUnknown
+          ? ''
+          : askDevMode
+            ? 'Включите режим разработчика'
+            : statusText(step, name, error, updating)}
       </p>
       <StepBar current={step === 'no_access' ? 0 : step === 'ready' ? 2 : 1} family={family} />
       {deviceUnknown ? (
         <section className={styles.panel} aria-busy="true">
           <span className={styles.spinner} aria-hidden="true" />
+        </section>
+      ) : askDevMode ? (
+        <section className={styles.panel} data-dev-mode="">
+          <h1 className={styles.title}>Включите режим разработчика</h1>
+          <p className={styles.lead}>
+            Один раз, это встроенная настройка Apple. Без неё приложения не откроются.
+          </p>
+          <DevModeGuide family={family} />
+          <p className={own.safe}>
+            Доступа к вашему {name} эта настройка нам не даёт, выключить её можно там же.
+          </p>
+          <Button href={DEV_MODE_DONE} className={styles.wide}>
+            Готово, дальше
+          </Button>
         </section>
       ) : step === 'guide' ? (
         <section className={styles.panel}>
@@ -374,7 +399,7 @@ export function ConnectStep({
           <p role="alert" className={styles.problemText}>
             {error}
           </p>
-          <Button href="/get/iphone" className={styles.wide}>
+          <Button href={DEV_MODE_DONE} className={styles.wide}>
             Попробовать снова
           </Button>
           {toAccess}

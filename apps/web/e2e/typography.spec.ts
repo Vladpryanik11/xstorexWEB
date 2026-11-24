@@ -9,9 +9,12 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
   await expect(hero).toHaveCSS('font-family', /Inter Tight/i);
   await expect(hero).toHaveCSS('font-weight', '600');
   const heroSize = Number.parseFloat(await hero.evaluate((el) => getComputedStyle(el).fontSize));
-  // Owner 2026-11-23: 34 px on a phone («заголовок должен быть больше»), up to 56 px on a computer.
-  if (isMobile) expect(heroSize).toBe(34);
-  else {
+  // Owner 2026-11-24 («равномерно», variant 4): 28–40 px on a phone, growing with the screen
+  // height; up to 56 px on a computer.
+  if (isMobile) {
+    expect(heroSize).toBeGreaterThanOrEqual(28);
+    expect(heroSize).toBeLessThanOrEqual(40);
+  } else {
     expect(heroSize).toBeGreaterThanOrEqual(34);
     expect(heroSize).toBeLessThanOrEqual(56);
   }
@@ -19,7 +22,8 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
     const s = getComputedStyle(el);
     return Number.parseFloat(s.letterSpacing) / Number.parseFloat(s.fontSize);
   });
-  expect(heroTrack).toBeCloseTo(-0.005, 3);
+  // Owner 2026-11-24 («как у Apple»): tighter, −1.5 %.
+  expect(heroTrack).toBeCloseTo(-0.015, 3);
 
   // «App Store» never breaks across lines (owner 2026-11-23).
   expect(await hero.textContent()).toContain('App\u00a0Store');
@@ -32,7 +36,7 @@ test('hero is Inter Tight 600, text is Onest', async ({ page, isMobile }) => {
 
 // Owner 2026-11-23, variant В+: the first-screen search is an App Store glass pill with a thin
 // rim, a bluish shadow and 17px text (iOS Safari zooms into fields under 16px).
-test('first-screen search is the App Store glass pill', async ({ page }) => {
+test('first-screen search is the App Store glass pill', async ({ page, isMobile }) => {
   await page.goto('/');
   const form = page.locator('[data-home-hero] form[role=search]');
   const input = form.locator('input');
@@ -43,7 +47,8 @@ test('first-screen search is the App Store glass pill', async ({ page }) => {
     'box-shadow',
     'rgba(11, 26, 74, 0.08) 0px 0px 0px 1px inset, rgba(20, 73, 224, 0.08) 0px 4px 16px 0px',
   );
-  expect((await form.boundingBox())?.height).toBe(48);
+  // Owner 2026-11-24 («сетка Apple»): 44 px on a phone, 48 px on a computer.
+  expect((await form.boundingBox())?.height).toBe(isMobile ? 44 : 48);
   expect(await input.evaluate((el) => getComputedStyle(el, '::placeholder').color)).toBe(
     'rgb(110, 110, 115)',
   );
@@ -56,14 +61,53 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
   await expect(cta).toHaveCSS('background-color', 'rgb(0, 113, 227)');
   await expect(cta).toHaveCSS('background-image', 'none');
   await expect(cta).toHaveCSS('box-shadow', 'none');
-  // Size Д with 20px text (owner 2026-11-23): 56px high, full width.
-  await expect(cta).toHaveCSS('font-size', '20px');
+  // Owner 2026-11-24 («сетка Apple»): a 48px pill with a 17px label, full width.
+  await expect(cta).toHaveCSS('font-size', '17px');
   await expect(cta).toHaveCSS('font-weight', '600');
   await expect(cta.locator('svg')).toHaveCount(0);
   // The same button on a computer (owner 2026-11-23): as wide as the search field above it.
   const search = await page.locator('[data-home-hero] form[role=search]').boundingBox();
   const box = await cta.boundingBox();
-  expect(box?.height).toBe(56);
+  expect(box?.height).toBe(48);
   expect(box?.width).toBe(search?.width);
   expect(box?.x).toBe(search?.x);
+});
+
+// Owner 2026-11-24 (variant Б «Синяя, как небо»): the plan card carries the sky of the first
+// screen, the button is white and carries the price (13:57), the card is narrow.
+test('plan card is the blue sky card', async ({ page }) => {
+  await page.goto('/');
+  const card = page.getByRole('region', { name: 'Весь каталог в одной подписке' }).locator('> div');
+  await card.scrollIntoViewIfNeeded();
+  expect(await card.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,
+  );
+  const box = await card.boundingBox();
+  expect(box?.width ?? 0).toBeLessThanOrEqual(288);
+  const cta = card.getByRole('link');
+  await expect(cta).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(cta).toHaveCSS('color', 'rgb(0, 113, 227)');
+  // 13:57, variant Б: the price is on the button, «/ мес.» quieter.
+  await expect(cta.getByText('/ мес.', { exact: true })).toHaveCSS(
+    'color',
+    'rgba(0, 113, 227, 0.6)',
+  );
+  await expect(cta.getByText('/ мес.', { exact: true })).toHaveCSS('margin-left', '5px');
+  await expect(cta).toHaveCSS('box-shadow', 'none');
+});
+
+// Owner 2026-11-24 14:18, variant Б: the «Оплата» step speaks the language of the home page —
+// white page, Inter Tight title, the blue plan card, the Apple blue button with the price once.
+test('the «Оплата» step looks like the home page', async ({ page }) => {
+  await page.goto('/get');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  const title = page.getByRole('heading', { level: 1 });
+  expect(await title.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Inter Tight/);
+  const card = page.getByText('Весь каталог в одной подписке', { exact: true }).locator('..');
+  expect(await card.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,
+  );
+  const pay = page.getByRole('button', { name: /^Оплатить .* \/ мес\.$/ });
+  await expect(pay).toHaveCSS('background-color', 'rgb(0, 113, 227)');
+  await expect(pay).toHaveCSS('box-shadow', 'none');
 });

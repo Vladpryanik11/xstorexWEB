@@ -1,0 +1,252 @@
+/* «Как это работает?» (owner 2026-11-24 09:11–09:12): a small blue line under the button that
+   opens the steps over the page. */
+.open {
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--x-cta);
+  font: var(--x-type-how);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* The page dims; on a phone the window rises from the bottom, on a computer it stands centred. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(10, 20, 40, 0.38);
+  animation: fade 0.2s ease both;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--x-white);
+  box-shadow: 0 -8px 30px rgba(10, 40, 100, 0.18);
+  /* Taller than a phone screen: the window scrolls inside itself. */
+  max-height: calc(100svh - 0.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  text-align: center;
+  animation: rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-left: 2.25rem;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  color: var(--x-text);
+  font: var(--x-type-howhead);
+  letter-spacing: -0.015em;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--x-sky-50);
+  color: var(--x-text);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* What the service is (owner 2026-11-24 11:56): one line large, the «without» line under it. */
+.lead {
+  margin: 0.875rem 0.25rem 0;
+  color: var(--x-text);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.sub {
+  margin: 0.375rem 0.25rem 0;
+  color: #3c4658;
+  font: var(--x-type-ui);
+  text-wrap: balance;
+}
+
+.heading {
+  margin: 1.125rem 0.25rem 0.5rem;
+  color: var(--x-text);
+  font: var(--x-type-howhead);
+  letter-spacing: -0.015em;
+  text-align: left;
+}
+
+/* What it works by: a grouped list, as in the iOS Settings. */
+.how {
+  margin: 0;
+  padding: 0 0.75rem;
+  border: 1px solid #e6ebf2;
+  border-radius: 1rem;
+  list-style: none;
+  text-align: left;
+}
+
+.how li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0;
+  color: #3c4658;
+  font: var(--x-type-cap);
+  text-wrap: pretty;
+}
+
+.how b {
+  display: block;
+  color: var(--x-text);
+  font: var(--x-type-ui);
+  font-weight: 600;
+}
+
+.number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  background: var(--x-cta);
+  color: var(--x-white);
+  font: var(--x-type-cap);
+  font-weight: 600;
+}
+
+/* Why it is safe (owner 2026-11-24 10:34 «нужно донести что это безопасно»). */
+.safe {
+  display: grid;
+  gap: 0.5625rem;
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border-radius: 1rem;
+  background: var(--x-sky-50);
+  list-style: none;
+  text-align: left;
+}
+
+.safe li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5625rem;
+  color: var(--x-text);
+  font: var(--x-type-cap);
+  text-wrap: pretty;
+}
+
+.how li:not(:first-child) {
+  border-top: 1px solid #eef1f5;
+}
+
+.safe svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: var(--x-cta);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 1.125rem;
+  border: 0;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-cta);
+  color: var(--x-white);
+  font: var(--x-type-buttonsm);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.next:active {
+  background: var(--x-cta-pressed);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (min-width: 40em) {
+  .backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    max-width: 26rem;
+    border-radius: 1.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(1rem) scale(0.98);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .sheet {
+    animation: none;
+  }
+}

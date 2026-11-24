@@ -1,74 +1,81 @@
 import { render, screen, within } from '@testing-library/react';
+import type { AppCard } from '@xstore/shared';
 import { expect, it } from 'vitest';
-import { HomeFaq, HomeFinal, HomePlan, HomeStats, HomeWhy } from './HomeSell';
+import { HomeFaq, HomePlan } from './HomeSell';
+
+const app = (slug: string, iconUrl: string | null = `/i/${slug}.png`) =>
+  ({ slug, name: slug, iconUrl }) as AppCard;
 
 const price = (s: string) => s.replace(/\s/g, ' ');
 
-it('plan card: price, what is included and a button with the price', () => {
-  render(<HomePlan priceRub={590} />);
-  const card = screen.getByRole('region', { name: 'Весь каталог на 1 месяц' });
-  expect(price(card.querySelector('p')?.textContent ?? '')).toBe('590 ₽ в месяц');
+it('plan card: what is included and the price on the button, said once', () => {
+  render(<HomePlan priceRub={590} apps={[]} />);
+  const card = screen.getByRole('region', { name: 'Весь каталог в одной подписке' });
   const items = within(card)
     .getAllByRole('listitem')
     .map((li) => li.textContent);
-  expect(items).toHaveLength(3);
-  expect(items[2]).toContain('Гарантия до последнего дня');
-  const cta = within(card).getByRole('link', { name: /Получить доступ за\s590\s₽/ });
+  // Owner 2026-11-24 13:12, variant Г: three short points as pills in a row, no ticks.
+  expect(items).toEqual(['Безлимит', '1 iPhone', 'Гарантия']);
+  expect(card.querySelector('li svg')).toBeNull();
+  // Owner 2026-11-24 13:57, variant Б: the price only on the white button, said once.
+  const cta = within(card).getByRole('link');
+  expect(price(cta.textContent ?? '')).toBe('590 ₽ / мес.');
   expect(cta).toHaveAttribute('href', '/get');
   expect(cta).toHaveAttribute('data-page-cta');
-  // Proof right under the pay button (owner 2026-11-21).
-  expect(cta.nextElementSibling).toHaveTextContent(/10 000\+\s*пользователей в месяц/);
-});
-
-it('stats row: three figures the owner confirmed', () => {
-  render(<HomeStats />);
-  const list = screen.getByRole('list', { name: 'Xstorex в цифрах' });
-  expect(
-    within(list)
-      .getAllByRole('listitem')
-      .map((li) => li.textContent?.replace(/\s+/g, ' ')),
-  ).toEqual(['200+ приложений', '10 000+ пользователей в месяц', '0 ₽ доплат по гарантии']);
+  expect(card.textContent?.match(/590/g)).toHaveLength(1);
+  expect(card.textContent?.match(/₽/g)).toHaveLength(1);
+  expect(card.textContent?.match(/мес/g)).toHaveLength(1);
+  expect(card.textContent).not.toMatch(/10 000|в день/);
 });
 
 it('plan card without a price still sells, with a plain button', () => {
-  render(<HomePlan priceRub={null} />);
+  render(<HomePlan priceRub={null} apps={[]} />);
   expect(screen.queryByText(/₽/)).toBeNull();
   expect(screen.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute('href', '/get');
 });
 
-it('why Xstorex: four reasons', () => {
-  render(<HomeWhy />);
-  const sec = screen.getByRole('region', { name: 'Почему Xstorex' });
-  expect(
-    within(sec)
-      .getAllByRole('heading', { level: 3 })
-      .map((h) => h.textContent),
-  ).toEqual([
-    'То, что удалили из App Store',
-    'Без лишних программ и аккаунтов',
-    'Только честные копии',
-    'Живые люди в поддержке',
-  ]);
+// Owner 2026-11-24 14:04, variant Г: the title says it is one subscription, a row of real catalog
+// icons shows what is in it; without icons there is no row.
+it('plan card shows five catalog icons and the size of the catalog above the price', () => {
+  const apps = ['a', 'b', 'c', 'd', 'e', 'f'].map((s) => app(s));
+  render(<HomePlan priceRub={590} apps={[app('x', null), app('a'), ...apps]} />);
+  const card = screen.getByRole('region', { name: 'Весь каталог в одной подписке' });
+  const row = within(card).getByRole('list', { name: 'Приложения каталога' });
+  const icons = [...row.querySelectorAll('img')];
+  expect(icons.map((i) => i.getAttribute('src'))).toEqual(
+    ['a', 'b', 'c', 'd', 'e'].map((s) => `/i/${s}.png`),
+  );
+  for (const i of icons) expect(i).toHaveAttribute('alt', '');
+  expect(row.textContent).toBe('+200');
+  expect(card.textContent?.match(/590/g)).toHaveLength(1);
 });
 
-it('FAQ answers only what is promised in the spec', () => {
+it('plan card without catalog icons has no icon row', () => {
+  render(<HomePlan priceRub={590} apps={[app('x', null)]} />);
+  expect(screen.queryByRole('list', { name: 'Приложения каталога' })).toBeNull();
+  expect(screen.queryByText('+200')).toBeNull();
+});
+
+// Owner 2026-11-24 12:20–12:29 (home variant Б): the first question says why it is safe; the
+// reasons of the removed «Почему Xstorex» became questions.
+it('FAQ starts with safety and answers only what is promised in the spec', () => {
   render(<HomeFaq />);
   const sec = screen.getByRole('region', { name: 'Частые вопросы' });
   const qs = [...sec.querySelectorAll('summary')].map((s) => s.textContent);
   expect(qs).toEqual([
-    'Это не взлом? С iPhone ничего не случится?',
+    'Это безопасно?',
     'А если приложение перестанет открываться?',
     'Нужна ли регистрация?',
     'Мне нужен компьютер?',
+    'Что если приложение удалили из App Store?',
+    'Сколько ждать после подключения iPhone?',
+    'Как связаться с поддержкой?',
   ]);
-  expect(sec.textContent).not.toMatch(/вернём деньги|спишутся/);
-});
-
-it('final call: price in the button when known, guarantee in the line', () => {
-  render(<HomeFinal priceRub={590} />);
-  const sec = screen.getByRole('region', { name: 'Ваши приложения уже ждут' });
-  expect(sec).toHaveTextContent(/Гарантия на весь срок подписки/);
-  expect(within(sec).getByRole('link', { name: /Получить доступ за\s590\s₽/ })).toHaveAttribute(
-    'data-page-cta',
+  const first = sec.querySelector('details p')?.textContent ?? '';
+  expect(first).toContain(
+    'Доступа к iPhone у нас нет: фото, сообщения, пароли и Apple ID мы не видим.',
   );
+  expect(first).toContain('без сторонних программ и взломанных версий');
+  expect(sec.textContent).not.toMatch(/сотрудникам/);
+  expect(sec.textContent).not.toMatch(/вернём деньги|спишутся/);
 });

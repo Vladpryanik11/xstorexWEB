@@ -1,8 +1,6 @@
 /* Selling blocks under the hero (spec v2 §3.1). Same width and gutter as the home shelves. */
 .planWrap,
-.block,
-.statsWrap,
-.finalWrap {
+.block {
   box-sizing: content-box;
   max-width: var(--x-page-max);
   margin-inline: auto;
@@ -11,80 +9,83 @@
 
 .title {
   margin: 0 0 1.25rem;
-  font: var(--x-type-h1);
-  letter-spacing: var(--x-track-head);
+  font: var(--x-type-section);
+  letter-spacing: -0.015em;
 }
 
-/* Plan card */
+/* Plan card: the sky of the first screen (owner 2026-11-24, variant Б «Синяя, как небо»), small
+   (13:08, variant 2 «Только главное», about a third of a phone screen). */
 .plan {
   box-sizing: border-box;
-  max-width: 26rem;
+  max-width: 18rem;
   margin-inline: auto;
-  padding: 1.75rem 1.5rem;
-  border: 1.5px solid var(--x-sky-200);
+  padding: 1rem;
   border-radius: var(--x-radius-panel);
-  background: var(--x-white);
-  box-shadow: var(--x-shadow);
+  background: linear-gradient(160deg, #0066e0, #0a84ff 60%, #3ea6ff);
+  box-shadow: 0 16px 40px rgba(0, 90, 220, 0.25);
+  color: var(--x-white);
+  text-align: center;
 }
 
-.eyebrow {
-  display: inline-block;
+.planTitle {
   margin: 0;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--x-radius-pill);
-  background: var(--x-sky-50);
-  color: var(--x-quiet-fg);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
+  color: var(--x-white);
+  font: var(--x-type-plantitle);
+  letter-spacing: -0.01em;
 }
 
-.price {
-  margin: 0.75rem 0 0;
-  font: var(--x-type-display);
-  letter-spacing: var(--x-track-head);
-  font-variant-numeric: tabular-nums;
+/* A row of real catalog icons and the size of the catalog (owner 2026-11-24 14:04, variant Г). */
+.icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0.625rem 0 0.125rem;
+  padding: 0;
+  list-style: none;
 }
 
-.price span {
-  color: var(--x-text-2);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
+.icons img {
+  display: block;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 22.5%;
+  box-shadow: 0 2px 6px rgba(0, 40, 120, 0.25);
+}
+
+.more {
+  margin-left: 0.25rem;
+  color: rgba(255, 255, 255, 0.9);
+  font: var(--x-type-eyebrow);
+}
+
+/* «/ мес.» beside the price on the button, quieter (owner 2026-11-24 13:57, variant Б). */
+.per {
+  /* The button is a flex box, so the space before it collapses. */
+  margin-left: 0.3125rem;
+  color: rgba(0, 113, 227, 0.6);
+  font-weight: 500;
 }
 
 .included {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1.25rem 0 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0.625rem 0 0.75rem;
   padding: 0;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
+  color: var(--x-white);
+  font: var(--x-type-eyebrow);
   letter-spacing: var(--x-track-small);
   list-style: none;
 }
 
+/* Pills of white glass, like the promises of the first screen (owner 2026-11-24 13:12, Г). */
 .included li {
-  display: flex;
-  gap: 0.625rem;
-}
-
-.included b {
-  color: var(--x-text);
-  font-weight: 600;
-}
-
-.included svg {
-  flex: none;
-  width: 1.25rem;
-  height: 1.25rem;
-  padding: 0.1875rem;
-  box-sizing: border-box;
-  border-radius: 50%;
-  background: var(--x-sky-50);
-  fill: none;
-  stroke: var(--x-blue);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--x-radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
 }
 
 .cta,
@@ -114,8 +115,11 @@
 }
 
 .ctaLight {
+  min-height: 2.75rem;
   background: var(--x-white);
-  color: var(--x-blue-deep);
+  color: var(--x-cta);
+  font: var(--x-type-body);
+  font-weight: 600;
 }
 
 .cta:active,
@@ -127,83 +131,6 @@
 .ctaLight:focus-visible {
   outline: 2px solid var(--x-blue-ring);
   outline-offset: 3px;
-}
-
-/* Proof right under the pay button (owner 2026-11-21) */
-.proof {
-  margin: 0.75rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
-  text-align: center;
-}
-
-.proof b {
-  color: var(--x-text);
-  font-weight: 600;
-}
-
-/* Figures row between the search and the steps */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  border-block: 1px solid var(--x-hair);
-  list-style: none;
-}
-
-.stat {
-  display: grid;
-  align-content: start;
-  gap: 0.25rem;
-  padding: 1rem 0.75rem 1rem 0;
-}
-
-.stat + .stat {
-  padding-left: 0.875rem;
-  border-left: 1px solid var(--x-hair);
-}
-
-.stats b {
-  font: var(--x-type-h2);
-  letter-spacing: var(--x-track-head);
-  font-variant-numeric: tabular-nums;
-}
-
-.stats span {
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  letter-spacing: var(--x-track-small);
-}
-
-/* Why Xstorex: a list with thin dividers, no cards (owner 2026-11-21) */
-.why {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  column-gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--x-hair);
-  list-style: none;
-}
-
-.why li {
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--x-hair);
-}
-
-.why h3 {
-  margin: 0;
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
-}
-
-.why p {
-  margin: 0.375rem 0 0;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
 }
 
 /* FAQ */
@@ -254,55 +181,16 @@
   letter-spacing: var(--x-track-small);
 }
 
-/* Final call */
-.final {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.75rem 1.5rem;
-  border-radius: var(--x-radius-panel);
-  background: var(--x-blue);
-  color: var(--x-white);
+/* The questions read in a narrow column, like the plan card (owner 2026-11-24 12:22). */
+.block:has(.faq) > * {
+  max-width: 36rem;
+  margin-inline: auto;
 }
 
-.final h2 {
-  margin: 0;
-  font: var(--x-type-h1);
-  letter-spacing: var(--x-track-head);
-}
-
-.final p {
-  margin: 0.375rem 0 0;
-  opacity: 0.85;
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-/* Phone: section titles one step (22 px); the last call is centred like the hero. */
+/* Phone (owner 2026-11-24 12:29 «карточку тарифа меньше»): a smaller title and a compact card,
+   about half of an iPhone screen. */
 @media (max-width: 47.99em) {
   .title {
-    font: var(--x-type-h2);
-  }
-
-  .final {
-    align-items: center;
-    text-align: center;
-  }
-
-  .final h2 {
-    font: var(--x-type-h2);
-  }
-}
-
-@media (min-width: 48em) {
-  .why {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .final {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2rem 2.5rem;
+    font: var(--x-type-sectionsm);
   }
 }

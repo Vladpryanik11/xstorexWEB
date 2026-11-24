@@ -1,114 +1,123 @@
-/* Two live lanes of catalog icons (spec 2026-11-23-home-first-screen §3.3, owner 2026-11-23):
-   no frame, from edge to edge of the screen, the second lane shifted by half an icon. */
+/* One live lane of catalog icons (spec 2026-11-23-home-first-screen §3.3; owner 2026-11-24: one
+   lane, no caption; «как Dock в macOS»): no frame, from edge to edge of the screen. */
 .lanes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
   width: 100%;
-  overflow: hidden;
+  /* The scroller below clips itself; the shadows of the icons stay whole inside its padding. */
+  overflow-y: visible;
 }
 
 .lane {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  align-items: center;
   min-width: 0;
 }
 
-/* Variant В+ (owner 2026-11-23): small capitals, dark blue for 4.5:1 on the sky. */
-.caption {
-  margin: 0;
-  padding-inline: var(--x-gutter);
-  color: #0a4fb0;
-  font: var(--x-type-eyebrow);
-  letter-spacing: 0.06em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.view {
-  margin-left: -1.125rem;
-}
-
-.lane + .lane .view {
-  margin-left: -3.25rem;
-}
-
-/* Two equal halves: moving by one half brings the second exactly where the first was. */
+/* Scrolled by a finger; the room above holds the larger, lifted middle icon (on a short screen it
+   would cover the subtitle otherwise), the room below the shadows, given back to the layout. */
 .track {
+  --pad-top: calc(var(--lane-icon, 3.375rem) * 0.52 + 0.375rem);
+  --pad-bottom: 0.875rem;
   display: flex;
-  gap: 0.75rem;
-  width: max-content;
-  animation: lane var(--lane-duration, 50s) linear infinite;
+  align-items: center;
+  width: 100%;
+  margin-bottom: calc(var(--pad-bottom) * -1);
+  padding-block: var(--pad-top) var(--pad-bottom);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-@keyframes lane {
-  to {
-    transform: translateX(calc(-50% - 0.375rem));
-  }
+.track::-webkit-scrollbar {
+  display: none;
 }
 
-.lane[data-paused] .track {
-  animation-play-state: paused;
-}
-
-/* Under a mouse the lane stands still, so an icon is easy to hit. */
-@media (hover: hover) and (pointer: fine) {
-  .lane:hover .track {
-    animation-play-state: paused;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .track {
-    animation: none;
-  }
+.track:active {
+  cursor: grabbing;
 }
 
 .item {
   flex: none;
-  display: block;
+  display: grid;
+  place-items: center;
+  /* An icon and its share of the gap: the Dock pushes the neighbours out from here. */
+  width: calc(var(--lane-icon, 3.375rem) * 1.22);
   border-radius: 22.5%;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .item:focus-visible {
-  outline: 2px solid var(--x-blue-ring);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .icon {
   display: block;
-  width: 3.375rem;
-  height: 3.375rem;
+  /* The hero sets --lane-icon from the screen height (owner 2026-11-24). */
+  width: var(--lane-icon, 3.375rem);
+  height: var(--lane-icon, 3.375rem);
   border-radius: 22.5%;
   background: var(--x-sky-50);
   box-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.06),
-    0 4px 12px rgba(10, 40, 100, 0.1);
+    0 4px 12px rgba(10, 40, 100, 0.12);
   object-fit: cover;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
 }
 
-/* Computer: from the left edge of the screen to the right edge of the text column, fading out;
-   captions start at the text. */
+/* While searching, the apps found stay bright and the others fade (owner 2026-11-24). */
+.item[data-dim] .icon {
+  opacity: 0.35;
+  filter: saturate(0.4) blur(1px);
+}
+
+.item:focus-visible .icon {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+/* The name of the middle app, right under its icon (owner 2026-11-24 12:57, variant Б3): white
+   in the font of the title, with a soft blue shadow, like the title on the sky. */
+.name {
+  /* The same height as before (1.25rem): the first screen is exactly one phone screen. */
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--x-white);
+  font: var(--x-type-lanename);
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 8px rgba(0, 70, 180, 0.45);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    transition: none;
+  }
+}
+
+/* Computer: from the left edge of the screen to the right edge of the text column, fading out. */
 @media (min-width: 64em) {
-  .lanes {
-    gap: 1.375rem;
+  .track {
     -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
     mask-image: linear-gradient(90deg, #000 82%, transparent);
   }
 
-  .caption {
-    padding-inline: var(--hero-bleed, 5rem) 0;
-    text-align: left;
-  }
-
-  .lane + .lane .view {
-    margin-left: -3.75rem;
-  }
-
   .icon {
-    width: 4rem;
-    height: 4rem;
+    --lane-icon: 3.5rem;
+  }
+
+  .item {
+    width: calc(3.5rem * 1.22);
   }
 }

@@ -21,7 +21,10 @@ export default async function ConnectPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const result = one((await searchParams).r) ?? null;
+  const params = await searchParams;
+  const result = one(params.r) ?? null;
+  // Developer Mode first, then the profile (owner 2026-11-24, variant Б): «Готово, дальше» adds `?dev=ok`.
+  const devMode = one(params.dev) === 'ok' ? 'done' : 'ask';
   const api = await serverApi();
   const access = await api.getAccess();
   // `hasPassword` comes only with a buyer session; the connect link needs one.
@@ -29,5 +32,5 @@ export default async function ConnectPage({
   // Step 3 installs the app the buyer paid from; without it the step points to the catalog.
   const ready = access.state.kind === 'active' && access.state.device?.ready === true;
   const chosen = ready ? ((await api.chosenApp().catch(() => null))?.app ?? null) : null;
-  return <ConnectStep access={access.state} result={result} chosen={chosen} />;
+  return <ConnectStep access={access.state} result={result} chosen={chosen} devMode={devMode} />;
 }

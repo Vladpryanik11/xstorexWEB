@@ -10,6 +10,12 @@
   padding: 1.5rem var(--x-gutter) 3rem;
 }
 
+/* The wizard pages are white, like the home page under its first screen (owner 2026-11-24 14:18,
+   variant Б). */
+:global(body):has(.wizard) {
+  background: var(--x-white);
+}
+
 /* step bar: three pills in a row */
 .steps {
   display: grid;
@@ -94,14 +100,15 @@
 
 .title {
   margin: 0;
-  font: var(--x-type-h1);
+  /* Inter Tight, like the titles of the home page (owner 2026-11-24 14:18, variant Б). */
+  font: var(--x-type-section);
   letter-spacing: var(--x-track-head);
   text-wrap: balance;
 }
 
 .subtitle {
   margin: 0;
-  font: var(--x-type-h2);
+  font: var(--x-type-sectionsm);
   letter-spacing: var(--x-track-head);
 }
 
@@ -112,39 +119,22 @@
   letter-spacing: var(--x-track-body);
 }
 
-/* price and plan facts */
+/* Plan card: the blue sky card of the home page (owner 2026-11-24 14:18, variant Б). The price is
+   said once, on the button. */
 .offer {
   display: grid;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  border-radius: var(--x-radius-card);
-  background: var(--x-sky-50);
+  padding: 1rem;
+  border-radius: var(--x-radius-panel);
+  background: linear-gradient(160deg, #0066e0, #0a84ff 60%, #3ea6ff);
+  box-shadow: 0 16px 40px rgba(0, 90, 220, 0.25);
+  color: var(--x-white);
+  text-align: center;
 }
 
-.price {
+.offerTitle {
   margin: 0;
-  color: var(--x-text);
-  font: var(--x-type-display);
-  letter-spacing: var(--x-track-head);
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fact {
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--x-radius-pill);
-  background: var(--x-card);
-  box-shadow: var(--x-shadow-sm);
-  color: var(--x-quiet-fg);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
+  font: var(--x-type-plantitle);
+  letter-spacing: -0.01em;
 }
 
 .note {
@@ -152,6 +142,10 @@
   color: var(--x-text-2);
   font: var(--x-type-ui);
   letter-spacing: var(--x-track-small);
+}
+
+.offer .note {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* form */
@@ -245,6 +239,20 @@
 
 .wide {
   width: 100%;
+}
+
+/* «Оплатить N ₽ / мес.»: the button of the home page, Apple blue without a shadow (14:18, Б). */
+.form .pay {
+  width: 100%;
+  background: var(--x-cta);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .form .pay:hover {
+    background: var(--x-cta-pressed);
+  }
 }
 
 .actions {

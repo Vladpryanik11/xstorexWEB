@@ -54,14 +54,31 @@
   --x-type-step: 500 1rem / 1 var(--x-font-head);
   --x-type-lead: 400 .9375rem / 1.4 var(--x-font);
   --x-type-leadlg: 400 1.125rem / 1.4 var(--x-font);
-  /* first screen, owner 2026-11-23: lane captions, the three promises, the audience avatars */
+  /* first screen, owner 2026-11-23: lane captions, the three promises */
   --x-type-eyebrow: 600 .8125rem / 1.2 var(--x-font);
   --x-type-promise: 500 .75rem / 1.25 var(--x-font);
   --x-type-promiselg: 500 .875rem / 1.25 var(--x-font);
-  --x-type-avatar: 600 .6875rem / 1 var(--x-font);
-  --x-type-dock: 500 .6875rem / 1.2 var(--x-font);
   --x-type-note: 500 .875rem / 1.3 var(--x-font);
   --x-type-button: 600 1.25rem / 1.2 var(--x-font);
+  /* first screen on a phone, owner 2026-11-24 («сетка Apple», «равномерно» variant 4): the title
+     and the subtitle grow with the screen height; a 17px label on the 48px pill */
+  --x-type-heroflex: 600 clamp(1.75rem, 5.4svh, 2.5rem) / 1.1 var(--x-font-title);
+  --x-type-leadflex: 400 clamp(.9375rem, 2.5svh, 1.125rem) / 1.4 var(--x-font);
+  --x-type-leadsm: 400 .875rem / 1.4 var(--x-font);
+  --x-type-buttonsm: 600 1.0625rem / 1.2 var(--x-font);
+  --x-type-lanename: 600 .9375rem / 1.25rem var(--x-font-title);
+  --x-type-plantitle: 600 1.0625rem / 1.25 var(--x-font-title);
+  --x-type-count: 400 .8125rem / 1.3 var(--x-font);
+  --x-type-how: 500 .875rem / 1.3 var(--x-font);
+  /* the small iPhone screens in «Как это работает» (owner 2026-11-24, variant А) */
+  /* «Как это работает» window titles: the first-screen pair, Inter Tight + Onest (owner 2026-11-24) */
+  --x-type-howhead: 600 1.125rem / 1.2 var(--x-font-title);
+  /* Section titles under the first screen, in the font of the hero title (owner 2026-11-24). */
+  --x-type-section: 600 1.75rem / 1.15 var(--x-font-title);
+  --x-type-sectionsm: 600 1.375rem / 1.2 var(--x-font-title);
+  /* Footer in the type of the site (owner 2026-11-24 12:37). */
+  --x-type-footbrand: 600 1.125rem / 1.2 var(--x-font-title);
+  --x-type-footlink: 400 .9375rem / 1.35 var(--x-font);
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;

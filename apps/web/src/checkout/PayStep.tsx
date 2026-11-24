@@ -1,6 +1,7 @@
 'use client';
 import {
   ApiClientError,
+  type AppCard,
   type CheckoutRequest,
   type CheckoutResponse,
   ErrorCode,
@@ -10,6 +11,7 @@ import {
 } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
+import { PLAN_TITLE, PlanIcons, PlanIncluded } from '../home/HomeSell';
 import { browserApi } from './browser-api';
 import styles from './checkout.module.css';
 import { newCheckoutKey, readCheckoutKey } from './checkout-key';
@@ -25,6 +27,8 @@ export type PayStepProps = {
   defaultEmail?: string;
   /** «Продлить»: the current end of access; the plan's days are added after it. */
   renewUntil?: Date;
+  /** Catalog apps for the row of icons on the plan card; without them there is no row. */
+  apps?: AppCard[];
   checkout?: (body: CheckoutRequest) => Promise<CheckoutResponse>;
   navigate?: (url: string) => void;
 };
@@ -61,6 +65,7 @@ export function PayStep({
   returnTo,
   defaultEmail = '',
   renewUntil,
+  apps = [],
   checkout = defaultCheckout,
   navigate = defaultNavigate,
 }: PayStepProps) {
@@ -143,13 +148,12 @@ export function PayStep({
         {renewUntil ? 'Продление доступа' : 'Доступ ко всему каталогу'}
       </h1>
 
+      {/* Owner 2026-11-24 14:18, variant Б: the plan card of the home page; the price is said once,
+          on the button. */}
       <div className={styles.offer}>
-        <p className={styles.price}>{price}</p>
-        <ul className={styles.facts}>
-          <li className={styles.fact}>1 месяц</li>
-          <li className={styles.fact}>для одного iPhone</li>
-          <li className={styles.fact}>все приложения каталога</li>
-        </ul>
+        <p className={styles.offerTitle}>{PLAN_TITLE}</p>
+        <PlanIcons apps={apps} />
+        <PlanIncluded />
         <p className={styles.note}>
           {renewUntil
             ? // Renewal starts at the end of the current term (Global Constraints, N1).
@@ -211,10 +215,10 @@ export function PayStep({
           <Button
             type="submit"
             disabled={!ready}
-            className={styles.wide}
+            className={styles.pay}
             aria-describedby={missing ? missingId : undefined}
           >
-            {busy ? 'Переходим к оплате…' : `Оплатить ${price}`}
+            {busy ? 'Переходим к оплате…' : `Оплатить ${price} / мес.`}
           </Button>
           {missing ? (
             <p id={missingId} className={styles.missing}>

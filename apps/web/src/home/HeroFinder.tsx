@@ -2,11 +2,11 @@
 
 import type { AppCard, Page } from '@xstore/shared';
 import { SearchField } from '@xstore/ui';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { browserApi } from '../checkout/browser-api';
-import { type DockState, HeroDock } from './HeroDock';
+import { APPS } from './figures';
 import styles from './HeroFinder.module.css';
-import { HeroLanes } from './HeroLanes';
+import { HeroLanes, matchApps, mixedApps } from './HeroLanes';
 
 /** The API searches from two letters (`searchQuerySchema`). */
 const MIN = 2;
@@ -16,13 +16,20 @@ const DELAY_MS = 250;
 
 export type HeroLaneApps = { removed: AppCard[]; premium: AppCard[] };
 
+type State =
+  | { kind: 'idle' }
+  | { kind: 'loading'; q: string }
+  | { kind: 'done'; q: string; count: number; more: boolean }
+  | { kind: 'error'; q: string };
+
 const searchCatalog = (q: string) => browserApi().search(q);
 
 /**
- * The live lanes and the search under them (spec 2026-11-23-home-first-screen §3.3–3.4, owner
- * 2026-11-23 18:16, variant В «Док с найденными»): from two letters the lanes dissolve and a
- * shelf of the apps found in the whole catalog takes their place; clearing the field brings the
- * lanes back. Enter still opens `/search`. Renders two grid items of the hero.
+ * The live lane and the search under it (spec 2026-11-23-home-first-screen, «Лента как Dock»,
+ * owner 2026-11-24): every letter looks for the app in the lane and moves it to the middle; an
+ * app that is not in the lane is looked for in the whole catalog from two letters, and the grey
+ * line under the field («200+ приложений») then links to what was found. Enter opens `/search`.
+ * Renders two grid items of the hero.
  */
 export function HeroFinder({
   lanes,
@@ -36,25 +43,32 @@ export function HeroFinder({
   search?: (q: string) => Promise<Page<AppCard>>;
 }) {
   const [query, setQuery] = useState('');
-  const [state, setState] = useState<DockState>({ kind: 'idle' });
+  const [state, setState] = useState<State>({ kind: 'idle' });
   // Only the answer to the latest query is shown.
   const latest = useRef('');
 
   const q = query.trim().slice(0, MAX);
-  const searching = q.length >= MIN;
+  const laneFound = matchApps(mixedApps(lanes.removed, lanes.premium), q);
+  const inLane = laneFound[0] ?? null;
+  const asksCatalog = q.length >= MIN && inLane === null;
 
   useEffect(() => {
-    latest.current = q;
-    if (q.length < MIN) {
+    latest.current = asksCatalog ? q : '';
+    if (!asksCatalog) {
       setState({ kind: 'idle' });
       return;
     }
-    setState((s) => (s.kind === 'done' ? s : { kind: 'loading', q }));
+    setState({ kind: 'loading', q });
     const timer = setTimeout(() => {
       search(q).then(
         (page) => {
           if (latest.current === q) {
-            setState({ kind: 'done', q, items: page.items, more: page.nextCursor !== null });
+            setState({
+              kind: 'done',
+              q,
+              count: page.items.length,
+              more: page.nextCursor !== null,
+            });
           }
         },
         () => {
@@ -63,45 +77,43 @@ export function HeroFinder({
       );
     }, DELAY_MS);
     return () => clearTimeout(timer);
-  }, [q, search]);
+  }, [q, asksCatalog, search]);
 
-  const found =
-    searching && state.kind === 'done' && state.items.length > 0
-      ? `Нашли ${state.items.length}${state.more ? '+' : ''}`
-      : null;
-  const said =
-    !searching || state.kind === 'idle' || state.kind === 'loading'
-      ? ''
-      : state.kind === 'error'
-        ? 'Поиск не ответил'
-        : (found ?? 'Такого приложения пока нет в каталоге');
+  let line: ReactNode = `${APPS} приложений`;
+  if (state.kind === 'done' && state.count > 0) {
+    line = (
+      <a className={styles.found} href={`/search?q=${encodeURIComponent(state.q)}`}>
+        Нашли {state.count}
+        {state.more ? '+' : ''} в каталоге ›
+      </a>
+    );
+  } else if (state.kind === 'done') {
+    line = 'Такого приложения пока нет в каталоге';
+  } else if (state.kind === 'error') {
+    line = 'Поиск не ответил';
+  }
 
   return (
     <>
-      <div
-        className={[lanesClassName, styles.area].filter(Boolean).join(' ')}
-        data-hero-finder=""
-        data-searching={searching ? '' : undefined}
-      >
-        <div className={styles.lanes} aria-hidden={searching ? true : undefined} inert={searching}>
-          <HeroLanes removed={lanes.removed} premium={lanes.premium} />
-        </div>
-        {searching ? (
-          <div className={styles.dock}>
-            <HeroDock state={state} />
-          </div>
-        ) : null}
-        <p className={styles.status} aria-live="polite">
-          {said}
-        </p>
+      <div className={lanesClassName} data-hero-finder="">
+        <HeroLanes
+          removed={lanes.removed}
+          premium={lanes.premium}
+          focus={inLane}
+          found={inLane ? laneFound : null}
+          paused={q.length > 0}
+        />
       </div>
       <div className={searchClassName}>
         <SearchField
           action="/search"
           placeholder="Найти свое приложение"
           onQueryChange={setQuery}
-          trailing={found ? <span aria-hidden="true">{found}</span> : null}
+          trailing={inLane ? <span aria-hidden="true">Нашли {laneFound.length}</span> : null}
         />
+        <p className={styles.count} data-hero-count="" aria-live="polite">
+          {line}
+        </p>
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { type AccessResponse, ApiClientError, type PlanView } from '@xstore/shared';
+import { type AccessResponse, ApiClientError, type AppCard, type PlanView } from '@xstore/shared';
 import { Button } from '@xstore/ui';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -45,9 +45,17 @@ export default async function GetPage({ searchParams }: { searchParams: Promise<
     redirect(`/get/${encodeURIComponent(access.state.orderId)}`);
   }
 
-  const [plan, app] = await Promise.all([
+  // Icons for the plan card, the same apps as the lanes of the home page; the step opens without them.
+  const section = (name: 'removed' | 'premium') =>
+    api
+      .section(name)
+      .then((page) => page.items)
+      .catch((): AppCard[] => []);
+  const [plan, app, removed, premium] = await Promise.all([
     optional<PlanView>(api.getPlan()),
     slug ? optional(api.app(slug)) : Promise.resolve(null),
+    section('removed'),
+    section('premium'),
   ]);
 
   return (
@@ -59,6 +67,7 @@ export default async function GetPage({ searchParams }: { searchParams: Promise<
           returnTo={app ? `/app/${app.slug}` : undefined}
           defaultEmail={access.email ?? ''}
           renewUntil={access.state.kind === 'active' ? access.state.until : undefined}
+          apps={[...removed, ...premium]}
         />
       ) : (
         <section className={styles.panel}>

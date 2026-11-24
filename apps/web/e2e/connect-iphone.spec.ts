@@ -29,9 +29,17 @@ async function freeUdid(udid: string): Promise<void> {
   }
 }
 
-/** On `/get/iphone`: «Подключить iPhone» → file → iOS answers → «Готово, iPhone подключён». */
+/**
+ * On `/get/iphone`: «Включите режим разработчика» → «Готово, дальше» (owner 2026-11-24, variant Б)
+ * → «Подключить iPhone» → file → iOS answers → «Готово, iPhone подключён».
+ */
 async function connectIphone(page: Page, ios: APIRequestContext, udid: string): Promise<void> {
   await freeUdid(udid);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Включите режим разработчика' }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Готово, дальше' }).click();
+  await expect(page).toHaveURL(/\/get\/iphone\?dev=ok$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Подключить iPhone' })).toBeVisible();
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Подключить iPhone', exact: true }).click();
