@@ -135,15 +135,19 @@ async function publishedApp(name = 'Пример', deviceFamily = [1, 2]) {
 }
 
 /** What the worker does when it finishes: one copy, every open request ready. */
-async function finishSigning(jobId: string, bundleId = 'com.example.signed') {
-  const row = await db.signingJob.findUniqueOrThrow({ where: { id: jobId } });
+async function finishSigning(jobId: string, bundleId?: string) {
+  const row = await db.signingJob.findUniqueOrThrow({
+    where: { id: jobId },
+    include: { appVersion: { select: { bundleId: true } } },
+  });
   const build = await db.signedBuild.create({
     data: {
       appVersionId: row.appVersionId,
       deviceCertificateId: row.deviceCertificateId,
       key: `${row.deviceCertificateId}/${row.appVersionId}.ipa`,
       sizeBytes: 10n,
-      bundleId,
+      // The app's own bundle id unless a test says otherwise (owner 2026-11-24).
+      bundleId: bundleId ?? row.appVersion.bundleId,
     },
   });
   await db.signingJob.updateMany({
@@ -236,26 +240,23 @@ describe('install request', () => {
     expect((await other.http.post(`/install/jobs/${body.jobId}/token`)).status).toBe(404);
   });
 
-  it('warns before replacing the previous app on a single-app profile', async () => {
+  it('a single-app profile installs a second app without asking (owner 2026-11-24)', async () => {
     const b = await buyer({ appIdPattern: 'TEAM123456.ru.supplier.one' });
     const first = await publishedApp('Первое');
     const second = await publishedApp('Второе');
-    // Nothing installed yet: no question.
-    const job = await b.http.post(`/install/apps/${first.app.slug}`);
-    expect(job.status).toBe(200);
     await db.installEvent.create({ data: { appId: first.app.id, deviceId: b.device.id } });
-    // The same app again: no question either.
-    expect((await b.http.post(`/install/apps/${first.app.slug}`)).status).toBe(200);
-    const asked = await b.http.post(`/install/apps/${second.app.slug}`);
-    expect([asked.status, asked.body.code, asked.body.details]).toEqual([
-      409,
-      'REPLACES_APP',
-      ['Первое'],
-    ]);
-    const confirmed = await b.http.post(`/install/apps/${second.app.slug}`, {
-      confirmReplace: true,
-    });
-    expect(confirmed.status).toBe(200);
+    expect((await b.http.post(`/install/apps/${second.app.slug}`)).status).toBe(200);
+  });
+
+  it('a copy signed with another bundle id is signed again', async () => {
+    const b = await buyer({ appIdPattern: 'TEAM123456.ru.supplier.one' });
+    const { app: a } = await publishedApp();
+    const first = await b.http.post(`/install/apps/${a.slug}`);
+    // Signed before 2026-11-24 with the profile's App ID.
+    await finishSigning(first.body.jobId, 'ru.supplier.one');
+    const again = await b.http.post(`/install/apps/${a.slug}`);
+    expect(again.status).toBe(200);
+    expect(again.body.stage).not.toBe('ready');
   });
 
   it('a wildcard profile never asks', async () => {

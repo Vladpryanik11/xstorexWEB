@@ -2,7 +2,6 @@ import { mkdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PrismaClient, SigningStage } from '@xstore/db';
 import { decryptSecret } from '@xstore/secrets/decrypt';
-import { signingBundleId } from '@xstore/shared';
 import { parseP12 } from '@xstore/signing';
 import type { WorkerDeps } from '../deps.js';
 import { ensureFreeSpace } from './disk.js';
@@ -89,7 +88,6 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
         select: {
           id: true,
           status: true,
-          appIdPattern: true,
           p12Enc: true,
           p12PasswordEnc: true,
           profile: true,
@@ -104,9 +102,10 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
     where: {
       appVersionId_deviceCertificateId: { appVersionId: version.id, deviceCertificateId: cert.id },
     },
-    select: { id: true },
+    select: { id: true, bundleId: true },
   });
-  if (existing) {
+  // A copy signed before 2026-11-24 with the profile's App ID is signed again (spec Н4 §3).
+  if (existing && existing.bundleId === version.bundleId) {
     await finishRequests(db, queueJobId, { signedBuildId: existing.id });
     return { status: 'ready', signedBuildId: existing.id, reused: true };
   }
@@ -118,7 +117,9 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
   const keyring = config.keyring;
   if (!keyring) throw new Error('MASTER_KEY_CURRENT is not set: cannot decrypt device files');
 
-  const bundleId = signingBundleId(cert.appIdPattern, version.bundleId);
+  // The app keeps its own bundle id for any profile, as in Feather (owner 2026-11-24, spec Н4 §3):
+  // the profile's App ID goes only into the signature's entitlements.
+  const { bundleId } = version;
   const key = signedBuildKey(cert.id, version.id);
   const started = Date.now();
   const sizeBytes = await withTempDir(config.tmpDir, async (dir) => {
@@ -148,7 +149,6 @@ export async function signAppVersion(deps: WorkerDeps, signingJobId: string): Pr
       output,
       ...files,
       workDir,
-      ...(bundleId !== version.bundleId ? { bundleId } : {}),
       timeoutMs: config.signing.timeoutMs,
       memoryMb: config.signing.memoryMb,
       cpuSec: config.signing.cpuSec,

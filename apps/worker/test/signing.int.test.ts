@@ -154,15 +154,35 @@ it('reuses an existing build', async () => {
   expect(await argsFiles()).toHaveLength(1);
 });
 
-it('signs a single-app profile with its App ID', async () => {
+it('keeps the app bundle id on a single-app profile (owner 2026-11-24, as Feather)', async () => {
   await useZsign();
   const seed = await seedSigning(deps.db, deps.s3, keyring(), {
     appId: 'TEAM123456.ru.supplier.one',
   });
   await signAppVersion(deps, (await request(seed)).id);
-  const args = (await firstArgs()).split('\n');
-  expect(args).toEqual(expect.arrayContaining(['-b', 'ru.supplier.one']));
-  expect((await deps.db.signedBuild.findFirstOrThrow()).bundleId).toBe('ru.supplier.one');
+  expect((await firstArgs()).split('\n')).not.toContain('-b');
+  expect((await deps.db.signedBuild.findFirstOrThrow()).bundleId).toBe(seed.version.bundleId);
+});
+
+it('signs again over a copy made with another bundle id', async () => {
+  await useZsign();
+  const seed = await seedSigning(deps.db, deps.s3, keyring(), {
+    appId: 'TEAM123456.ru.supplier.one',
+  });
+  // A copy from before 2026-11-24, signed with the profile's App ID.
+  await deps.db.signedBuild.create({
+    data: {
+      appVersionId: seed.version.id,
+      deviceCertificateId: seed.cert.id,
+      key: 'old.ipa',
+      sizeBytes: 1n,
+      bundleId: 'ru.supplier.one',
+    },
+  });
+  const outcome = await signAppVersion(deps, (await request(seed)).id);
+  expect(outcome).toMatchObject({ status: 'ready', reused: false });
+  expect(await argsFiles()).toHaveLength(1);
+  expect((await deps.db.signedBuild.findFirstOrThrow()).bundleId).toBe(seed.version.bundleId);
 });
 
 it('refuses when device files ended', async () => {

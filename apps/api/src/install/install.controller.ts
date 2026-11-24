@@ -8,6 +8,10 @@ import { zodBody } from '../common/zod-body.js';
 import { RateLimiter } from '../rate-limit/rate-limiter.js';
 import { InstallService } from './install.service.js';
 
+/**
+ * `confirmReplace` came from the «заменит» question, gone since 2026-11-24 (apps keep their bundle
+ * id); a page loaded before the update may still send it.
+ */
 const requestSchema = z
   .object({ confirmReplace: z.boolean().optional() })
   .strict()
@@ -30,7 +34,7 @@ export class InstallController {
   @HttpCode(200)
   async request(
     @Param('slug') slug: string,
-    @Body(zodBody(requestSchema)) body: z.infer<typeof requestSchema>,
+    @Body(zodBody(requestSchema)) _body: z.infer<typeof requestSchema>,
     @Req() req: HttpReq,
   ): Promise<InstallJobView> {
     // biome-ignore lint/style/noNonNullAssertion: @RequireUser guarantees a session
@@ -41,7 +45,7 @@ export class InstallController {
       INSTALL_LIMIT.windowSec,
     );
     if (!allowed) throw new DomainError(ErrorCode.RATE_LIMITED, 429);
-    return this.install.request(userId, slug, body);
+    return this.install.request(userId, slug);
   }
 
   @Get('chosen')

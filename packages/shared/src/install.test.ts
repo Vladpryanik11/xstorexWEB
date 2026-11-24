@@ -5,7 +5,6 @@ import {
   failReasonText,
   INSTALL_STAGES,
   profileKind,
-  signingBundleId,
   signingQueueJobId,
   stageProgress,
 } from './install.js';
@@ -17,21 +16,6 @@ const OK = {
   app: { status: 'published' as const },
   version: { status: 'published' as const, encrypted: false, deviceFamily: [1, 2] },
 };
-
-describe('signingBundleId', () => {
-  it('wildcard keeps bundle id', () => {
-    expect(signingBundleId('TEAM123456.*', 'com.example.app')).toBe('com.example.app');
-  });
-  it('explicit app id replaces bundle id', () => {
-    expect(signingBundleId('TEAM123456.ru.supplier.one', 'com.example.app')).toBe(
-      'ru.supplier.one',
-    );
-  });
-  it('a prefix wildcard keeps a matching bundle id and replaces others', () => {
-    expect(signingBundleId('TEAM123456.ru.x.*', 'ru.x.app')).toBe('ru.x.app');
-    expect(signingBundleId('TEAM123456.ru.x.*', 'com.other')).toBe('ru.x.com.other');
-  });
-});
 
 describe('profileKind', () => {
   it('tells a wildcard profile from a single-app one', () => {
