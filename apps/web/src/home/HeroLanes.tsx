@@ -233,13 +233,20 @@ function Lane({
 
     let frame = 0;
     let last = performance.now();
+    // The drift is less than a pixel a frame, and a screen with one pixel per point keeps the
+    // scroll in whole pixels, so the lane keeps its own exact place and follows any other scroll.
+    let pos = el.scrollLeft;
     const tick = (t: number) => {
       const dt = Math.min(50, t - last);
       last = t;
       const s = live.current;
       s.idle += dt;
       if (!reduce && !s.touching && !s.paused && !s.centering && s.idle > IDLE_MS) {
-        el.scrollLeft += (dt * DRIFT) / 1000;
+        if (Math.abs(el.scrollLeft - pos) > 1) pos = el.scrollLeft;
+        pos += (dt * DRIFT) / 1000;
+        el.scrollLeft = pos;
+      } else {
+        pos = el.scrollLeft;
       }
       wrap();
       draw();

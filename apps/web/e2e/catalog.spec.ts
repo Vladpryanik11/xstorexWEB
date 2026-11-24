@@ -354,23 +354,28 @@ test('the first-screen lane is a Dock: it drifts, and the search brings the app 
   await expect(track.locator('a[data-dim]').first()).toBeAttached();
   await expect(hero.getByRole('search')).toContainText('Нашли');
   await expect(hero.locator('[data-lane-name]')).toHaveText('Тестовое приложение 1');
-  // In the middle of the lane, and larger than its neighbours.
-  const middle = await track.evaluate((el) => {
-    const box = el.getBoundingClientRect();
-    const hits = [...el.querySelectorAll('a[data-hit] img')].map((i) => i.getBoundingClientRect());
-    const near = hits.sort(
-      (a, b) =>
-        Math.abs(a.x + a.width / 2 - (box.x + box.width / 2)) -
-        Math.abs(b.x + b.width / 2 - (box.x + box.width / 2)),
-    )[0];
-    const any = el.querySelector('a:not([data-hit]) img')?.getBoundingClientRect();
-    return {
-      off: Math.abs((near?.x ?? 0) + (near?.width ?? 0) / 2 - (box.x + box.width / 2)),
-      ratio: (near?.width ?? 0) / (any?.width ?? 1),
-      x: (near?.x ?? 0) + (near?.width ?? 0) / 2,
-      y: (near?.y ?? 0) + (near?.height ?? 0) / 2,
-    };
-  });
+  // In the middle of the lane once the lane has slid there, and larger than its neighbours.
+  const measure = () =>
+    track.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const hits = [...el.querySelectorAll('a[data-hit] img')].map((i) =>
+        i.getBoundingClientRect(),
+      );
+      const near = hits.sort(
+        (a, b) =>
+          Math.abs(a.x + a.width / 2 - (box.x + box.width / 2)) -
+          Math.abs(b.x + b.width / 2 - (box.x + box.width / 2)),
+      )[0];
+      const any = el.querySelector('a:not([data-hit]) img')?.getBoundingClientRect();
+      return {
+        off: Math.abs((near?.x ?? 0) + (near?.width ?? 0) / 2 - (box.x + box.width / 2)),
+        ratio: (near?.width ?? 0) / (any?.width ?? 1),
+        x: (near?.x ?? 0) + (near?.width ?? 0) / 2,
+        y: (near?.y ?? 0) + (near?.height ?? 0) / 2,
+      };
+    });
+  await expect.poll(async () => (await measure()).off).toBeLessThanOrEqual(4);
+  const middle = await measure();
   expect(middle.off).toBeLessThanOrEqual(4);
   expect(middle.ratio).toBeGreaterThan(1.3);
 
