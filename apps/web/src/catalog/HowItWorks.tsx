@@ -2,7 +2,7 @@ import { SectionTitle } from '@xstore/ui';
 import { useId } from 'react';
 import styles from './HowItWorks.module.css';
 
-const steps = [
+export const HOW_STEPS = [
   { title: 'Оплатите', text: 'Без регистрации, за минуту.' },
   { title: 'Подключите iPhone', text: 'Один раз, прямо с телефона.' },
   { title: 'Установите', text: 'Любые приложения каталога.' },
@@ -17,7 +17,7 @@ export function HowItWorks() {
         <SectionTitle>Как это работает</SectionTitle>
       </div>
       <ol className={styles.steps}>
-        {steps.map((step, i) => (
+        {HOW_STEPS.map((step, i) => (
           <li key={step.title} className={styles.step}>
             <span className={styles.number} aria-hidden="true">
               {i + 1}

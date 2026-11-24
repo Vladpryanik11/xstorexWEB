@@ -300,15 +300,16 @@ test('the first screen: lanes, search, button, promises and the audience above t
     // The grey «200+» line belongs to the search (owner 2026-11-24, А3): the air above the button
     // is counted from it.
     const count = await hero.locator('[data-hero-count]').boundingBox();
-    const gaps = [
-      (boxes[0]?.y ?? 0) - bottom(sub),
-      (boxes[1]?.y ?? 0) - bottom(boxes[0]),
-      (boxes[2]?.y ?? 0) - bottom(count),
-      // Owner 2026-11-24 09:09: the button stands in the middle between the line and the promises.
-      (boxes[3]?.y ?? 0) - bottom(boxes[2]),
-    ];
+    const gaps = [(boxes[0]?.y ?? 0) - bottom(sub), (boxes[1]?.y ?? 0) - bottom(boxes[0])];
     for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
-    expect(gaps[0] ?? 0).toBeGreaterThan(16);
+    expect(gaps[0] ?? 0).toBeGreaterThanOrEqual(12);
+    // Owner 2026-11-24 09:09–09:11: the button stands a little above the middle between the
+    // «200+» line and the promises, with a small blue «Как это работает?» under it.
+    const how = await hero.getByRole('button', { name: 'Как это работает?' }).boundingBox();
+    const above = (boxes[2]?.y ?? 0) - bottom(count);
+    const below = (boxes[3]?.y ?? 0) - bottom(how);
+    expect(above).toBeLessThanOrEqual(below);
+    expect(above).toBeGreaterThanOrEqual(12);
     const underPromises = (boxes[4]?.y ?? 0) - bottom(boxes[3]);
     expect(underPromises).toBeGreaterThanOrEqual(14);
     expect(underPromises).toBeLessThanOrEqual(26);
@@ -376,6 +377,26 @@ test('the first-screen lane is a Dock: it drifts, and the search brings the app 
   // A tap on the ringed icon in the middle opens its install sheet.
   await page.mouse.click(middle.x, middle.y);
   await expect(page.getByRole('dialog', { name: 'Тестовое приложение 1' })).toBeVisible();
+});
+
+// Owner 2026-11-24 09:12: «Как это работает?» opens the steps over the page.
+test('«Как это работает?» under the button opens the steps without leaving the page', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  await hero.getByRole('button', { name: 'Как это работает?' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Как это работает' });
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await dialog.getByRole('button', { name: 'Дальше' }).click();
+  await dialog.getByRole('button', { name: 'Дальше' }).click();
+  await expect(dialog.getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
+    'href',
+    '/get',
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
 });
 
 test('the first-screen search says when the catalog has no such app', async ({ page }) => {

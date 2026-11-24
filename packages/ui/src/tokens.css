@@ -69,6 +69,7 @@
   --x-type-buttonsm: 600 1.0625rem / 1.2 var(--x-font);
   --x-type-lanename: 500 .8125rem / 1.125rem var(--x-font);
   --x-type-count: 400 .8125rem / 1.3 var(--x-font);
+  --x-type-how: 500 .875rem / 1.3 var(--x-font);
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;

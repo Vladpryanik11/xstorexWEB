@@ -3,6 +3,7 @@ import { useId } from 'react';
 import { HeroFinder, type HeroLaneApps } from './HeroFinder';
 import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
+import { HowSheet } from './HowSheet';
 
 /** Line icons for the three promises, drawn for Xstorex (no Apple logo; a plain shield, no check). */
 const PROMISES = [
@@ -66,6 +67,9 @@ export function HomeHero({
         <a className={styles.cta} href="/get" data-hero-cta>
           Подключить iPhone
         </a>
+        {/* Owner 2026-11-24 09:11–09:12: a small blue question right under the button; it opens the
+            steps over the page. */}
+        <HowSheet className={styles.how} />
         <span id={promisesId} hidden>
           Без лишнего
         </span>

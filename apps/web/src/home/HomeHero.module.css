@@ -144,10 +144,16 @@
   outline-offset: 3px;
 }
 
+/* «Как это работает?» under the button (owner 2026-11-24 09:11–09:12); it opens the steps. */
+.how {
+  grid-row: 6;
+  margin-top: 0.375rem;
+}
+
 /* Three promises under the button (owner 2026-11-23, variant А): white tiles, a blue line icon
    on the left, two lines of text. */
 .promises {
-  grid-row: 6;
+  grid-row: 7;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.375rem;
@@ -257,12 +263,12 @@
 
   .inner {
     flex: 1 0 auto;
-    /* «Низ», variant А (owner 2026-11-24): the free space goes in equal parts above the lane,
-       above the search, above the button and under it, so the button stands in the middle between
-       the «200+» line and the promises (owner 09:09); the audience line follows the promises. */
+    /* «Низ», variant А (owner 2026-11-24): the free space goes above the lane, the search, the
+       button and under «Как это работает?»; the button stands a fifth above the middle between the
+       «200+» line and the promises (owner 09:09–09:11); the audience line follows the promises. */
     grid-template-rows:
-      auto auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto
-      minmax(1rem, 1fr) auto 1rem;
+      auto auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 0.8fr)
+      auto auto minmax(0.75rem, 1.2fr) auto 1rem;
   }
 
   .title {
@@ -297,8 +303,12 @@
     font: var(--x-type-buttonsm);
   }
 
+  .how {
+    grid-row: 9;
+  }
+
   .promises {
-    grid-row: 10;
+    grid-row: 11;
     margin-top: 0;
   }
 
@@ -347,10 +357,14 @@
     min-height: 2.75rem;
   }
 
+  .how {
+    margin-top: 0;
+  }
+
   .inner {
     grid-template-rows:
-      auto auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto minmax(0.75rem, 1fr) auto
-      minmax(0.75rem, 1fr) auto 1rem;
+      auto auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 0.8fr)
+      auto auto minmax(0.5rem, 1.2fr) auto 1rem;
   }
 }
 
@@ -426,7 +440,7 @@
 
   .visual {
     display: grid;
-    grid-row: 1 / 7;
+    grid-row: 1 / 8;
     grid-column: 2;
     place-items: center;
     align-self: center;

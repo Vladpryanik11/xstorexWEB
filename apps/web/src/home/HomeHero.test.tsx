@@ -61,6 +61,10 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
   for (let i = 1; i < order.length; i++) {
     expect(follows(order[i - 1] as Element, order[i] as Element)).toBe(true);
   }
+  // Owner 2026-11-24 09:11: a small blue «Как это работает?» right under the button.
+  // It opens a window of steps over the page (09:12), so it is a button, not a link.
+  const how = screen.getByRole('button', { name: 'Как это работает?' });
+  expect(follows(cta, how) && follows(how, promises)).toBe(true);
   // Apart from the app icons of the lanes, the only link is the button.
   expect(screen.getAllByRole('link').filter((l) => !l.closest('[data-hero-lanes]'))).toHaveLength(
     1,

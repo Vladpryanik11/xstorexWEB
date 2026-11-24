@@ -1,0 +1,228 @@
+/* «Как это работает?» (owner 2026-11-24 09:11–09:12): a small blue line under the button that
+   opens the steps over the page. */
+.open {
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--x-cta);
+  font: var(--x-type-how);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* The page dims; on a phone the window rises from the bottom, on a computer it stands centred. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(10, 20, 40, 0.38);
+  animation: fade 0.2s ease both;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--x-white);
+  box-shadow: 0 -8px 30px rgba(10, 40, 100, 0.18);
+  text-align: center;
+  animation: rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-left: 2.25rem;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  color: var(--x-text);
+  font: var(--x-type-h3);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--x-sky-50);
+  color: var(--x-text);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* One step per screen width, swiped sideways. */
+.track {
+  display: flex;
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem 0.5rem;
+  scroll-snap-align: center;
+}
+
+.number {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--x-cta);
+  color: var(--x-white);
+  font: var(--x-type-h2);
+}
+
+.stepTitle {
+  margin: 0.5rem 0 0;
+  color: var(--x-text);
+  font: var(--x-type-h2);
+}
+
+.text {
+  margin: 0;
+  color: #6e6e73;
+  font: var(--x-type-body);
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: rgba(14, 26, 51, 0.2);
+  transition:
+    width 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.dot[aria-current]::after {
+  width: 1.25rem;
+  border-radius: 1rem;
+  background: var(--x-cta);
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 0.75rem;
+  border: 0;
+  border-radius: var(--x-radius-pill);
+  background: var(--x-cta);
+  color: var(--x-white);
+  font: var(--x-type-buttonsm);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.next:active {
+  background: var(--x-cta-pressed);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (min-width: 40em) {
+  .backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    max-width: 26rem;
+    border-radius: 1.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(1rem) scale(0.98);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .sheet {
+    animation: none;
+  }
+}
