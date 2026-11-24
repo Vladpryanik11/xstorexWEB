@@ -34,29 +34,31 @@
   grid-column: 1;
 }
 
-/* Bright sky: #1E8FFF on top, cyan, pale, white before the search. Bleeds to the page edges and
-   up under the pill; two soft spots stay still (owner 2026-11-23: no motion). */
-.sky {
+/* Bright sky «Мягкий переход» (owner 2026-11-24): twice as tall as before (it used to end at the
+   search), the top stays #1E8FFF → #3EC6FF and the fade to white runs along an eased curve down to
+   the audience line. It lies under every block of the hero (absolute, behind the content), bleeds
+   to the page edges and up under the pill; two soft spots stay still (owner 2026-11-23: no motion).
+   Mockup: /mnt/project-files/screenshots/2026-11-24-sky-longer/, variant В. */
+.inner > .sky {
+  position: absolute;
   z-index: 0;
-  grid-row: 1 / 4;
-  grid-column: 1 / -1;
-  align-self: stretch;
-  justify-self: stretch;
-  margin: calc(-1 * var(--hero-top)) calc(50% - 50vw) 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  /* Never past the hero: it clips, and a cut edge would show. */
+  height: min(53rem, 100%);
   background: linear-gradient(
     180deg,
     #1e8fff 0%,
-    #3ec6ff 34%,
-    #c4e8ff 66%,
+    #3ec6ff 17%,
+    #6fd3ff 30%,
+    #a2e0ff 45%,
+    #c9ecff 60%,
+    #e3f5ff 75%,
+    #f5fbff 88%,
     rgba(255, 255, 255, 0) 100%
   );
   pointer-events: none;
-}
-
-.inner > .sky {
-  position: relative;
-  z-index: 0;
-  grid-column: 1 / -1;
 }
 
 .sky::before {
@@ -187,6 +189,9 @@
 }
 
 .after {
+  /* Above the sky, which reaches into the audience line and the steps. */
+  position: relative;
+  z-index: 1;
   box-sizing: content-box;
   display: flex;
   flex-direction: column;
@@ -340,13 +345,18 @@
     font: var(--x-type-promiselg);
   }
 
-  /* Taller sky on a computer: the white text keeps the saturated part. */
-  .sky {
+  /* On a computer the sky ends before the hero does (880px, owner 2026-11-24). */
+  .inner > .sky {
+    height: min(55rem, 100%);
     background: linear-gradient(
       180deg,
       #1e8fff 0%,
-      #3ec6ff 62%,
-      #c4e8ff 90%,
+      #3ec6ff 31%,
+      #6fd3ff 44%,
+      #a2e0ff 57%,
+      #c9ecff 70%,
+      #e3f5ff 82%,
+      #f5fbff 92%,
       rgba(255, 255, 255, 0) 100%
     );
   }

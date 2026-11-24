@@ -156,10 +156,30 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   const pill = await page.locator('header').first().locator('> div').first().boundingBox();
   const titleBox = await title.boundingBox();
   expect(titleBox?.y).toBeGreaterThan((pill?.y ?? 0) + (pill?.height ?? 0));
-  // The sky turns white before the search.
+  // Owner 2026-11-24, «Мягкий переход»: the sky is twice as tall and melts into white by the
+  // audience line; it stays inside the hero and lies under every block.
   const skyBox = await sky.boundingBox();
-  const search = await hero.getByRole('search').boundingBox();
-  expect((skyBox?.y ?? 0) + (skyBox?.height ?? 0)).toBeLessThanOrEqual(search?.y ?? 0);
+  const heroBox = await hero.boundingBox();
+  const promises = await hero.getByRole('list', { name: 'Без лишнего' }).boundingBox();
+  const skyBottom = (skyBox?.y ?? 0) + (skyBox?.height ?? 0);
+  expect(skyBox?.height ?? 0).toBeGreaterThanOrEqual(800);
+  expect(skyBottom).toBeGreaterThan((promises?.y ?? 0) + (promises?.height ?? 0));
+  expect(skyBottom).toBeLessThanOrEqual((heroBox?.y ?? 0) + (heroBox?.height ?? 0));
+  expect(
+    await sky.evaluate((el) => {
+      const bg = getComputedStyle(el).backgroundImage;
+      return bg.match(/rgba?\([^)]*\)/g)?.length ?? 0;
+    }),
+  ).toBeGreaterThanOrEqual(8);
+  const audience = hero.locator('[data-hero-audience]');
+  await audience.scrollIntoViewIfNeeded();
+  expect(
+    await audience.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit !== null && el.contains(hit);
+    }),
+  ).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.setViewportSize({ width: 1280, height: 800 });
