@@ -46,22 +46,6 @@ export function profileKind(appIdPattern: string): 'all' | 'single' {
   return /^[^.]+\.\*$/.test(appIdPattern) ? 'all' : 'single';
 }
 
-/**
- * The bundle id an app is signed with: unchanged when the profile's App ID covers it, otherwise
- * the profile's App ID without the team prefix (supplier spec §7). A prefix wildcard
- * (`TEAM.ru.x.*`) keeps a matching bundle id and puts any other under its prefix.
- */
-export function signingBundleId(appIdPattern: string, bundleId: string): string {
-  const dot = appIdPattern.indexOf('.');
-  const pattern = dot === -1 ? appIdPattern : appIdPattern.slice(dot + 1);
-  if (pattern === '*') return bundleId;
-  if (pattern.endsWith('.*')) {
-    const prefix = pattern.slice(0, -1);
-    return bundleId.startsWith(prefix) ? bundleId : `${prefix}${bundleId}`;
-  }
-  return pattern;
-}
-
 export type InstallDenial = 'DEVICE_NOT_READY' | 'APP_NOT_AVAILABLE' | 'WRONG_DEVICE';
 
 /** Whether the buyer's device may get this app now; the live subscription is checked by the caller. */

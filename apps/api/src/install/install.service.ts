@@ -8,7 +8,6 @@ import {
   type InstallLink,
   type InstallStage,
   itmsUrl,
-  profileKind,
   QueueName,
   signingQueueJobId,
 } from '@xstore/shared';
@@ -83,11 +82,7 @@ export class InstallService {
     return { device, certificate: device.certificates[0] ?? null };
   }
 
-  async request(
-    userId: string,
-    slug: string,
-    opts: { confirmReplace?: boolean } = {},
-  ): Promise<InstallJobView> {
+  async request(userId: string, slug: string): Promise<InstallJobView> {
     const db = this.prisma.client;
     const now = new Date();
     const app = await db.app.findUnique({
@@ -100,7 +95,7 @@ export class InstallService {
           where: { status: 'published' },
           orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
           take: 1,
-          select: { id: true, status: true, encrypted: true, deviceFamily: true },
+          select: { id: true, status: true, encrypted: true, deviceFamily: true, bundleId: true },
         },
       },
     });
@@ -117,27 +112,24 @@ export class InstallService {
     // biome-ignore lint/style/noNonNullAssertion: canInstall passed, so both exist
     const cert = certificate!;
     // biome-ignore lint/style/noNonNullAssertion: canInstall passed, so both exist
-    const versionId = version!.id;
-
-    // A single-app profile: every app gets the same bundle id and replaces the previous one.
-    if (profileKind(cert.appIdPattern) === 'single' && !opts.confirmReplace) {
-      const last = await db.installEvent.findFirst({
-        where: { deviceId: device.id, createdAt: { gte: cert.createdAt } },
-        orderBy: { createdAt: 'desc' },
-        select: { appId: true, app: { select: { name: true } } },
-      });
-      if (last && last.appId !== app.id) {
-        throw new DomainError(ErrorCode.REPLACES_APP, 409, [last.app.name]);
-      }
-    }
+    const { id: versionId, bundleId } = version!;
 
     const queueJobId = signingQueueJobId(versionId, cert.id);
-    const build = await db.signedBuild.findUnique({
-      where: {
-        appVersionId_deviceCertificateId: { appVersionId: versionId, deviceCertificateId: cert.id },
-      },
-      select: { id: true },
-    });
+    // A copy signed before 2026-11-24 with the profile's App ID is not served: the worker signs
+    // the app again with its own bundle id (spec Н4 §3).
+    const currentBuild = async () => {
+      const found = await db.signedBuild.findUnique({
+        where: {
+          appVersionId_deviceCertificateId: {
+            appVersionId: versionId,
+            deviceCertificateId: cert.id,
+          },
+        },
+        select: { id: true, bundleId: true },
+      });
+      return found?.bundleId === bundleId ? found : null;
+    };
+    const build = await currentBuild();
     const base = {
       userId,
       deviceId: device.id,
@@ -157,12 +149,7 @@ export class InstallService {
     const row = await db.signingJob.create({ data: base, select: { id: true } });
     await this.enqueue(queueJobId, row.id);
     // The worker may have finished the same copy between our check and the row.
-    const done = await db.signedBuild.findUnique({
-      where: {
-        appVersionId_deviceCertificateId: { appVersionId: versionId, deviceCertificateId: cert.id },
-      },
-      select: { id: true },
-    });
+    const done = await currentBuild();
     if (done) {
       await db.signingJob.updateMany({
         where: { id: row.id, stage: { notIn: ['ready', 'failed'] } },
