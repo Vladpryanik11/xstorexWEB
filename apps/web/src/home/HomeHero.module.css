@@ -277,7 +277,7 @@
   .lanes {
     grid-row: 4;
     margin-top: 0;
-    --lane-icon: clamp(2.5rem, 7.2svh, 3.75rem);
+    --lane-icon: clamp(2.5rem, 6.8svh, 3.75rem);
   }
 
   .search {

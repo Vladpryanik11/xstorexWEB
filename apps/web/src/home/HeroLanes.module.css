@@ -16,7 +16,7 @@
 /* Scrolled by a finger; the room above holds the larger, lifted middle icon (on a short screen it
    would cover the subtitle otherwise), the room below the shadows, given back to the layout. */
 .track {
-  --pad-top: calc(var(--lane-icon, 3.375rem) * 0.55);
+  --pad-top: calc(var(--lane-icon, 3.375rem) * 0.52 + 0.375rem);
   --pad-bottom: 0.875rem;
   display: flex;
   align-items: center;
