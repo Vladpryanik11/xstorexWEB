@@ -319,6 +319,27 @@ test('the first screen: lanes, search, button, promises and the audience above t
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+// Owner 2026-11-24 12:52 «ровнее под иконку, центровее»: the name stands right under the middle
+// icon, not in the middle of the screen, also while the lane drifts.
+test('the name of the middle app stands right under its icon', async ({ page }) => {
+  await page.goto('/');
+  const hero = page.locator('[data-home-hero]');
+  const off = () =>
+    hero.evaluate((root) => {
+      const icons = [...root.querySelectorAll('[data-lane-track] img')].map((i) =>
+        i.getBoundingClientRect(),
+      );
+      const big = icons.sort((a, b) => b.width - a.width)[0];
+      const n = root.querySelector('[data-lane-name]')?.getBoundingClientRect();
+      if (!big || !n) return 99;
+      return Math.abs(big.x + big.width / 2 - (n.x + n.width / 2));
+    });
+  for (let i = 0; i < 4; i++) {
+    expect(await off()).toBeLessThanOrEqual(1.5);
+    await page.waitForTimeout(700);
+  }
+});
+
 // Owner 2026-11-24, «Лента как Dock» (spec 2026-11-23-home-first-screen): the lane drifts on its
 // own, the middle icon is larger, and typing a name moves that app to the middle of the lane.
 test('the first-screen lane is a Dock: it drifts, and the search brings the app to its middle', async ({

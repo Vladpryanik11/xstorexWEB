@@ -229,6 +229,8 @@ function Lane({
       if (name.current && middleApp && name.current.textContent !== middleApp.name) {
         name.current.textContent = middleApp.name;
       }
+      // The name stands right under the middle icon, which drifts off the middle of the lane.
+      if (name.current) name.current.style.transform = `translateX(${d[near] ?? 0}px)`;
     };
 
     let frame = 0;
