@@ -5,7 +5,10 @@
   flex-direction: column;
   gap: 0.875rem;
   width: 100%;
-  overflow: hidden;
+  /* Cut the lane at the screen edges only: the icon shadows below stay whole (a cut shadow drew a
+     line across the sky under the lane, owner 2026-11-24 «весь экран»). */
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .lane {

@@ -302,6 +302,8 @@ test('the first screen: lanes, search, button, promises and the audience above t
       (boxes[4]?.y ?? 0) - bottom(boxes[3]),
     ];
     for (const g of gaps) expect(Math.abs(g - (gaps[0] ?? 0))).toBeLessThanOrEqual(2);
+    // The lane is cut at the screen edges only, so the icon shadows below are not cut into a line.
+    await expect(hero.locator('[data-hero-lanes] > div').first()).toHaveCSS('overflow-y', 'visible');
     // Owner 2026-11-24: no three steps on the first screen any more.
     await expect(hero.getByRole('list', { name: 'Три шага' })).toHaveCount(0);
   } else {
