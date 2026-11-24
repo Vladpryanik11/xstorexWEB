@@ -72,6 +72,21 @@ it('names the app in the middle of the lane under it, for the eye only', () => {
   expect(name).toHaveAttribute('aria-hidden', 'true');
 });
 
+// Owner 2026-11-24 21:39: the names that change under the drifting lane feel abrupt; they stay
+// hidden until somebody searches.
+it('shows the name only while somebody searches', () => {
+  const removed = [app('a', '/a.png'), app('b', '/b.png')];
+  const { container, rerender } = render(<HeroLanes removed={removed} premium={[]} />);
+  const name = () => container.querySelector('[data-lane-name]');
+  expect(name()).not.toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} found={['a']} focus="a" />);
+  expect(name()).toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} found={[]} />);
+  expect(name()).toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} />);
+  expect(name()).not.toHaveAttribute('data-show');
+});
+
 // The search moves the app it found to the middle; the apps found stay bright and the others
 // fade (owner 2026-11-24: «так было прикольно», no blue ring).
 it('keeps the apps the search found bright and dims the others', () => {

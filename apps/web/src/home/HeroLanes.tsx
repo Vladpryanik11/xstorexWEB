@@ -210,20 +210,30 @@ function Lane({
     if (!el) return;
     const slots = [...el.querySelectorAll<HTMLElement>('[data-slot]')];
     const reduce = reducedMotion();
-    const step = () => slots[0]?.offsetWidth ?? 0;
-    const width = () => step() * apps.length;
-    // Keep the view inside the middle copy.
-    const wrap = () => {
-      const w = width();
-      if (w === 0) return;
-      if (el.scrollLeft < w * 0.5) el.scrollLeft += w;
-      else if (el.scrollLeft > w * 1.5) el.scrollLeft -= w;
+    // Layout is read once and again only on a resize: reading it every frame, right after the
+    // scroll moved, made the browser lay the page out on every frame.
+    let sw = 0;
+    let half = 0;
+    let offs: number[] = [];
+    const measure = () => {
+      sw = slots[0]?.offsetWidth ?? 0;
+      half = el.clientWidth / 2;
+      offs = slots.map((s) => s.offsetLeft + sw / 2);
     };
-    const draw = () => {
-      const sw = step();
+    measure();
+    const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+    resize?.observe(el);
+    const width = () => sw * apps.length;
+    const applied: string[] = [];
+    /**
+     * Places the icons for the lane scrolled to `pos`. The browser keeps the scroll in whole
+     * pixels while the drift moves less than a pixel a frame, so the icons stood still and then
+     * jumped a pixel (owner 2026-11-24 21:39 «лагает»): `nudge` moves them by the part of a pixel
+     * the scroll could not, and the lane glides.
+     */
+    const draw = (pos: number, nudge: number) => {
       if (sw === 0) return;
-      const middle = el.clientWidth / 2;
-      const d = slots.map((s) => s.offsetLeft + sw / 2 - el.scrollLeft - middle);
+      const d = offs.map((o) => o - pos - half);
       const sc = dockScales(d, sw);
       let near = 0;
       d.forEach((v, k) => {
@@ -242,38 +252,53 @@ function Lane({
           (shift[k + 1] as number) -
           (size * ((sc[k + 1] as number) - 1 + ((sc[k] as number) - 1))) / 2;
       }
+      // Only the icons in view move by the part of a pixel; the others keep their place, so the
+      // browser repaints only what is on screen.
+      const view = half + sw * 2;
       slots.forEach((s, k) => {
         const lift = ((sc[k] as number) - 1) * size * 0.35;
+        const x = (shift[k] as number) + (Math.abs(d[k] as number) < view ? nudge : 0);
+        const next = `translate(${x}px, ${-lift}px) scale(${sc[k]})`;
         const img = s.firstElementChild as HTMLElement | null;
-        if (img) img.style.transform = `translate(${shift[k]}px, ${-lift}px) scale(${sc[k]})`;
+        if (img && applied[k] !== next) {
+          img.style.transform = next;
+          applied[k] = next;
+        }
       });
       const middleApp = apps[near % apps.length];
       if (name.current && middleApp && name.current.textContent !== middleApp.name) {
         name.current.textContent = middleApp.name;
       }
       // The name stands right under the middle icon, which drifts off the middle of the lane.
-      if (name.current) name.current.style.transform = `translateX(${d[near] ?? 0}px)`;
+      if (name.current) {
+        name.current.style.transform = `translateX(${(d[near] ?? 0) + nudge}px)`;
+      }
     };
 
     let frame = 0;
     let last = performance.now();
-    // The drift is less than a pixel a frame, and a screen with one pixel per point keeps the
-    // scroll in whole pixels, so the lane keeps its own exact place and follows any other scroll.
+    // The lane keeps its own exact place and follows any other scroll (a finger, the search).
     let pos = el.scrollLeft;
     const tick = (t: number) => {
       const dt = Math.min(50, t - last);
       last = t;
       const s = live.current;
       s.idle += dt;
-      if (!reduce && !s.touching && !s.paused && !s.centering && s.idle > IDLE_MS) {
+      const drifting = !reduce && !s.touching && !s.paused && !s.centering && s.idle > IDLE_MS;
+      if (drifting) {
         if (Math.abs(el.scrollLeft - pos) > 1) pos = el.scrollLeft;
         pos += (dt * DRIFT) / 1000;
         el.scrollLeft = pos;
       } else {
         pos = el.scrollLeft;
       }
-      wrap();
-      draw();
+      // Keep the view inside the middle copy.
+      const w = width();
+      if (w > 0 && (pos < w * 0.5 || pos > w * 1.5)) {
+        pos += pos < w * 0.5 ? w : -w;
+        el.scrollLeft = pos;
+      }
+      draw(pos, drifting ? el.scrollLeft - pos : 0);
       frame = requestAnimationFrame(tick);
     };
 
@@ -295,10 +320,11 @@ function Lane({
     el.addEventListener('mouseleave', up);
 
     // Start in the middle copy, with the first app in the middle.
-    el.scrollLeft = width() + step() / 2 - el.clientWidth / 2;
+    el.scrollLeft = width() + sw / 2 - half;
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
+      resize?.disconnect();
       el.removeEventListener('touchstart', down);
       el.removeEventListener('touchend', up);
       el.removeEventListener('wheel', touch);
@@ -404,7 +430,13 @@ function Lane({
           </Link>
         ))}
       </div>
-      <p ref={name} className={styles.name} data-lane-name="" aria-hidden="true">
+      <p
+        ref={name}
+        className={styles.name}
+        data-lane-name=""
+        data-show={found ? '' : undefined}
+        aria-hidden="true"
+      >
         {apps[0]?.name}
       </p>
     </div>

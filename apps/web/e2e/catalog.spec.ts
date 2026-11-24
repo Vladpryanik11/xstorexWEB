@@ -344,6 +344,8 @@ test('the name of the middle app stands right under its icon', async ({ page }) 
   await expect(name).toHaveCSS('font-weight', '600');
   await expect(name).toHaveCSS('font-family', /Inter Tight/);
   await expect(name).toHaveCSS('text-shadow', /rgba\(0, 70, 180, 0\.45\)/);
+  // Owner 2026-11-24 21:39: hidden until somebody searches.
+  await expect(name).toHaveCSS('opacity', '0');
 });
 
 // Owner 2026-11-24, «Лента как Dock» (spec 2026-11-23-home-first-screen): the lane drifts on its
@@ -377,6 +379,7 @@ test('the first-screen lane is a Dock: it drifts, and the search brings the app 
   await expect(track.locator('a[data-dim]').first()).toBeAttached();
   await expect(hero.getByRole('search')).toContainText('Нашли');
   await expect(hero.locator('[data-lane-name]')).toHaveText('Тестовое приложение 1');
+  await expect(hero.locator('[data-lane-name]')).toHaveCSS('opacity', '1');
   // In the middle of the lane once the lane has slid there, and larger than its neighbours.
   const measure = () =>
     track.evaluate((el) => {
