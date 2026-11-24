@@ -22,10 +22,11 @@ const unbounded = Unbounded({
   display: 'swap',
 });
 
-// The first-screen title (owner 2026-11-23, «ближе к Apple»): Inter Tight 600.
+// The first-screen title (owner 2026-11-23, «ближе к Apple»): Inter Tight 600; the lighter
+// price of the plan card (owner 2026-11-24 13:26) needs 400 and 500 too.
 const interTight = Inter_Tight({
   subsets: ['latin', 'cyrillic'],
-  weight: ['600'],
+  weight: ['400', '500', '600'],
   variable: '--font-inter-tight',
   display: 'swap',
 });
