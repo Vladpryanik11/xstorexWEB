@@ -72,3 +72,24 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
   expect(box?.width).toBe(search?.width);
   expect(box?.x).toBe(search?.x);
 });
+
+// Owner 2026-11-24 (variant Б «Синяя, как небо»): the plan card carries the sky of the first
+// screen, its price is Inter Tight like the hero title, the button is white, the card is narrow.
+test('plan card is the blue sky card', async ({ page }) => {
+  await page.goto('/');
+  const card = page.getByRole('region', { name: 'Весь каталог на 1 месяц' }).locator('> div');
+  await card.scrollIntoViewIfNeeded();
+  expect(await card.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+    /linear-gradient\(.*rgb\(0, 102, 224\).*rgb\(10, 132, 255\)/,
+  );
+  const box = await card.boundingBox();
+  expect(box?.width ?? 0).toBeLessThanOrEqual(384);
+  const price = card.locator('p').first();
+  await expect(price).toHaveCSS('font-family', /Inter Tight/i);
+  await expect(price).toHaveCSS('font-weight', '600');
+  await expect(price).toHaveCSS('color', 'rgb(255, 255, 255)');
+  const cta = card.getByRole('link');
+  await expect(cta).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(cta).toHaveCSS('color', 'rgb(0, 113, 227)');
+  await expect(cta).toHaveCSS('box-shadow', 'none');
+});

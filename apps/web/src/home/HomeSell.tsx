@@ -51,7 +51,7 @@ export function HomePlan({ priceRub }: Price) {
             </li>
           ))}
         </ul>
-        <Cta priceRub={priceRub} />
+        <Cta priceRub={priceRub} light />
         <p className={styles.proof}>
           <b>{AUDIENCE}</b> пользователей в месяц
         </p>
