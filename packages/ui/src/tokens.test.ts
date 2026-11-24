@@ -88,6 +88,8 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-type-how', '500 .875rem / 1.3 var(--x-font)'],
     ['--x-type-mini', '400 .5625rem / 1.25 var(--x-font)'],
     ['--x-type-minihead', '600 .625rem / 1.2 var(--x-font)'],
+    ['--x-type-howhead', '600 1.125rem / 1.2 var(--x-font-title)'],
+    ['--x-type-howstep', '600 1.5rem / 1.15 var(--x-font-title)'],
     ['--x-cta', '#0071e3'],
     ['--x-cta-pressed', '#0062c4'],
   ])('%s = %s', (name, value) => {

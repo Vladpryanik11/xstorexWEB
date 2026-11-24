@@ -66,7 +66,8 @@
   flex: 1;
   margin: 0;
   color: var(--x-text);
-  font: var(--x-type-h3);
+  font: var(--x-type-howhead);
+  letter-spacing: -0.015em;
 }
 
 .close {
@@ -254,7 +255,9 @@
 .stepTitle {
   margin: 0;
   color: var(--x-text);
-  font: var(--x-type-h2);
+  /* The first-screen pair (owner 2026-11-24 10:37): Inter Tight like «Удаленные из App Store». */
+  font: var(--x-type-howstep);
+  letter-spacing: -0.015em;
 }
 
 .text {
