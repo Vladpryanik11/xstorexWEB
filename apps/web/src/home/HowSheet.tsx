@@ -27,6 +27,13 @@ const SAFE = [
   'Гарантия на весь срок подписки.',
 ];
 
+/** Drops #how from the address once the window closes, so the header link opens it again. */
+function clearHowHash() {
+  if (window.location.hash === '#how') {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
 /**
  * «Как это работает?» under the button of the first screen (owner 2026-11-24 09:11–09:12): a small
  * blue line that opens a window over the page, so nobody leaves the first screen. Owner 11:38–11:56:
@@ -42,8 +49,32 @@ export function HowSheet({ className }: { className?: string }) {
   const opener = useRef<HTMLButtonElement>(null);
   const closer = useRef<HTMLButtonElement>(null);
 
+  // The header item «Как это работает» links to /#how (owner 2026-11-24 12:29: the section left
+  // the home page), so the address opens the window; closing clears it so the link works again.
+  useEffect(() => {
+    const fromHash = () => {
+      if (window.location.hash === '#how') setOpen(true);
+    };
+    // A click on the link while already on the home page: open here, before the router sees it.
+    const onClick = (e: MouseEvent) => {
+      const link = e.target instanceof Element ? e.target.closest('a[href="/#how"]') : null;
+      if (!link || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(true);
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+    document.addEventListener('click', onClick, true);
+    return () => {
+      window.removeEventListener('hashchange', fromHash);
+      document.removeEventListener('click', onClick, true);
+    };
+  }, []);
+
   const close = () => {
     setOpen(false);
+    clearHowHash();
     opener.current?.focus();
   };
 
@@ -53,6 +84,7 @@ export function HowSheet({ className }: { className?: string }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpen(false);
+        clearHowHash();
         opener.current?.focus();
       }
     };

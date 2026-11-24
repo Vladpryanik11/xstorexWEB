@@ -1,38 +1,17 @@
-/* Everything under the hero, in the «Проверь и купи» order (owner 2026-11-21, spec v2 §3.1).
-   One gap between blocks: 56 px on a phone, 72 px from 48em. Children pad themselves by the
-   gutter, like the header's inner box. */
+/* Under the hero (owner 2026-11-24 12:29, variant Б): the plan and the questions on white, so the
+   sky of the first screen flows into them. One gap: 56 px on a phone, 72 px from 48em. Children
+   pad themselves by the gutter, like the header's inner box. */
 .flow {
-  box-sizing: content-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 3.5rem;
-  max-width: calc(var(--x-page-max) + 2 * var(--x-gutter));
-  margin-inline: auto;
   padding: 1rem 0 3.5rem;
-}
-
-/* The four sections (owner 2026-11-24: the second search «Ищете конкретное приложение?» left). */
-.check,
-.catalog {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.check {
-  gap: 1.25rem;
-}
-
-.catalog {
-  gap: 2rem;
+  background: var(--x-white);
 }
 
 @media (min-width: 48em) {
   .flow {
     gap: 4.5rem;
     padding-top: 2rem;
-  }
-
-  .catalog {
-    gap: 2.5rem;
   }
 }

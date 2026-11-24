@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test';
 
 // Data comes from `pnpm --filter @xstore/db seed:e2e` (global setup).
 
-test('home shows collections and an app opens its install sheet', async ({ page, isMobile }) => {
+test('home shows the first screen and an app link opens its install sheet', async ({
+  page,
+  isMobile,
+}) => {
   await page.goto('/');
   // Owner 2026-11-23 (spec 2026-11-23-home-first-screen §3).
   await expect(
@@ -12,11 +15,8 @@ test('home shows collections and an app opens its install sheet', async ({ page,
   // Owner 2026-11-24: the second search «Ищете конкретное приложение?» left the home page.
   await expect(page.getByRole('heading', { name: 'Ищете конкретное приложение?' })).toHaveCount(0);
   await expect(page.getByRole('search')).toHaveCount(1);
-  await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
-  await page
-    .getByRole('button', { name: /^Тестовое приложение 1(?!\d)/ })
-    .first()
-    .click();
+  // Owner 2026-11-24 12:29 (variant Б): the collections left the home page, an app opens from a link.
+  await page.goto('/?app=testovoe-prilozhenie-1');
   const sheet = page.getByRole('dialog', { name: 'Тестовое приложение 1' });
   await expect(sheet).toBeVisible();
   // A guest pays first: «Установить» on iPhone, «Оформить доступ» on a computer.
@@ -31,41 +31,26 @@ test('home shows collections and an app opens its install sheet', async ({ page,
   await expect(sheet.getByRole('link', { name: 'Подробнее' })).toHaveCount(0);
 });
 
-test('home explains how it works and has no install banner', async ({ page }) => {
-  await page.goto('/');
-  const how = page.getByRole('region', { name: 'Как это работает' });
-  for (const step of [
-    'Оплатите подписку',
-    'Включите режим разработчика',
-    'Подключите iPhone',
-    'Устанавливайте приложения',
-  ]) {
-    await expect(how.getByRole('heading', { name: step })).toBeVisible();
-  }
-  await expect(
-    how.getByText('Только приложения с правами на распространение. Никаких взломанных версий.'),
-  ).toBeVisible();
+test('the header «Как это работает» opens the window over the home page', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/faq');
+  // Owner 2026-11-24 12:29: the section «Как это работает» left the home page; the header item
+  // (/#how) opens the window instead. The phone menu has no such item: a shared link opens it there.
+  if (isMobile) await page.goto('/#how');
+  else
+    await page
+      .getByRole('navigation', { name: 'Основное меню' })
+      .getByRole('link', { name: 'Как это работает', exact: true })
+      .click();
+  const dialog = page.getByRole('dialog', { name: 'Как это работает' });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('region', { name: 'Как это работает' })).toHaveCount(0);
   await expect(page.getByRole('complementary', { name: 'Установить Xstore' })).toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-});
-
-test('home renders every collection layout and the category chips', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('list', { name: 'Баннеры' })).toBeVisible();
-  for (const title of ['Популярное', 'Набирают популярность', 'Больше нет в App Store']) {
-    await expect(page.getByRole('heading', { name: title })).toBeVisible();
-  }
-  const chips = page.getByRole('navigation', { name: 'Категории' });
-  await expect(chips.getByRole('link', { name: 'Игры' })).toHaveAttribute('href', '/category/igry');
-  // The seeded icons come from object storage. The hero lanes move all the time, so the
-  // check takes an icon from the collections below them.
-  const icon = page.locator('img[src*="/icons/"]:visible:not([data-hero-lanes] img)').first();
-  await expect(icon).toBeVisible();
-  // Shelf icons load lazily; bring one on screen before checking it decoded.
-  await icon.scrollIntoViewIfNeeded();
-  await expect
-    .poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth))
-    .toBeGreaterThan(0);
 });
 
 test('search finds by Cyrillic prefix', async ({ page }) => {
@@ -131,7 +116,7 @@ test('list page shows the collection', async ({ page }) => {
 test('no horizontal overflow on home at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Популярное' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Частые вопросы' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -210,11 +195,8 @@ test('an app morphs into its sheet; Escape closes it and returns focus', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home tiles open the catalog sections, shown as icons', async ({ page }) => {
-  await page.goto('/');
-  const tiles = page.getByRole('navigation', { name: 'Разделы каталога' });
-  await tiles.getByRole('link', { name: /Удалённые из App Store/ }).click();
-  await expect(page).toHaveURL(/\/removed$/);
+test('catalog sections are shown as icons', async ({ page }) => {
+  await page.goto('/removed');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Удалённые из App Store' }),
   ).toBeVisible();
@@ -252,7 +234,7 @@ test('on a phone the offer button follows the visitor once the hero scrolls away
   // The header carries its own «Подключить» (owner 2026-11-23); count the page buttons only.
   const buttons = page.locator('main').getByRole('link', { name: 'Подключить iPhone' });
   await expect(buttons).toHaveCount(1);
-  await page.getByRole('heading', { name: 'Как это работает' }).scrollIntoViewIfNeeded();
+  await page.getByRole('heading', { name: 'Частые вопросы' }).scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(isMobile ? 2 : 1);
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(buttons).toHaveCount(1);
@@ -430,54 +412,49 @@ test('the lane stands still under reduced motion', async ({ page }) => {
   expect(await track.evaluate((el) => el.scrollLeft)).toBe(start);
 });
 
-test('home blocks follow the «Проверь и купи» order', async ({ page }) => {
+// Owner 2026-11-24 12:29 (variant Б): under the first screen only the plan and the questions, on
+// white, so the sky of the first screen flows into them.
+test('under the first screen: the plan, then the questions, on white', async ({ page }) => {
   await page.goto('/');
-  const names = [
-    'Как это работает',
-    'Почему Xstorex',
-    'Весь каталог на 1 месяц',
-    'Популярное',
-    'Частые вопросы',
-    'Ваши приложения уже ждут',
-  ];
   const ys: number[] = [];
-  for (const name of names) {
+  for (const name of ['Весь каталог на 1 месяц', 'Частые вопросы']) {
     const box = await page.getByRole('heading', { name, exact: true }).first().boundingBox();
     ys.push(box?.y ?? -1);
   }
-  expect(ys).toEqual([...ys].sort((a, b) => a - b));
-  await expect(
-    page.getByRole('list', { name: 'Xstorex в цифрах' }).getByRole('listitem'),
-  ).toHaveCount(3);
+  expect(ys[0]).toBeGreaterThan(0);
+  expect(ys[1]).toBeGreaterThan(ys[0] ?? 0);
+  for (const gone of [
+    'Как это работает',
+    'Почему Xstorex',
+    'Популярное',
+    'Ваши приложения уже ждут',
+    'Преимущества Xstorex',
+  ]) {
+    await expect(page.getByRole('heading', { name: gone, exact: true })).toHaveCount(0);
+  }
+  await expect(page.getByRole('list', { name: 'Xstorex в цифрах' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Разделы каталога' })).toHaveCount(0);
+  const bg = await page.getByRole('region', { name: 'Частые вопросы' }).evaluate((el) => {
+    let n: Element | null = el;
+    while (n) {
+      const c = getComputedStyle(n).backgroundColor;
+      if (c !== 'rgba(0, 0, 0, 0)') return c;
+      n = n.parentElement;
+    }
+    return '';
+  });
+  expect(bg).toBe('rgb(255, 255, 255)');
 });
 
-test('the benefits panel is for wide screens only', async ({ page, isMobile }) => {
-  await page.goto('/');
-  const panel = page.getByRole('region', { name: 'Преимущества Xstorex' });
-  if (isMobile) await expect(panel).toBeHidden();
-  else await expect(panel.getByRole('listitem')).toHaveCount(4);
-});
-
-test('home sells the plan: price card, reasons, questions and a last call', async ({
-  page,
-  isMobile,
-}) => {
+test('home sells the plan and answers the questions', async ({ page, isMobile }) => {
   await page.goto('/');
   const plan = page.getByRole('region', { name: 'Весь каталог на 1 месяц' });
   await expect(plan.getByText(/₽\s*в месяц/)).toBeVisible();
   const buy = plan.getByRole('link', { name: /^Получить доступ за\s.+₽$/ });
   await expect(buy).toHaveAttribute('href', '/get');
-  await expect(
-    page.getByRole('region', { name: 'Почему Xstorex' }).getByRole('heading', { level: 3 }),
-  ).toHaveCount(4);
-  await expect(page.getByRole('region', { name: 'Частые вопросы' }).locator('summary')).toHaveCount(
-    4,
-  );
-  const last = page.getByRole('region', { name: 'Ваши приложения уже ждут' });
-  await expect(last.getByRole('link', { name: /^Получить доступ за/ })).toHaveAttribute(
-    'href',
-    '/get',
-  );
+  const faq = page.getByRole('region', { name: 'Частые вопросы' }).locator('summary');
+  await expect(faq).toHaveCount(7);
+  await expect(faq.first()).toHaveText('Это безопасно?');
   if (isMobile) {
     // The sticky button never doubles the plan button: only the hero one stays in the page.
     await buy.scrollIntoViewIfNeeded();

@@ -1,16 +1,9 @@
 import { ApiClientError, type AppCard, type AppDetail } from '@xstore/shared';
 import type { Metadata, Viewport } from 'next';
-import { Fragment } from 'react';
 import { serverApi } from '../../src/api/server';
 import { AppPreview } from '../../src/catalog/AppPreview';
-import { CategoryChips } from '../../src/catalog/CategoryChips';
-import { CollectionSection } from '../../src/catalog/CollectionSection';
-import { HeroCarousel } from '../../src/catalog/HeroCarousel';
-import { HowItWorks } from '../../src/catalog/HowItWorks';
-import { SectionTiles } from '../../src/catalog/SectionTiles';
-import { HomeBenefits } from '../../src/home/HomeBenefits';
 import { HomeHero } from '../../src/home/HomeHero';
-import { HomeFaq, HomeFinal, HomePlan, HomeStats, HomeWhy } from '../../src/home/HomeSell';
+import { HomeFaq, HomePlan } from '../../src/home/HomeSell';
 import { HomeStickyCta } from '../../src/home/HomeStickyCta';
 import styles from './page.module.css';
 
@@ -23,9 +16,6 @@ export const metadata: Metadata = {
 
 /** iPhone status bar matches the bright sky of the hero (spec 2026-11-23-home-first-screen §4). */
 export const viewport: Viewport = { themeColor: '#1e8fff' };
-
-/** Chips go after this many collections (spec §6.3). */
-const CHIPS_AFTER = 2;
 
 type Props = { searchParams: Promise<{ app?: string | string[] }> };
 
@@ -62,34 +52,15 @@ export default async function HomePage({ searchParams }: Props) {
     laneApps(api, 'removed'),
     laneApps(api, 'premium'),
   ]);
-  const chips = <CategoryChips categories={home.categories} />;
 
   return (
     <>
       <HomeHero collections={home.collections} lanes={{ removed, premium }} />
-      {/* Order «Проверь и купи» (owner 2026-11-21, spec v2 §3.1): check, figures, how, why, plan,
-          catalog, questions, last call. */}
+      {/* Owner 2026-11-24 12:29 (variant Б): the first screen answers the questions, so under it
+          only the plan and the questions stay, on white for the sky to flow into. */}
       <div className={styles.flow}>
-        <HomeBenefits />
-        <div className={styles.check}>
-          <SectionTiles />
-        </div>
-        <HomeStats />
-        <HowItWorks />
-        <HomeWhy />
         <HomePlan priceRub={priceRub} />
-        <div className={styles.catalog}>
-          <HeroCarousel banners={home.banners} />
-          {home.collections.map((c, i) => (
-            <Fragment key={c.slug}>
-              <CollectionSection collection={c} />
-              {i === CHIPS_AFTER - 1 ? chips : null}
-            </Fragment>
-          ))}
-          {home.collections.length < CHIPS_AFTER ? chips : null}
-        </div>
         <HomeFaq />
-        <HomeFinal priceRub={priceRub} />
       </div>
       <HomeStickyCta />
       {shared ? (

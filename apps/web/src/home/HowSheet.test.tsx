@@ -51,3 +51,35 @@ it('closes with the cross', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));
   expect(screen.queryByRole('dialog')).toBeNull();
 });
+
+// Owner 2026-11-24 12:29: the home page keeps only the plan and the questions, so the header item
+// «Как это работает» (/#how) opens this window instead of scrolling to a section.
+it('opens from the address /#how and clears it on close', () => {
+  window.history.replaceState(null, '', '/#how');
+  render(<HowSheet />);
+  const dialog = screen.getByRole('dialog', { name: 'Как это работает' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Закрыть' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(window.location.hash).toBe('');
+});
+
+it('opens when the header link sets #how on the home page', () => {
+  window.history.replaceState(null, '', '/');
+  render(<HowSheet />);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  window.history.replaceState(null, '', '/#how');
+  fireEvent(window, new HashChangeEvent('hashchange'));
+  expect(screen.getByRole('dialog', { name: 'Как это работает' })).toBeVisible();
+});
+
+it('the header link to /#how opens the window on the home page without leaving it', () => {
+  window.history.replaceState(null, '', '/');
+  render(
+    <>
+      <a href="/#how">Как это работает</a>
+      <HowSheet />
+    </>,
+  );
+  fireEvent.click(screen.getByRole('link', { name: 'Как это работает' }));
+  expect(screen.getByRole('dialog', { name: 'Как это работает' })).toBeVisible();
+});

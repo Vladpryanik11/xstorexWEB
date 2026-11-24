@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { formatRub } from '../checkout/wizard-step';
-import { APPS, AUDIENCE } from './figures';
+import { AUDIENCE } from './figures';
 import styles from './HomeSell.module.css';
 
 /*
@@ -60,66 +60,13 @@ export function HomePlan({ priceRub }: Price) {
   );
 }
 
-const STATS = [
-  [APPS, 'приложений'],
-  [AUDIENCE, 'пользователей в месяц'],
-  ['0 ₽', 'доплат по гарантии'],
-];
-
-/** Row of figures between the search and «Как это работает» (owner 2026-11-21). */
-export function HomeStats() {
-  return (
-    <div className={styles.statsWrap}>
-      <ul className={styles.stats} aria-label="Xstorex в цифрах">
-        {STATS.map(([n, t]) => (
-          <li key={t} className={styles.stat}>
-            <b>{n}</b> <span>{t}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-const REASONS = [
-  [
-    'То, что удалили из App Store',
-    'Приложения, которые больше нигде не скачать, ставятся как раньше.',
-  ],
-  [
-    'Без лишних программ и аккаунтов',
-    'Всё работает в Safari. Не нужно ставить ещё одно приложение или давать нам Apple ID.',
-  ],
-  [
-    'Только честные копии',
-    'У каждого приложения есть право на распространение. Никаких взломов и модов с вирусами.',
-  ],
-  ['Живые люди в поддержке', 'Перестало открываться? Напишите нам, восстановим без доплаты.'],
-];
-
-export function HomeWhy() {
-  const id = useId();
-  return (
-    <section className={styles.block} aria-labelledby={id}>
-      <h2 id={id} className={styles.title}>
-        Почему Xstorex
-      </h2>
-      <ul className={styles.why}>
-        {REASONS.map(([t, p]) => (
-          <li key={t}>
-            <h3>{t}</h3>
-            <p>{p}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
+/** Owner 2026-11-24 12:20–12:29 (home variant Б): the first question says why it is safe, in the
+ * words of the «Как это работает» window; the reasons of the removed «Почему Xstorex» became the
+ * last three questions. */
 const QUESTIONS = [
   [
-    'Это не взлом? С iPhone ничего не случится?',
-    'Нет. iPhone не взламываем, Apple ID не просим. Приложения ставятся тем же способом, каким компании раздают программы своим сотрудникам.',
+    'Это безопасно?',
+    'Да. Доступа к iPhone у нас нет: фото, сообщения, пароли и Apple ID мы не видим. Приложения подписаны официальным сертификатом разработчика Apple. Профиль и режим разработчика — обычные настройки Apple, удалить или выключить их можно в любой момент. Ставим только официальные файлы приложений, без сторонних программ и взломанных версий.',
   ],
   [
     'А если приложение перестанет открываться?',
@@ -133,6 +80,15 @@ const QUESTIONS = [
     'Мне нужен компьютер?',
     'Нет. Оплатить можно с любого устройства, а приложения ставятся на iPhone.',
   ],
+  [
+    'Что если приложение удалили из App Store?',
+    'Оно остаётся в нашем каталоге. Ставите его с сайта, как раньше.',
+  ],
+  [
+    'Сколько ждать после подключения iPhone?',
+    'Обычно 2–3 часа в рабочее время. Когда всё готово, придёт письмо.',
+  ],
+  ['Как связаться с поддержкой?', 'Напишите нам на почту. Отвечаем в рабочие часы.'],
 ];
 
 export function HomeFaq() {
@@ -149,25 +105,6 @@ export function HomeFaq() {
             <p>{a}</p>
           </details>
         ))}
-      </div>
-    </section>
-  );
-}
-
-export function HomeFinal({ priceRub }: Price) {
-  const id = useId();
-  return (
-    <section className={styles.finalWrap} aria-labelledby={id}>
-      <div className={styles.final}>
-        <div>
-          <h2 id={id}>Ваши приложения уже ждут</h2>
-          <p>
-            {priceRub !== null
-              ? `Весь каталог за ${formatRub(priceRub)} в месяц. Гарантия на весь срок подписки.`
-              : 'Весь каталог в одной подписке. Гарантия на весь срок подписки.'}
-          </p>
-        </div>
-        <Cta priceRub={priceRub} light />
       </div>
     </section>
   );
