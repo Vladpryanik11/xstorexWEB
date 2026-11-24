@@ -1,7 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import type { AppCard } from '@xstore/shared';
 import { expect, it } from 'vitest';
-import { dockScales, HeroLanes, laneApps, matchApp, matchApps } from './HeroLanes';
+import { dockScales, dockShifts, HeroLanes, laneApps, matchApp, matchApps } from './HeroLanes';
 
 const app = (slug: string, iconUrl?: string, name = `App ${slug}`) =>
   ({ slug, name, iconUrl }) as AppCard;
@@ -72,6 +72,21 @@ it('names the app in the middle of the lane under it, for the eye only', () => {
   expect(name).toHaveAttribute('aria-hidden', 'true');
 });
 
+// Owner 2026-11-24 21:39: the names that change under the drifting lane feel abrupt; they stay
+// hidden until somebody searches.
+it('shows the name only while somebody searches', () => {
+  const removed = [app('a', '/a.png'), app('b', '/b.png')];
+  const { container, rerender } = render(<HeroLanes removed={removed} premium={[]} />);
+  const name = () => container.querySelector('[data-lane-name]');
+  expect(name()).not.toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} found={['a']} focus="a" />);
+  expect(name()).toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} found={[]} />);
+  expect(name()).toHaveAttribute('data-show');
+  rerender(<HeroLanes removed={removed} premium={[]} />);
+  expect(name()).not.toHaveAttribute('data-show');
+});
+
 // The search moves the app it found to the middle; the apps found stay bright and the others
 // fade (owner 2026-11-24: «так было прикольно», no blue ring).
 it('keeps the apps the search found bright and dims the others', () => {
@@ -135,4 +150,26 @@ it('finds an app of the lane by its name or address, in any case, with common sp
   // Every app of the lane that fits, the best one first.
   expect(matchApps(apps, 'тестовое приложение 1')).toEqual(['app-1', 'app-10']);
   expect(matchApps(apps, 'тикток')).toEqual([]);
+});
+
+// Owner 2026-11-24 21:53: «дёргание в момент, когда иконка становится большой». The neighbours were
+// pushed out from the nearest icon, so when the next icon became the nearest, the whole lane jumped
+// by about 19 px. Now the point in the middle of the lane stays put and nothing jumps.
+it('moves the icons smoothly when the next icon becomes the middle one', () => {
+  const sw = 66;
+  const at = (pos: number) => {
+    const d = Array.from({ length: 9 }, (_, k) => k * sw + sw / 2 - pos);
+    const sc = dockScales(d, sw);
+    const shift = dockShifts(d, sc, sw * 0.82);
+    return d.map((v, k) => v + (shift[k] as number));
+  };
+  // The middle of the lane crosses the border between icons 4 and 5.
+  const before = at(5 * sw - 0.01);
+  const after = at(5 * sw + 0.01);
+  for (let k = 0; k < 9; k++) {
+    expect(Math.abs((after[k] as number) - (before[k] as number))).toBeLessThan(0.1);
+  }
+  // Still a Dock: the icons right and left of the middle move apart.
+  const still = at(4 * sw + sw / 2);
+  expect((still[5] as number) - (still[4] as number)).toBeGreaterThan(sw);
 });
