@@ -29,6 +29,17 @@ export const uploadViewSchema = z.object({
 });
 export type UploadView = z.infer<typeof uploadViewSchema>;
 
+/** `GET /admin/uploads`: files still on their way into the catalog, or turned down (7 days). */
+export type UploadListItem = {
+  id: string;
+  fileName: string;
+  sizeBytes: number;
+  status: 'uploading' | 'uploaded' | 'inspecting' | 'rejected';
+  rejectCode: string | null;
+  /** ISO 8601. */
+  createdAt: string;
+};
+
 /** At most this many part URLs are presigned per request. */
 export const MAX_PART_URLS_PER_CALL = 20;
 

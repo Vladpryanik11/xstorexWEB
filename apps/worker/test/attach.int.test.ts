@@ -140,7 +140,8 @@ it('creates a draft app for a new bundle id', async () => {
     minIos: '15.0',
     deviceFamily: [1, 2],
     encrypted: false,
-    status: 'draft',
+    // Ready for the moment the admin picks a section; the app itself stays a draft.
+    status: 'published',
     ipaKey: row.key,
     sizeBytes: row.sizeBytes,
     icon57Key: `apps/${version.appId}/${version.id}/icon-57.png`,
@@ -190,6 +191,29 @@ it('adds a version to an existing app', async () => {
   expect((await deps.db.app.findUniqueOrThrow({ where: { id: app.id } })).iconKey).toBe(
     'apps/custom.png',
   );
+});
+
+it('a new version of an app in the catalog goes public by itself', async () => {
+  await upload(await ipa());
+  const app = await deps.db.app.findFirstOrThrow();
+  const category = await deps.db.category.create({
+    data: { slug: 'music', name: 'Музыка', icon: 'music', sort: 1 },
+  });
+  await deps.db.app.update({
+    where: { id: app.id },
+    data: { section: 'premium', categoryId: category.id, status: 'published', name: 'Своё имя' },
+  });
+
+  await upload(await ipa({ CFBundleShortVersionString: '1.3', CFBundleVersion: '46' }));
+  const versions = await deps.db.appVersion.findMany({ orderBy: { createdAt: 'asc' } });
+  expect(versions.map((v) => [v.version, v.status])).toEqual([
+    ['1.2', 'draft'],
+    ['1.3', 'published'],
+  ]);
+  expect(await deps.db.app.findUniqueOrThrow({ where: { id: app.id } })).toMatchObject({
+    status: 'published',
+    name: 'Своё имя',
+  });
 });
 
 it('duplicate version is rejected', async () => {

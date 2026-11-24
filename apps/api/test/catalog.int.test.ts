@@ -310,11 +310,11 @@ describe('visibility', () => {
 });
 
 describe('sections', () => {
-  it('lists apps removed from the App Store by name', async () => {
-    await seedApp(db, { slug: 'b', name: 'Б', removedFromAppStore: true });
-    await seedApp(db, { slug: 'a', name: 'А', removedFromAppStore: true });
-    await seedApp(db, { slug: 'kept', name: 'В', removedFromAppStore: false });
-    await seedApp(db, { slug: 'hid', name: 'Г', removedFromAppStore: true, status: 'hidden' });
+  it('lists apps of the «removed» section by name', async () => {
+    await seedApp(db, { slug: 'b', name: 'Б', section: 'removed' });
+    await seedApp(db, { slug: 'a', name: 'А', section: 'removed' });
+    await seedApp(db, { slug: 'kept', name: 'В', section: 'premium' });
+    await seedApp(db, { slug: 'hid', name: 'Г', section: 'removed', status: 'hidden' });
     const res = await get('/catalog/sections/removed');
     expect(res.status).toBe(200);
     expect(res.headers['cache-control']).toBe(CACHE);
@@ -323,24 +323,24 @@ describe('sections', () => {
     expect(page.nextCursor).toBeNull();
   });
 
-  it('lists premium as the admin picked it in the «premium» collection', async () => {
+  it('lists premium by the app section, not the old «premium» collection', async () => {
     expect(appPage.parse((await get('/catalog/sections/premium')).body)).toEqual({
       items: [],
       nextCursor: null,
     });
-    const game = await seedApp(db, { slug: 'game', name: 'Игра' });
-    const tool = await seedApp(db, { slug: 'tool', name: 'Утилита' });
-    const hidden = await seedApp(db, { slug: 'hid', name: 'Скрытое', status: 'hidden' });
-    await seedApp(db, { slug: 'other', name: 'Другое' });
+    await seedApp(db, { slug: 'game', name: 'Игра', section: 'premium' });
+    await seedApp(db, { slug: 'tool', name: 'Утилита', section: 'premium' });
+    await seedApp(db, { slug: 'hid', name: 'Скрытое', section: 'premium', status: 'hidden' });
+    const old = await seedApp(db, { slug: 'other', name: 'Другое' });
     await seedCollection(db, {
       slug: 'premium',
       title: 'Premium доступы',
       onHome: false,
-      items: [{ appId: tool.id }, { appId: hidden.id }, { appId: game.id }],
+      items: [{ appId: old.id }],
     });
     expect(slugs(appPage.parse((await get('/catalog/sections/premium')).body).items)).toEqual([
-      'tool',
       'game',
+      'tool',
     ]);
   });
 

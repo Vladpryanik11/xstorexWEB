@@ -171,7 +171,7 @@ test('«Каталог» panel opens under the pill on hover and closes on Escap
 
   if (mouse) {
     // Moving over the gap into the panel keeps it open.
-    await panel.getByRole('link', { name: /Популярные/ }).hover();
+    await panel.getByRole('link', { name: /Premium доступы/ }).hover();
     await expect(button).toHaveAttribute('aria-expanded', 'true');
   }
 

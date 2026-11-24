@@ -9,7 +9,7 @@ import { browserApi } from '../checkout/browser-api';
 export const CLOSE_DELAY_MS = 150;
 
 /** Sections whose first apps are shown as icons in the panel. */
-export const ICON_SECTIONS = ['removed', 'premium', 'popular'] as const satisfies Section['slug'][];
+export const ICON_SECTIONS = ['removed', 'premium'] as const satisfies Section['slug'][];
 
 export type SectionIcons = Partial<Record<Section['slug'], AppCard[]>>;
 

@@ -165,7 +165,8 @@ async function main(): Promise<void> {
           rating: app.rating,
           ratingCount: app.ratingCount,
           removedFromAppStore: app.removedFromAppStore,
-          rightsBasis: 'Демо-данные для разработки',
+          // Owner 2026-11-24: two sections; the demo puts the rest into «Премиум».
+          section: app.removedFromAppStore ? 'removed' : 'premium',
           status: 'published',
           versions: {
             create: app.versions.map((v, i) => ({

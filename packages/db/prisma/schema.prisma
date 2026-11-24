@@ -225,6 +225,12 @@ enum AppStatus {
   hidden
 }
 
+/// Catalog section (owner 2026-11-24): «Удалённые» or «Премиум»; none means «Без раздела».
+enum AppSection {
+  removed
+  premium
+}
+
 enum VersionStatus {
   draft
   published
@@ -262,6 +268,8 @@ model App {
   /// Hero carousel image.
   bannerKey           String?
   removedFromAppStore Boolean          @default(false)
+  /// Kept in step with `removedFromAppStore` (= section is `removed`).
+  section             AppSection?
   /// «Основание для распространения»; required before publishing.
   rightsBasis         String?
   /// `free` or `addon:<Plan.code>`.
@@ -281,6 +289,7 @@ model App {
 
   @@index([status])
   @@index([categoryId])
+  @@index([status, section])
 }
 
 model AppVersion {

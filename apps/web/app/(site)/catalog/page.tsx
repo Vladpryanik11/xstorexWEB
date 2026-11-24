@@ -1,11 +1,6 @@
-import { SectionPage, sectionMetadata } from '../../../src/catalog/SectionPage';
-import { one, type SearchParams } from '../../../src/catalog/search-params';
-import { sectionOf } from '../../../src/catalog/sections';
+import { redirect } from 'next/navigation';
 
-const section = sectionOf('all');
-
-export const metadata = sectionMetadata(section);
-
-export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  return <SectionPage section={section} cursor={one((await searchParams).cursor)} />;
+/** The catalog is two sections now (owner 2026-11-24); old links land on the first one. */
+export default function Page() {
+  redirect('/removed');
 }

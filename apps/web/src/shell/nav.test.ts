@@ -98,13 +98,11 @@ describe('isActive', () => {
 });
 
 describe('catalogMenu', () => {
-  it('sections with their apps first, then the whole catalog and search', () => {
+  it('the two sections with their apps, then search', () => {
     const { items } = catalogMenu(GUEST);
     expect(items.map((i) => [i.label, i.href, i.section])).toEqual([
       ['Удалённые из App Store', '/removed', 'removed'],
       ['Premium доступы', '/premium', 'premium'],
-      ['Популярные', '/popular', 'popular'],
-      ['Весь каталог', '/catalog', undefined],
       ['Поиск', '/search', undefined],
     ]);
     for (const item of items) {
@@ -135,14 +133,7 @@ describe('catalogMenu', () => {
 
 describe('isCatalogPath', () => {
   it('catalog, its sections and search', () => {
-    for (const path of [
-      '/catalog',
-      '/catalog/games',
-      '/removed',
-      '/premium',
-      '/popular',
-      '/search',
-    ]) {
+    for (const path of ['/removed', '/premium', '/search']) {
       expect(isCatalogPath(path)).toBe(true);
     }
   });

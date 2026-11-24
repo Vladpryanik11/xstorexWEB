@@ -4,14 +4,13 @@ import { SectionTiles } from './SectionTiles';
 import { SECTIONS, sectionBySlug } from './sections';
 
 describe('catalog sections', () => {
-  it('are the four sections the owner asked for, in order', () => {
+  it('are the two sections the owner asked for (2026-11-24), in order', () => {
     expect(SECTIONS.map((s) => [s.title, s.href])).toEqual([
       ['Удалённые из App Store', '/removed'],
       ['Premium доступы', '/premium'],
-      ['Популярные', '/popular'],
-      ['Весь каталог', '/catalog'],
     ]);
-    expect(sectionBySlug('popular')?.title).toBe('Популярные');
+    expect(sectionBySlug('premium')?.title).toBe('Premium доступы');
+    expect(sectionBySlug('popular')).toBeUndefined();
     expect(sectionBySlug('nope')).toBeUndefined();
   });
 
@@ -19,12 +18,7 @@ describe('catalog sections', () => {
     render(<SectionTiles />);
     const nav = screen.getByRole('navigation', { name: 'Разделы каталога' });
     const links = within(nav).getAllByRole('link');
-    expect(links.map((l) => l.getAttribute('href'))).toEqual([
-      '/removed',
-      '/premium',
-      '/popular',
-      '/catalog',
-    ]);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/removed', '/premium']);
     expect(links[0]).toHaveAccessibleName(/Удалённые из App Store/);
   });
 });

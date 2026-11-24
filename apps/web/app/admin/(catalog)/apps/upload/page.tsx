@@ -1,12 +1,6 @@
-import { requireStaff } from '../../../../../src/auth/session';
-import { UploadDropzone } from '../../../../../src/upload/UploadDropzone';
+import { redirect } from 'next/navigation';
 
-export default async function UploadPage() {
-  const session = await requireStaff('/admin/apps/upload');
-  return (
-    <>
-      <h1>Загрузка IPA</h1>
-      <UploadDropzone ownerId={session.user.id} />
-    </>
-  );
+/** Uploading moved onto «Приложения» (spec 2026-11-24 §2). */
+export default function UploadPage() {
+  redirect('/admin/apps');
 }

@@ -46,13 +46,15 @@ type CardRow = Prisma.AppGetPayload<{ select: typeof CARD_SELECT }>;
 
 const SIMILAR_LIMIT = 12;
 
-/** Slug of the manual collection behind «Premium доступы». */
-export const PREMIUM_COLLECTION = 'premium';
-
+/** Sections the admin assigns (simple upload, owner 2026-11-24); `all` is the whole catalog. */
 const SECTION_FILTERS = {
-  removed: { removedFromAppStore: true },
+  removed: { section: 'removed' },
+  premium: { section: 'premium' },
   all: {},
 } satisfies Record<string, Prisma.AppWhereInput>;
+
+const isFilteredSection = (slug: string): slug is keyof typeof SECTION_FILTERS =>
+  Object.hasOwn(SECTION_FILTERS, slug);
 
 /** `UIDeviceFamily` (1 iPhone, 2 iPad) → devices shown on the app page; none means iPhone. */
 function devices(family: number[]): AppDetail['devices'] {
@@ -217,31 +219,36 @@ export class CatalogService {
   }
 
   /**
-   * Catalog sections (owner 2026-11-18): removed from the App Store and the whole catalog page by
-   * name; popular ranks by installs (up to 100); premium is the admin's manual «premium»
-   * collection, so one app can sit there and in its category at once.
+   * Catalog sections: «Удалённые» and «Премиум» by the app's section (owner 2026-11-24), the
+   * whole catalog by name, popular by installs (up to 100). `category` narrows to a subcategory.
    */
-  async section(slug: string, rawCursor?: unknown): Promise<Page<AppCard>> {
-    if (slug === 'premium') {
-      const collection = await this.db.collection.findUnique({
-        where: { slug: PREMIUM_COLLECTION },
-        include: { items: true },
-      });
-      if (!collection) return { items: [], nextCursor: null };
-      const ranked = await this.rankMany([collection], () => LIST_LIMIT);
-      return {
-        items: (ranked.get(collection.id) ?? []).map((r) => this.card(r)),
-        nextCursor: null,
-      };
-    }
+  async section(slug: string, rawCursor?: unknown, rawCategory?: unknown): Promise<Page<AppCard>> {
     if (slug === 'popular') {
       const popular: RankedCollection = { id: 'popular', source: 'top_downloads', items: [] };
       const ranked = await this.rankMany([popular], () => LIST_LIMIT);
       return { items: (ranked.get(popular.id) ?? []).map((r) => this.card(r)), nextCursor: null };
     }
-    const where = SECTION_FILTERS[slug as keyof typeof SECTION_FILTERS];
-    if (!where) throw notFound();
+    if (!isFilteredSection(slug)) throw notFound();
+    const where: Prisma.AppWhereInput = { ...SECTION_FILTERS[slug] };
+    if (typeof rawCategory === 'string' && rawCategory !== '') {
+      const category = await this.db.category.findUnique({
+        where: { slug: rawCategory },
+        select: { id: true },
+      });
+      if (!category) return { items: [], nextCursor: null };
+      where.categoryId = category.id;
+    }
     return this.byName(where, rawCursor);
+  }
+
+  /** Subcategories that have at least one visible app in the section, by sort. */
+  async sectionCategories(slug: string): Promise<CategoryView[]> {
+    if (!isFilteredSection(slug)) throw notFound();
+    return this.db.category.findMany({
+      where: { apps: { some: { ...VISIBLE, ...SECTION_FILTERS[slug] } } },
+      orderBy: [{ sort: 'asc' }, { id: 'asc' }],
+      select: { slug: true, name: true, icon: true },
+    });
   }
 
   /** Visible apps matching `where`, 24 per page by name. */
