@@ -11,7 +11,7 @@ const price = (s: string) => s.replace(/\s/g, ' ');
 it('plan card: what is included and the price on the button, said once', () => {
   render(<HomePlan priceRub={590} apps={[]} />);
   const card = screen.getByRole('region', { name: 'Весь каталог в одной подписке' });
-  const items = within(card)
+  const items = within(within(card).getByRole('list', { name: 'Что входит' }))
     .getAllByRole('listitem')
     .map((li) => li.textContent);
   // Owner 2026-11-24 13:12, variant Г: three short points as pills in a row, no ticks.
@@ -50,10 +50,13 @@ it('plan card shows five catalog icons and the size of the catalog above the pri
   expect(card.textContent?.match(/590/g)).toHaveLength(1);
 });
 
-it('plan card without catalog icons has no icon row', () => {
+// Owner 2026-11-24 16:55: while the catalog is empty, five placeholders stand in for the icons.
+it('plan card without catalog icons shows five placeholders', () => {
   render(<HomePlan priceRub={590} apps={[app('x', null)]} />);
-  expect(screen.queryByRole('list', { name: 'Приложения каталога' })).toBeNull();
-  expect(screen.queryByText('+200')).toBeNull();
+  const row = screen.getByRole('list', { name: 'Приложения каталога' });
+  expect(row.querySelectorAll('img')).toHaveLength(0);
+  expect(row.querySelectorAll('[data-ghost]')).toHaveLength(5);
+  expect(row.textContent).toBe('+200');
 });
 
 // Owner 2026-11-24 12:20–12:29 (home variant Б): the first question says why it is safe; the

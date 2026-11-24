@@ -140,10 +140,32 @@ export function HeroLanes({
 }) {
   const unique = mixedApps(removed, premium).filter((a) => a.iconUrl);
   const one = laneApps(unique, Math.max(PER_LANE, unique.length));
-  if (one.length === 0) return null;
+  if (one.length === 0) return <PlaceholderLane />;
   return (
     <div className={styles.lanes} data-hero-lanes="">
       <Lane apps={one} focus={focus} found={found} paused={paused} />
+    </div>
+  );
+}
+
+/**
+ * Owner 2026-11-24 16:55: while the catalog is empty, a still row of glass placeholders stands in
+ * for the icons, so the first screen keeps its look and height. They lead nowhere.
+ */
+function PlaceholderLane() {
+  return (
+    <div className={styles.lanes} data-lane-placeholder="" aria-hidden="true">
+      <div className={styles.lane}>
+        <div className={`${styles.track} ${styles.still}`}>
+          {Array.from({ length: PER_LANE }, (_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: identical placeholders, the position is the key
+            <span key={i} className={styles.item} data-ghost="">
+              <span className={`${styles.icon} ${styles.ghost}`} />
+            </span>
+          ))}
+        </div>
+        <p className={styles.name} />
+      </div>
     </div>
   );
 }
