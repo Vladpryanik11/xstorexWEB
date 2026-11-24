@@ -84,7 +84,8 @@ describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
     ['--x-type-promise', '500 .75rem / 1.25 var(--x-font)'],
     ['--x-type-promiselg', '500 .875rem / 1.25 var(--x-font)'],
     ['--x-type-avatar', '600 .6875rem / 1 var(--x-font)'],
-    ['--x-type-dock', '500 .6875rem / 1.2 var(--x-font)'],
+    ['--x-type-lanename', '500 .8125rem / 1.125rem var(--x-font)'],
+    ['--x-type-count', '400 .8125rem / 1.3 var(--x-font)'],
     ['--x-cta', '#0071e3'],
     ['--x-cta-pressed', '#0062c4'],
   ])('%s = %s', (name, value) => {
