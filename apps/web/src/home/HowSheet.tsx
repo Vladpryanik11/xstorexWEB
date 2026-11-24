@@ -110,12 +110,10 @@ export function HowSheet({ className }: { className?: string }) {
                   aria-label={`Шаг ${i + 1} из ${HOW_STEPS.length}`}
                 >
                   <StepScreen step={i} />
-                  <h3 className={styles.stepTitle}>
-                    <span className={styles.number} aria-hidden="true">
-                      {i + 1}
-                    </span>
-                    {s.title}
-                  </h3>
+                  <p className={styles.count} data-how-count="">
+                    Шаг {i + 1} из {HOW_STEPS.length}
+                  </p>
+                  <h3 className={styles.stepTitle}>{s.title}</h3>
                   <p className={styles.text}>{s.text}</p>
                   {s.how ? (
                     <ol className={styles.how}>
@@ -184,43 +182,33 @@ const SCREENS = [
     <span className={styles.pill}>Оплатить</span>
   </>,
   <>
+    <span className={styles.back}>‹ Настройки</span>
     <span className={styles.screenHead}>Конфиденциальность и безопасность</span>
     <span className={styles.row}>
       <i className={styles.rowIcon} data-tone="blue" />
-      Службы геолокации
+      <span className={styles.label}>Службы геолокации</span>
     </span>
-    <span className={styles.row}>
+    <span className={styles.row} data-hot="">
       <i className={styles.rowIcon} />
-      Режим разработчика
+      <span className={styles.label}>Режим разработчика</span>
       <i className={styles.toggle} />
     </span>
     <span className={styles.row}>
       <i className={styles.rowIcon} data-tone="green" />
-      Режим блокировки
+      <span className={styles.label}>Режим блокировки</span>
     </span>
   </>,
   <>
     <span className={styles.screenHead}>Настройки</span>
-    <span className={styles.row}>
+    <span className={styles.row} data-hot="">
       <i className={styles.rowIcon} data-tone="green" />
-      Профиль загружен
+      <span className={styles.label}>Профиль загружен</span>
     </span>
     <span className={styles.row}>
       <i className={styles.rowIcon} />
-      Основные
+      <span className={styles.label}>Основные</span>
     </span>
     <span className={styles.pill}>Установить</span>
-  </>,
-  <>
-    <span className={styles.screenHead}>Почта</span>
-    <span className={styles.mail}>
-      <b>Xstorex</b>
-      Приложения готовы к установке
-    </span>
-    <span className={styles.mail} data-read="">
-      <b>Xstorex</b>
-      iPhone подключён
-    </span>
   </>,
   <>
     <span className={styles.screenHead}>Каталог</span>

@@ -12,20 +12,25 @@ it('opens a window of steps over the page instead of leaving it', () => {
   const dialog = screen.getByRole('dialog', { name: 'Как это работает' });
   const slides = within(dialog).getAllByRole('group');
   expect(slides.map((s) => s.getAttribute('aria-label'))).toEqual([
-    'Шаг 1 из 5',
-    'Шаг 2 из 5',
-    'Шаг 3 из 5',
-    'Шаг 4 из 5',
-    'Шаг 5 из 5',
+    'Шаг 1 из 4',
+    'Шаг 2 из 4',
+    'Шаг 3 из 4',
+    'Шаг 4 из 4',
   ]);
   // Owner 2026-11-24 10:28: Developer Mode comes right after the payment, then the profile, then
-  // the wait for the email, then the apps.
-  expect(slides.map((s) => s.querySelector('h3')?.textContent?.replace(/^\d/, ''))).toEqual([
+  // the wait for the email (10:41: a fourth point of the profile step), then the apps.
+  expect(slides.map((s) => s.querySelector('h3')?.textContent)).toEqual([
     'Оплатите подписку',
     'Включите режим разработчика',
     'Подключите iPhone',
-    'Дождитесь письма',
     'Устанавливайте приложения',
+  ]);
+  // The step number stands above the title, so a long title is not pushed aside by it.
+  expect(slides.map((s) => s.querySelector('[data-how-count]')?.textContent)).toEqual([
+    'Шаг 1 из 4',
+    'Шаг 2 из 4',
+    'Шаг 3 из 4',
+    'Шаг 4 из 4',
   ]);
 });
 
@@ -54,9 +59,9 @@ it('shows a small screen and a short instruction on each step', () => {
     'Откройте сайт в Safari и нажмите «Подключить iPhone»',
     'Настройки → «Профиль загружен»',
     'Нажмите «Установить»',
+    'Дождитесь письма о готовности: обычно 2–3 часа в рабочее время',
   ]);
-  expect(slides[3]).toHaveTextContent('Обычно 2–3 часа в рабочее время.');
-  expect(slides[4]).toHaveTextContent('сертификатом разработчика Apple для вашего iPhone');
+  expect(slides[3]).toHaveTextContent('сертификатом разработчика Apple для вашего iPhone');
   expect(dialog).toHaveTextContent('Гарантия на весь срок подписки');
 });
 
@@ -84,13 +89,13 @@ it('goes through the steps with «Дальше» and ends with the button to con
     within(dialog)
       .getAllByRole('button', { name: /^Шаг \d/ })
       .map((d) => d.getAttribute('aria-current'));
-  expect(dots()).toEqual(['step', null, null, null, null]);
+  expect(dots()).toEqual(['step', null, null, null]);
   fireEvent.click(within(dialog).getByRole('button', { name: 'Дальше' }));
-  expect(dots()).toEqual([null, 'step', null, null, null]);
-  for (let k = 0; k < 3; k++) {
+  expect(dots()).toEqual([null, 'step', null, null]);
+  for (let k = 0; k < 2; k++) {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Дальше' }));
   }
-  expect(dots()).toEqual([null, null, null, null, 'step']);
+  expect(dots()).toEqual([null, null, null, 'step']);
   expect(within(dialog).queryByRole('button', { name: 'Дальше' })).toBeNull();
   expect(within(dialog).getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
     'href',

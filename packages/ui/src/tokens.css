@@ -74,7 +74,7 @@
   --x-type-minihead: 600 .625rem / 1.2 var(--x-font);
   /* «Как это работает» window titles: the first-screen pair, Inter Tight + Onest (owner 2026-11-24) */
   --x-type-howhead: 600 1.125rem / 1.2 var(--x-font-title);
-  --x-type-howstep: 600 1.5rem / 1.15 var(--x-font-title);
+  --x-type-howstep: 600 1.375rem / 1.15 var(--x-font-title);
   --x-track-head: -.03em;
   --x-track-body: 0em;
   --x-track-small: 0em;

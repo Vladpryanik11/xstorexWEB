@@ -2,7 +2,8 @@ import { SectionTitle } from '@xstore/ui';
 import { useId } from 'react';
 import styles from './HowItWorks.module.css';
 
-/** The steps after the payment (owner 2026-11-24 10:12–10:30): the same titles and texts in the
+/** The steps after the payment (owner 2026-11-24 10:12–10:30; 10:41 the wait for the email became
+ * the fourth point of «Подключите iPhone»): the same titles and texts in the
  * window under the first-screen button and in this section. `how` (a short instruction, point by
  * point) and `note` are shown in the window only. */
 export const HOW_STEPS: {
@@ -35,13 +36,9 @@ export const HOW_STEPS: {
       'Откройте сайт в Safari и нажмите «Подключить iPhone»',
       'Настройки → «Профиль загружен»',
       'Нажмите «Установить»',
+      'Дождитесь письма о готовности: обычно 2–3 часа в рабочее время',
     ],
     safe: 'Профиль передаёт только модель iPhone, версию iOS и номер устройства. Фото, сообщения, пароли и Apple ID нам не видны.',
-  },
-  {
-    title: 'Дождитесь письма',
-    text: 'Обычно 2–3 часа в рабочее время.',
-    note: 'Придёт письмо, что приложения готовы к установке.',
   },
   {
     title: 'Устанавливайте приложения',

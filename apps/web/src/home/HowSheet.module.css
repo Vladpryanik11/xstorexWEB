@@ -47,8 +47,10 @@
   border-radius: 1.75rem 1.75rem 0 0;
   background: var(--x-white);
   box-shadow: 0 -8px 30px rgba(10, 40, 100, 0.18);
+  /* The head, the dots and the button stay in place; a long step scrolls inside itself. */
+  display: flex;
+  flex-direction: column;
   max-height: calc(100svh - 0.5rem);
-  overflow-y: auto;
   box-sizing: border-box;
   text-align: center;
   animation: rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -94,6 +96,8 @@
 /* One step per screen width, swiped sideways. */
 .track {
   display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
   margin-top: 0.75rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -111,6 +115,8 @@
   align-content: start;
   gap: 0.375rem;
   padding: 0.25rem 0.25rem 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: none;
   scroll-snap-align: center;
 }
 
@@ -129,7 +135,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
-  width: 8rem;
+  width: 11rem;
   height: 9.25rem;
   padding: 0.625rem 0.5rem;
   border: 3px solid var(--x-text);
@@ -141,8 +147,33 @@
 }
 
 .screenHead {
+  overflow: hidden;
   font: var(--x-type-minihead);
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* «‹ Настройки», as at the top of an iOS settings page. */
+.back {
+  margin-bottom: -0.25rem;
+  color: #0a84ff;
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The row the step is about, lit as if under a finger. */
+.row[data-hot] {
+  margin: 0 -0.25rem;
+  padding: 0.1875rem 0.25rem;
+  border-radius: 0.375rem;
+  background: #e3f1ff;
+  font: var(--x-type-minihead);
 }
 
 .field {
@@ -170,7 +201,7 @@
   display: flex;
   align-items: center;
   gap: 0.3125rem;
-  padding-bottom: 0.25rem;
+  padding: 0.1875rem 0;
   border-bottom: 1px solid #eef1f5;
 }
 
@@ -200,36 +231,10 @@
   box-shadow: inset -0.5625rem 0 0 0.0625rem var(--x-white);
 }
 
-.mail {
-  display: grid;
-  gap: 0.0625rem;
-  padding: 0.25rem 0.25rem 0.375rem 0.625rem;
-  border-bottom: 1px solid #eef1f5;
-  position: relative;
-}
-
-.mail::before {
-  content: "";
-  position: absolute;
-  left: 0.125rem;
-  top: 0.5rem;
-  width: 0.3125rem;
-  height: 0.3125rem;
-  border-radius: 50%;
-  background: var(--x-cta);
-}
-
-.mail[data-read]::before {
-  display: none;
-}
-
-.mail b {
-  font: var(--x-type-minihead);
-}
-
 .apps {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1.875rem);
+  justify-content: center;
   gap: 0.375rem;
 }
 
@@ -239,17 +244,13 @@
   border-radius: 0.375rem;
 }
 
-.number {
-  display: inline-grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  margin-right: 0.5rem;
-  border-radius: 50%;
-  background: var(--x-cta);
-  color: var(--x-white);
-  font: var(--x-type-ui);
-  vertical-align: 0.125rem;
+/* «Шаг 2 из 4» above the title (owner 2026-11-24 10:41, «привести UI/UX в порядок»): the number no
+   longer pushes a long title onto two ragged lines. */
+.count {
+  margin: 0.25rem 0 0;
+  color: var(--x-cta);
+  font: var(--x-type-cap);
+  font-weight: 600;
 }
 
 .stepTitle {
@@ -258,20 +259,23 @@
   /* The first-screen pair (owner 2026-11-24 10:37): Inter Tight like «Удаленные из App Store». */
   font: var(--x-type-howstep);
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 .text {
   margin: 0;
   color: #3c4658;
   font: var(--x-type-lead);
+  text-wrap: pretty;
 }
 
 /* The short instruction, point by point. */
 .how {
   display: grid;
-  gap: 0.25rem;
-  margin: 0.25rem 0 0;
-  padding: 0;
+  margin: 0.5rem 0 0;
+  padding: 0 0.75rem;
+  border: 1px solid #e6ebf2;
+  border-radius: 0.875rem;
   list-style: none;
   counter-reset: how;
   text-align: left;
@@ -279,10 +283,17 @@
 
 .how li {
   display: flex;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.4375rem 0;
+  text-wrap: pretty;
   color: var(--x-text);
   font: var(--x-type-ui);
   counter-increment: how;
+}
+
+.how li + li {
+  border-top: 1px solid #eef1f5;
 }
 
 .how li::before {
@@ -324,6 +335,7 @@
 
 .safe span {
   min-width: 0;
+  text-wrap: pretty;
 }
 
 /* Honest about the wait for the iPhone (supplier spec §4.1). */
@@ -331,6 +343,7 @@
   margin: 0.25rem 0 0;
   color: #6e6e73;
   font: var(--x-type-cap);
+  text-wrap: pretty;
 }
 
 .dots {
@@ -427,26 +440,34 @@
   }
 }
 
-/* A phone of middle height (iPhone 15 in Safari) and a short one (iPhone SE): the small screen
-   shrinks so the whole window fits. */
+/* A phone of middle height (iPhone 15 in Safari): the small screen shrinks so the whole window fits. */
 @media (max-height: 45em) {
   .shot {
-    height: 8.5rem;
-    margin-bottom: 0.25rem;
+    height: 6.5rem;
+    margin-bottom: 0.125rem;
   }
 
   .screen {
-    zoom: 0.84;
+    zoom: 0.66;
+  }
+
+  .slide {
+    gap: 0.25rem;
+  }
+
+  .how li {
+    padding: 0.375rem 0;
+  }
+
+  .next {
+    margin-top: 0.5rem;
   }
 }
 
+/* iPhone SE: the instruction matters more than the picture, so the small screen steps aside. */
 @media (max-height: 38.75em) {
   .shot {
-    height: 6.5rem;
-  }
-
-  .screen {
-    zoom: 0.64;
+    display: none;
   }
 }
 
