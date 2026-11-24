@@ -56,13 +56,13 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
     'Более 10 000 пользователей в месяц',
   );
   expect(container.querySelectorAll('[data-hero-audience] [data-avatar]')).toHaveLength(3);
-  // Owner 2026-11-24 09:24: three drawn faces, each head whole inside its circle.
+  // Owner 2026-11-24 09:28: three photos of people, each head whole inside its circle.
   const avatars = [...container.querySelectorAll('[data-hero-audience] [data-avatar]')];
   expect(avatars.map((a) => a.tagName)).toEqual(['IMG', 'IMG', 'IMG']);
   expect(avatars.map((a) => a.getAttribute('src'))).toEqual([
-    '/home/avatars/1.svg',
-    '/home/avatars/2.svg',
-    '/home/avatars/3.svg',
+    '/home/avatars/1.webp',
+    '/home/avatars/2.webp',
+    '/home/avatars/3.webp',
   ]);
   expect(container.querySelector('[data-hero-audience] [data-avatar]')?.textContent).toBe('');
 

@@ -31,8 +31,8 @@ const PROMISES = [
   },
 ];
 
-/** Three drawn faces in the audience line, each head whole inside its circle (owner 2026-11-24 09:24). */
-const AVATARS = ['/home/avatars/1.svg', '/home/avatars/2.svg', '/home/avatars/3.svg'];
+/** Three photos in the audience line, each head whole inside its circle (owner 2026-11-24 09:28). */
+const AVATARS = ['/home/avatars/1.webp', '/home/avatars/2.webp', '/home/avatars/3.webp'];
 
 export type { HeroLaneApps };
 
@@ -99,7 +99,7 @@ export function HomeHero({
         <p className={styles.audience} data-hero-audience="">
           <span className={styles.avatars} aria-hidden="true">
             {AVATARS.map((src) => (
-              // biome-ignore lint/performance/noImgElement: three 26px static drawings, 1.5 KB each
+              // biome-ignore lint/performance/noImgElement: three 26px static photos, 2 KB each
               <img key={src} src={src} alt="" width={26} height={26} data-avatar="" />
             ))}
           </span>
