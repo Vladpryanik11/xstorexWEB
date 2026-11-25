@@ -33,7 +33,10 @@ test('«Тарифы» shows the plan card of the home page', async ({ page }) =
 test('the footer names Xstorex and writes to support, with no dead links', async ({ page }) => {
   await page.goto('/faq');
   const footer = page.locator('footer');
-  await expect(footer.getByRole('link', { name: 'Xstorex', exact: true })).toHaveAttribute('href', '/');
+  await expect(footer.getByRole('link', { name: 'Xstorex', exact: true })).toHaveAttribute(
+    'href',
+    '/',
+  );
   await expect(footer.getByRole('link', { name: 'support@xstorex.app' })).toHaveAttribute(
     'href',
     'mailto:support@xstorex.app',
