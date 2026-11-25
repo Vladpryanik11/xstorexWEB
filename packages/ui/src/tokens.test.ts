@@ -38,8 +38,9 @@ describe('palette E tokens (spec 2026-11-17, §3–4)', () => {
     expect(token(name)).toBe(value);
   });
 
-  it('page background is ice', () => {
-    expect(css).toMatch(/body\s*\{\s*background:\s*var\(--x-ice\)/);
+  // Owner 2026-11-25 (ПК, пункт 6): every page of the site is white, like the home page.
+  it('page background is white', () => {
+    expect(css).toMatch(/body\s*\{\s*background:\s*var\(--x-white\)/);
   });
 
   it.each([
@@ -57,17 +58,18 @@ describe('palette E tokens (spec 2026-11-17, §3–4)', () => {
 });
 
 describe('typography tokens (spec 2026-11-23-home-first-screen §1)', () => {
-  it('Onest sets the text, Unbounded the headings', () => {
+  // Owner 2026-11-25 (ПК, пункт 5): headings everywhere in the font of the home page title.
+  it('Onest sets the text, Inter Tight the headings', () => {
     expect(token('--x-font')).toMatch(/^var\(--font-onest, onest\)/);
-    expect(token('--x-font-head')).toMatch(/^var\(--font-unbounded, unbounded\)/);
+    expect(token('--x-font-head')).toBe('var(--x-font-title)');
     expect(token('--x-system')).toBeUndefined();
     expect(css).not.toMatch(/helvetica/i);
   });
 
   it.each([
-    ['--x-type-display', '500 clamp(2.125rem, 1.6rem + 2.2vw, 3rem) / 1.08 var(--x-font-head)'],
-    ['--x-type-h1', '500 1.75rem / 1.1 var(--x-font-head)'],
-    ['--x-type-h2', '500 1.375rem / 1.25 var(--x-font-head)'],
+    ['--x-type-display', '600 clamp(2.125rem, 1.6rem + 2.2vw, 3rem) / 1.08 var(--x-font-head)'],
+    ['--x-type-h1', '600 1.75rem / 1.1 var(--x-font-head)'],
+    ['--x-type-h2', '600 1.375rem / 1.25 var(--x-font-head)'],
     ['--x-type-h3', '600 1.0625rem / 1.3 var(--x-font)'],
     ['--x-type-body', '400 1rem / 1.5 var(--x-font)'],
     ['--x-type-ui', '500 .875rem / 1.4 var(--x-font)'],

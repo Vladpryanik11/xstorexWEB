@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import styles from './Footer.module.css';
+import { SUPPORT_MAIL } from './nav';
 
 const groups = [
   [
     { href: '/faq', label: 'Вопросы' },
-    { href: '/support', label: 'Поддержка' },
+    // Support is by mail (owner 2026-11-25, ПК пункт 9): the address itself, there is no page.
+    { href: `mailto:${SUPPORT_MAIL}`, label: SUPPORT_MAIL },
     { href: '/legal', label: 'Контакты' },
   ],
   [
@@ -37,7 +39,7 @@ export function Footer() {
           <Link className={styles.brand} href="/">
             {/* biome-ignore lint/performance/noImgElement: a 36px static logo needs no optimisation */}
             <img src="/brand/mark.png" alt="" width={36} height={36} />
-            <span>Xstore</span>
+            <span>Xstorex</span>
           </Link>
           {telegram ? (
             <a
@@ -51,9 +53,6 @@ export function Footer() {
             </a>
           ) : null}
         </div>
-        <p className={styles.tagline}>
-          Приложения для iPhone и iPad. Только с правами на распространение.
-        </p>
         <nav className={styles.groups} aria-label="Разделы сайта">
           {groups.map((links) => (
             <ul key={links[0]?.href}>
@@ -68,7 +67,7 @@ export function Footer() {
           ))}
         </nav>
         <div className={styles.base}>
-          <p className={styles.small}>© 2026 Xstore</p>
+          <p className={styles.small}>© 2026 Xstorex</p>
         </div>
       </div>
     </footer>

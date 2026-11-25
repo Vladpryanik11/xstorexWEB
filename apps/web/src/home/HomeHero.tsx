@@ -1,7 +1,5 @@
-import type { CollectionView } from '@xstore/shared';
 import { useId } from 'react';
 import { HeroFinder, type HeroLaneApps } from './HeroFinder';
-import { HeroPhone } from './HeroPhone';
 import styles from './HomeHero.module.css';
 import { HowSheet } from './HowSheet';
 
@@ -42,13 +40,7 @@ export type { HeroLaneApps };
  * search, the «Подключить iPhone» button, three promises and the audience (owner 2026-11-24: the
  * three steps left the first screen; «Как это работает» further down keeps them).
  */
-export function HomeHero({
-  collections,
-  lanes,
-}: {
-  collections: CollectionView[];
-  lanes: HeroLaneApps;
-}) {
+export function HomeHero({ lanes }: { lanes: HeroLaneApps }) {
   const promisesId = useId();
   return (
     <section className={styles.hero} data-home-hero>
@@ -91,9 +83,6 @@ export function HomeHero({
             </li>
           ))}
         </ul>
-        <div className={styles.visual} aria-hidden="true">
-          <HeroPhone collections={collections} />
-        </div>
       </div>
       <div className={styles.after}>
         <p className={styles.audience} data-hero-audience="">

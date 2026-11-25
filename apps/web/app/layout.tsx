@@ -2,12 +2,12 @@ import '@xstore/ui/tokens.css';
 import './globals.css';
 import { Toaster } from '@xstore/ui';
 import type { Metadata, Viewport } from 'next';
-import { Inter_Tight, Onest, Unbounded } from 'next/font/google';
+import { Inter_Tight, Onest } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { SessionRenewal } from '../src/auth/SessionRenewal';
 
-// Spec 2026-11-23-home-first-screen §1: Unbounded sets the headings, Onest all other text.
-// next/font self-hosts both.
+// Onest sets the text; Inter Tight 600 the headings (owner 2026-11-25, ПК пункт 5: Unbounded left
+// the site). next/font self-hosts both.
 const onest = Onest({
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '600'],
@@ -15,14 +15,7 @@ const onest = Onest({
   display: 'swap',
 });
 
-const unbounded = Unbounded({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['500'],
-  variable: '--font-unbounded',
-  display: 'swap',
-});
-
-// The first-screen title (owner 2026-11-23, «ближе к Apple»): Inter Tight 600.
+// Every heading (owner 2026-11-23 «ближе к Apple», 2026-11-25 everywhere): Inter Tight 600.
 const interTight = Inter_Tight({
   subsets: ['latin', 'cyrillic'],
   weight: ['600'],
@@ -40,12 +33,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#f2f8fd',
+  // The pages are white (owner 2026-11-25), so is the iPhone status bar over them.
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${onest.variable} ${unbounded.variable} ${interTight.variable}`}>
+    <html lang="ru" className={`${onest.variable} ${interTight.variable}`}>
       <body>
         <SessionRenewal />
         {children}

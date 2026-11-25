@@ -10,7 +10,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 17rem;
   gap: 0.625rem;
-  width: min(62rem, calc(100vw - 2 * var(--x-gutter)));
+  /* As wide as its content (owner 2026-11-25, ПК пункт 4): one column of three items and the
+     blue card, no empty middle. */
+  width: min(40rem, calc(100vw - 2 * var(--x-gutter)));
   padding: 0.75rem;
   border-radius: var(--x-radius-panel);
   background: var(--x-white);
@@ -37,9 +39,8 @@
 
 .list {
   display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(3, auto);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   gap: 0.25rem;
   margin: 0;
   padding: 0;
@@ -145,8 +146,9 @@
 }
 
 .promoTitle {
-  font: var(--x-type-h2);
-  letter-spacing: var(--x-track-head);
+  /* The words and the font of the plan card on the home page (owner 2026-11-25). */
+  font: var(--x-type-sectionsm);
+  letter-spacing: -0.01em;
 }
 
 .promoLink {

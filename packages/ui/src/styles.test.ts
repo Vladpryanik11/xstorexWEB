@@ -39,6 +39,16 @@ describe('ui styles follow palette E (spec 2026-11-17 §3–4)', () => {
     );
   });
 
+  // Owner 2026-11-25 (ПК, пункт 7): one button on the whole site, the flat Apple blue of the home.
+  it('primary button is the flat home blue, without a shadow', () => {
+    const p = rule('button/Button.module.css', '.primary');
+    expect(p).toContain('background: var(--x-cta)');
+    expect(p).not.toContain('box-shadow');
+    expect(rule('button/Button.module.css', '.primary:hover')).toContain(
+      'background: var(--x-cta-pressed)',
+    );
+  });
+
   it('quiet button is sky with quiet text', () => {
     const q = rule('button/Button.module.css', '.quiet');
     expect(q).toContain('background: var(--x-sky-50)');

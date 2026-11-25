@@ -147,9 +147,19 @@ describe('Header', () => {
   });
 
   it('forcedPath overrides the current path', () => {
-    render(<Header nav={SUB} forcedPath="/blog" />);
-    expect(screen.getByRole('link', { name: 'Блог' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Вопросы' })).not.toHaveAttribute('aria-current');
+    render(<Header nav={SUB} forcedPath="/faq" />);
+    expect(screen.getByRole('link', { name: 'Вопросы' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Как это работает' })).not.toHaveAttribute(
+      'aria-current',
+    );
+  });
+
+  // Owner 2026-11-25 (ПК, пункт 3): the blog page does not exist yet, so no link leads there.
+  it('has no «Блог» link while there is no blog', () => {
+    render(<Header nav={SUB} />);
+    expect(screen.queryByRole('link', { name: 'Блог' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
+    expect(within(screen.getByRole('dialog')).queryByRole('link', { name: 'Блог' })).toBeNull();
   });
 });
 
@@ -182,7 +192,11 @@ describe('MobileMenu', () => {
       'Поиск',
     ]);
     expect(labels(cards[1] as HTMLElement)).toEqual(['Мой доступ']);
-    expect(labels(cards[2] as HTMLElement)).toEqual(['Блог', 'Вопросы', 'Поддержка']);
+    expect(labels(cards[2] as HTMLElement)).toEqual(['Вопросы', 'Поддержка']);
+    // Support is by mail (no /support page): the menu writes to it.
+    expect(
+      within(cards[2] as HTMLElement).getByRole('link', { name: 'Поддержка' }),
+    ).toHaveAttribute('href', 'mailto:support@xstorex.app');
     expect(within(sheet).getByRole('link', { name: 'Вопросы' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -258,14 +272,14 @@ describe('MobileMenu', () => {
     fireEvent.click(burger);
     expect(within(screen.getByRole('dialog')).getAllByRole('link')[0]).toHaveFocus();
 
-    nav.pathname = '/blog';
+    nav.pathname = '/faq';
     rerender(<Header nav={SUB} />);
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(burger).toHaveAttribute('aria-expanded', 'false');
     // Focus was inside the sheet, so it goes back to the burger instead of being lost.
     expect(burger).toHaveFocus();
-    expect(screen.getByRole('link', { name: 'Блог' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Вопросы' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('closes when a header link above the sheet navigates, keeping focus on that link', () => {
@@ -326,13 +340,14 @@ describe('CatalogMenu', () => {
   const button = () => screen.getByRole('button', { name: 'Каталог' });
   const panel = () => document.getElementById(button().getAttribute('aria-controls') ?? '');
 
-  it('«Каталог» leads the menu row: how it works, questions, blog', () => {
+  it('«Каталог» leads the menu row: how it works, questions', () => {
     render(<Header nav={GUEST} />);
     const row = screen.getByRole('navigation', { name: 'Основное меню' });
     const names = within(row)
       .getAllByRole('listitem')
       .map((li) => li.firstElementChild?.textContent);
-    expect(names.slice(0, 4)).toEqual(['Каталог', 'Как это работает', 'Вопросы', 'Блог']);
+    expect(names.slice(0, 3)).toEqual(['Каталог', 'Как это работает', 'Вопросы']);
+    expect(names).not.toContain('Блог');
     expect(button()).toHaveAttribute('aria-expanded', 'false');
     expect(panel()).toBeNull();
   });
@@ -407,7 +422,7 @@ describe('CatalogMenu', () => {
     viewport.wide = true;
     render(<Header nav={GUEST} />);
     fireEvent.mouseEnter(button());
-    fireEvent.mouseEnter(screen.getByRole('link', { name: 'Блог' }));
+    fireEvent.mouseEnter(screen.getByRole('link', { name: 'Вопросы' }));
     expect(button()).toHaveAttribute('aria-expanded', 'false');
   });
 

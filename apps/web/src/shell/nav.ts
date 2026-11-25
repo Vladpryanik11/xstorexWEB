@@ -17,18 +17,22 @@ const access: NavItem = { href: '/access', label: 'Мой доступ' };
 
 const connect: NavItem = { href: '/get', label: 'Подключить iPhone' };
 
-/** Help pages: the phone menu card «Помощь» (the footer lists them too). */
+/** Support is by mail in working hours; there is no support page. */
+export const SUPPORT_MAIL = 'support@xstorex.app';
+
+/**
+ * Help: the phone menu card «Помощь». No «Блог» until the blog exists (owner 2026-11-25, ПК
+ * пункт 3); «Поддержка» writes to the support mail.
+ */
 const siteItems: NavItem[] = [
-  { href: '/blog', label: 'Блог' },
   { href: '/faq', label: 'Вопросы' },
-  { href: '/support', label: 'Поддержка' },
+  { href: `mailto:${SUPPORT_MAIL}`, label: 'Поддержка' },
 ];
 
-/** The middle row after «Каталог» (owner 2026-11-23, spec 2026-11-23-home-first-screen §2). */
+/** The middle row after «Каталог» (spec 2026-11-23-home-first-screen §2, owner 2026-11-25). */
 const rowItems: NavItem[] = [
   { href: '/#how', label: 'Как это работает' },
   { href: '/faq', label: 'Вопросы' },
-  { href: '/blog', label: 'Блог' },
 ];
 
 /** `GET /access` sends `email` and `hasPassword` only with a buyer session. */
@@ -138,7 +142,7 @@ export function catalogMenu(state: NavState): { items: CatalogMenuItem[]; promo:
       }
     : {
         kicker: 'Подписка',
-        title: 'Весь каталог на месяц по одной цене',
+        title: 'Весь каталог в одной подписке',
         href: '/pricing',
         label: 'Смотреть тарифы',
       };

@@ -33,13 +33,13 @@
   --x-gutter: 1.25rem;
   --x-column: 33rem;
   --x-page-max: 70rem; /* ≥64em: clamp(70rem, 100vw - 10rem, 90rem) */
-  /* type — spec 2026-11-23-home-first-screen §1: Unbounded for headings, Onest for everything else.
-     next/font exposes the self-hosted faces as --font-unbounded / --font-onest. */
+  /* type — Onest for text; headings in Inter Tight 600, the font of the home title (owner
+     2026-11-25, ПК пункт 5; it replaced Unbounded). next/font exposes the faces as --font-*. */
   --x-font: var(--font-onest, Onest), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --x-font-head: var(--font-unbounded, Unbounded), var(--font-onest, Onest), -apple-system, system-ui, sans-serif;
-  --x-type-display: 500 clamp(2.125rem, 1.6rem + 2.2vw, 3rem) / 1.08 var(--x-font-head);
-  --x-type-h1: 500 1.75rem / 1.1 var(--x-font-head);
-  --x-type-h2: 500 1.375rem / 1.25 var(--x-font-head);
+  --x-font-head: var(--x-font-title);
+  --x-type-display: 600 clamp(2.125rem, 1.6rem + 2.2vw, 3rem) / 1.08 var(--x-font-head);
+  --x-type-h1: 600 1.75rem / 1.1 var(--x-font-head);
+  --x-type-h2: 600 1.375rem / 1.25 var(--x-font-head);
   --x-type-h3: 600 1.0625rem / 1.3 var(--x-font);
   --x-type-body: 400 1rem / 1.5 var(--x-font);
   --x-type-ui: 500 .875rem / 1.4 var(--x-font);
@@ -114,8 +114,9 @@
   }
 }
 
+/* Every page is white, like the home page (owner 2026-11-25, ПК пункт 6). */
 body {
-  background: var(--x-ice);
+  background: var(--x-white);
 }
 
 /* component tokens (design skill «Components») */

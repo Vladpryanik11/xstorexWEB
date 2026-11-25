@@ -13,18 +13,19 @@ describe('root layout', () => {
       width: 'device-width',
       initialScale: 1,
       maximumScale: 1,
-      themeColor: '#f2f8fd',
+      themeColor: '#ffffff',
     });
     // diyorde.com sets no viewport-fit: with `cover` landscape iPhone puts the logo under the notch.
     expect(viewport).not.toHaveProperty('viewportFit');
     expect(viewport).not.toHaveProperty('userScalable');
   });
 
-  it('serves Unbounded, Onest and Inter Tight through next/font on <html>', async () => {
+  it('serves Onest and Inter Tight through next/font on <html>, no Unbounded', async () => {
     const { default: RootLayout } = await import('./layout');
     const html = RootLayout({ children: null }) as { props: { className: string } };
     expect(html.props.className.split(' ')).toEqual(
-      expect.arrayContaining(['var-onest', 'var-unbounded', 'var-inter-tight']),
+      expect.arrayContaining(['var-onest', 'var-inter-tight']),
     );
+    expect(html.props.className).not.toContain('var-unbounded');
   });
 });
