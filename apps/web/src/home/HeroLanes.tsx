@@ -5,8 +5,12 @@ import Link from 'next/link';
 import { type MouseEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import styles from './HeroLanes.module.css';
 
-/** Icons in one copy of the lane: enough to run past the right edge of a computer screen. */
-const PER_LANE = 12;
+/**
+ * Icons in one copy of the lane. The view stays within half a copy of the middle one, so a copy
+ * must be at least ⅔ of the lane wide for the search to reach the middle of any app: the lane
+ * spans the whole screen on a computer (owner 2026-11-25), and 24 icons of 76 px cover 2560 px.
+ */
+const PER_LANE = 24;
 /** Copies of the lane side by side: the view stays in the middle one, so the lane never ends. */
 const COPIES = 3;
 /** The middle icon is this much larger (owner 2026-11-24, «Заметно»). */

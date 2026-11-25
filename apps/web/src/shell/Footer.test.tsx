@@ -9,12 +9,14 @@ afterEach(() => {
 describe('Footer', () => {
   it('shows the brand, the site links and the copyright', () => {
     render(<Footer />);
-    const brand = screen.getByRole('link', { name: 'Xstore' });
+    // Owner 2026-11-25 (ПК, пункт 9): the brand is Xstorex everywhere.
+    const brand = screen.getByRole('link', { name: 'Xstorex' });
     expect(brand).toHaveAttribute('href', '/');
     expect(brand.querySelector('img')).toHaveAttribute('src', '/brand/mark.png');
     const links: [string, string][] = [
       ['Вопросы', '/faq'],
-      ['Поддержка', '/support'],
+      // Support is by mail only, so the footer shows the address (there is no /support page).
+      ['support@xstorex.app', 'mailto:support@xstorex.app'],
       ['Контакты', '/legal'],
       ['Пользовательское соглашение', '/terms'],
       ['Политика конфиденциальности', '/privacy'],
@@ -26,10 +28,9 @@ describe('Footer', () => {
     }
     // The blog comes in stage 2 (plan 2026-11-21, 1.2).
     expect(screen.queryByRole('link', { name: 'Блог' })).toBeNull();
-    expect(
-      screen.getByText('Приложения для iPhone и iPad. Только с правами на распространение.'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('© 2026 Xstore')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Поддержка' })).toBeNull();
+    expect(screen.queryByText(/Только с правами на распространение/)).toBeNull();
+    expect(screen.getByText('© 2026 Xstorex')).toBeInTheDocument();
   });
 
   it('has no Telegram link without NEXT_PUBLIC_TELEGRAM_URL', () => {

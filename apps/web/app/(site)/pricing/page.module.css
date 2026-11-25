@@ -1,24 +1,30 @@
-/* /pricing: one plan card and a few questions, centred in a narrow column. */
+/* /pricing: the title, then the plan card and the questions of the home page (owner 2026-11-25). */
 
 .page {
   box-sizing: content-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 2.5rem;
   max-width: var(--x-column);
   margin-inline: auto;
-  padding: 1.5rem var(--x-gutter) 3rem;
+  padding: 1.5rem var(--x-gutter) 3.5rem;
+}
+
+/* The home blocks pad themselves by the gutter; here the page already does. */
+.page > section {
+  padding-inline: 0;
 }
 
 .head {
   display: grid;
   gap: 0.5rem;
+  text-align: center;
 }
 
 .title {
   margin: 0;
   font: var(--x-type-display);
-  letter-spacing: var(--x-track-head);
+  letter-spacing: -0.02em;
 }
 
 .lead {
@@ -26,115 +32,4 @@
   color: var(--x-text-2);
   font: var(--x-type-body);
   letter-spacing: var(--x-track-body);
-}
-
-.card {
-  display: grid;
-  gap: 1.25rem;
-  padding: 1.75rem 1.5rem;
-  border-radius: var(--x-radius-panel);
-  background: var(--x-card);
-  box-shadow: var(--x-shadow);
-}
-
-.planTitle {
-  margin: 0;
-  font: var(--x-type-h2);
-  letter-spacing: var(--x-track-head);
-}
-
-.price {
-  margin: 0;
-  font: var(--x-type-display);
-  letter-spacing: var(--x-track-head);
-}
-
-.per {
-  color: var(--x-text-2);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-.list {
-  display: grid;
-  gap: 0.625rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-.tick {
-  flex: none;
-  margin-top: 0.125rem;
-  padding: 0.125rem;
-  border-radius: var(--x-radius-pill);
-  background: var(--x-sky-50);
-  color: var(--x-blue);
-}
-
-.note {
-  margin: 0;
-  color: var(--x-text-2);
-  font: var(--x-type-ui);
-  letter-spacing: var(--x-track-small);
-}
-
-.cta {
-  width: 100%;
-}
-
-.faq {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.faqTitle {
-  margin: 0 0 0.25rem;
-  font: var(--x-type-h2);
-  letter-spacing: var(--x-track-head);
-}
-
-.question {
-  border-radius: var(--x-radius-card);
-  background: var(--x-card);
-  box-shadow: var(--x-shadow-sm);
-}
-
-.summary {
-  padding: 1rem 1.25rem;
-  border-radius: var(--x-radius-card);
-  font: var(--x-type-h3);
-  letter-spacing: var(--x-track-body);
-  cursor: pointer;
-}
-
-.summary:focus-visible {
-  outline: 2px solid var(--x-blue-ring);
-  outline-offset: 2px;
-}
-
-.answer {
-  margin: 0;
-  padding: 0 1.25rem 1.125rem;
-  color: var(--x-text-2);
-  font: var(--x-type-body);
-  letter-spacing: var(--x-track-body);
-}
-
-@media (min-width: 48em) {
-  .page {
-    padding-block: 2.5rem 4rem;
-  }
-
-  .card {
-    padding: 2.25rem 2rem;
-  }
 }

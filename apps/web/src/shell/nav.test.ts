@@ -62,8 +62,8 @@ describe('navStateFrom', () => {
 
 describe('navItems', () => {
   it('the middle row is the same for everyone', () => {
-    expect(navItems().map((i) => i.label)).toEqual(['Как это работает', 'Вопросы', 'Блог']);
-    expect(navItems().map((i) => i.href)).toEqual(['/#how', '/faq', '/blog']);
+    expect(navItems().map((i) => i.label)).toEqual(['Как это работает', 'Вопросы']);
+    expect(navItems().map((i) => i.href)).toEqual(['/#how', '/faq']);
   });
 });
 
@@ -116,6 +116,8 @@ describe('catalogMenu', () => {
       expect(catalogMenu(state).promo).toMatchObject({
         href: '/pricing',
         label: 'Смотреть тарифы',
+        // Owner 2026-11-25 (ПК, пункт 4): the words of the plan card on the home page.
+        title: 'Весь каталог в одной подписке',
       });
     }
   });

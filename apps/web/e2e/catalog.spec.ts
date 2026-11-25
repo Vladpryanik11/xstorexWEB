@@ -120,7 +120,7 @@ test('no horizontal overflow on home at 320px', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('home hero: bright sky with white text under the pill; the iPhone is for wide screens', async ({
+test('home hero: bright sky with white text under the pill; no iPhone picture', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -134,7 +134,7 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   );
   expect((await sky.boundingBox())?.y).toBe(0);
   const phone = hero.locator('[data-hero-phone]');
-  await expect(phone).toBeHidden();
+  await expect(phone).toHaveCount(0);
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
   // Owner 2026-11-24 («как у Apple», Б; «грязновато» → чистый вариант 2): no shadow or haze on
@@ -175,9 +175,22 @@ test('home hero: bright sky with white text under the pill; the iPhone is for wi
   ).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await expect(phone).toBeVisible();
-  expect(await phone.locator('[data-app] img').count()).toBeGreaterThan(0);
+  // Owner 2026-11-25 (ПК, вариант А «По центру»): on a computer the first screen is one centred
+  // column like on a phone, and the lane runs across the whole screen.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(phone).toHaveCount(0);
+  const centre = async (loc: import('@playwright/test').Locator) => {
+    const b = await loc.boundingBox();
+    return (b?.x ?? 0) + (b?.width ?? 0) / 2;
+  };
+  for (const part of [title, hero.locator('form[role=search]'), hero.locator('[data-hero-cta]')]) {
+    expect(Math.abs((await centre(part)) - 720)).toBeLessThan(2);
+  }
+  await expect(title).toHaveCSS('text-align', 'center');
+  const lane = await hero.locator('[data-hero-lane]').boundingBox();
+  expect(lane?.x ?? 1).toBeLessThanOrEqual(0);
+  expect((lane?.x ?? 0) + (lane?.width ?? 0)).toBeGreaterThanOrEqual(1440);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('an app morphs into its sheet; Escape closes it and returns focus', async ({ page }) => {

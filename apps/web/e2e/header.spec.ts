@@ -53,10 +53,10 @@ test('highlight follows the hovered item and returns to the active one', async (
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/dev/ui?auth=1&path=/faq');
   const nav = page.getByRole('navigation', { name: 'Основное меню' });
-  await nav.getByRole('link', { name: 'Блог' }).hover();
-  await expect(nav.getByRole('link', { name: 'Блог' }).locator('[data-nav-highlight]')).toHaveCount(
-    1,
-  );
+  await nav.getByRole('link', { name: 'Как это работает' }).hover();
+  await expect(
+    nav.getByRole('link', { name: 'Как это работает' }).locator('[data-nav-highlight]'),
+  ).toHaveCount(1);
   await page.mouse.move(5, 700);
   await expect(
     nav.getByRole('link', { name: 'Вопросы' }).locator('[data-nav-highlight]'),
@@ -129,13 +129,13 @@ test('focus ring stays visible in the open card menu', async ({ page }) => {
   await expect(burger).toHaveCSS('outline-color', 'rgb(34, 118, 243)');
 });
 
-test('iPhone status bar matches the sky on the home page and the ice elsewhere', async ({
+test('iPhone status bar matches the sky on the home page and the white pages elsewhere', async ({
   page,
 }) => {
   await page.goto('/');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1e8fff');
   await page.goto('/faq');
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f2f8fd');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff');
 });
 
 test('«Каталог» panel opens under the pill on hover and closes on Escape', async ({ page }) => {
@@ -167,6 +167,12 @@ test('«Каталог» panel opens under the pill on hover and closes on Escap
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(1280);
   expect(Math.abs(box.x + box.width / 2 - 640)).toBeLessThanOrEqual(2);
+  // Owner 2026-11-25 (ПК пункт 4): as wide as its content, the words of the home plan card.
+  expect(box.width).toBeLessThanOrEqual(640);
+  await expect(panel.getByText('Весь каталог в одной подписке')).toHaveCSS(
+    'font-family',
+    /Inter Tight/i,
+  );
   expect(await noHorizontalScroll(page)).toBe(true);
 
   if (mouse) {

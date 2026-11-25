@@ -125,9 +125,14 @@ const QUESTIONS = [
     'Обычно 2–3 часа в рабочее время. Когда всё готово, придёт письмо.',
   ],
   ['Как связаться с поддержкой?', 'Напишите нам на почту. Отвечаем в рабочие часы.'],
-];
+] as const;
 
-export function HomeFaq() {
+/** The questions under the plan; «Тарифы» asks its own (owner 2026-11-25, ПК пункт 8). */
+export function HomeFaq({
+  questions = QUESTIONS,
+}: {
+  questions?: readonly (readonly [string, string])[];
+}) {
   const id = useId();
   return (
     <section className={styles.block} aria-labelledby={id}>
@@ -135,7 +140,7 @@ export function HomeFaq() {
         Частые вопросы
       </h2>
       <div className={styles.faq}>
-        {QUESTIONS.map(([q, a]) => (
+        {questions.map(([q, a]) => (
           <details key={q}>
             <summary>{q}</summary>
             <p>{a}</p>

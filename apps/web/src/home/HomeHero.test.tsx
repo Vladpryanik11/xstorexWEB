@@ -1,9 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
-import type { AppCard, CollectionView } from '@xstore/shared';
+import type { AppCard } from '@xstore/shared';
 import { expect, it } from 'vitest';
 import { HomeHero } from './HomeHero';
 
-const collections: CollectionView[] = [];
 const lanes = {
   removed: [{ slug: 'r', name: 'r', iconUrl: '/r.png' }] as AppCard[],
   premium: [{ slug: 'p', name: 'p', iconUrl: '/p.png' }] as AppCard[],
@@ -14,7 +13,7 @@ const follows = (a: Element, b: Element) =>
 
 // Spec 2026-11-23-home-first-screen §3 (owner 2026-11-23).
 it('first screen in the approved order: promise, lanes, search, button, three promises, audience', () => {
-  const { container } = render(<HomeHero collections={collections} lanes={lanes} />);
+  const { container } = render(<HomeHero lanes={lanes} />);
 
   const h1 = screen.getByRole('heading', {
     level: 1,
@@ -82,16 +81,20 @@ it('first screen in the approved order: promise, lanes, search, button, three pr
 
 // Owner 2026-11-24: the three steps leave the first screen (the «Как это работает» section stays).
 it('ends the first screen with the audience line, without the three steps', () => {
-  render(<HomeHero collections={collections} lanes={lanes} />);
+  render(<HomeHero lanes={lanes} />);
   expect(screen.queryByRole('list', { name: 'Три шага' })).toBeNull();
   expect(screen.queryByText('Подключи')).toBeNull();
   expect(screen.queryByText('Установка прямо с сайта')).toBeNull();
 });
 
-it('keeps the sky and the computer picture away from screen readers', () => {
-  const { container } = render(<HomeHero collections={collections} lanes={lanes} />);
+it('keeps the sky away from screen readers', () => {
+  const { container } = render(<HomeHero lanes={lanes} />);
   const sky = container.querySelector('[data-hero-sky]');
   expect(sky).toHaveAttribute('aria-hidden', 'true');
-  const phone = container.querySelector('[data-hero-phone]');
-  expect(phone?.closest('[aria-hidden="true"]')).not.toBeNull();
+});
+
+// Owner 2026-11-25 (ПК, вариант А «По центру»): no iPhone picture beside the text on a computer.
+it('draws no iPhone picture beside the text', () => {
+  const { container } = render(<HomeHero lanes={lanes} />);
+  expect(container.querySelector('[data-hero-phone]')).toBeNull();
 });

@@ -45,8 +45,7 @@ async function laneApps(api: Awaited<ReturnType<typeof serverApi>>, slug: 'remov
 
 export default async function HomePage({ searchParams }: Props) {
   const api = await serverApi();
-  const [home, shared, priceRub, removed, premium] = await Promise.all([
-    api.home(),
+  const [shared, priceRub, removed, premium] = await Promise.all([
     sharedApp(api, (await searchParams).app),
     planPrice(api),
     laneApps(api, 'removed'),
@@ -55,7 +54,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <>
-      <HomeHero collections={home.collections} lanes={{ removed, premium }} />
+      <HomeHero lanes={{ removed, premium }} />
       {/* Owner 2026-11-24 12:29 (variant Б): the first screen answers the questions, so under it
           only the plan and the questions stay, on white for the sky to flow into. */}
       <div className={styles.flow}>

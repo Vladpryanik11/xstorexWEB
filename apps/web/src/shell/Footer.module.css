@@ -50,14 +50,6 @@
   outline-offset: 3px;
 }
 
-.tagline {
-  max-width: 22rem;
-  margin: 1rem 0 0;
-  color: #6e6e73;
-  font: var(--x-type-leadsm);
-  letter-spacing: 0;
-}
-
 .social {
   position: relative;
   display: grid;
@@ -152,6 +144,31 @@
 
   .base {
     margin-top: 2.5rem;
+  }
+}
+
+/* Computer (owner 2026-11-25, ПК пункт 9): the brand on the left, the two groups of links
+   compact on the right of the same row, the copyright under both. */
+@media (min-width: 64em) {
+  .inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 4rem;
+    align-items: start;
+  }
+
+  .groups {
+    grid-template-columns: repeat(2, max-content);
+    column-gap: 5rem;
+    margin-top: 0;
+  }
+
+  .groups ul {
+    align-content: start;
+  }
+
+  .base {
+    grid-column: 1 / -1;
   }
 }
 

@@ -1,8 +1,7 @@
-import { ApiClientError, type PlanView } from '@xstore/shared';
-import { Button } from '@xstore/ui';
+import { ApiClientError, type AppCard } from '@xstore/shared';
 import type { Metadata } from 'next';
 import { serverApi } from '../../../src/api/server';
-import { formatRub } from '../../../src/checkout/wizard-step';
+import { HomeFaq, HomePlan } from '../../../src/home/HomeSell';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -10,98 +9,56 @@ export const metadata: Metadata = {
   description: 'Один тариф: весь каталог приложений для iPhone на месяц.',
 };
 
-const included = [
-  'Все приложения каталога',
-  'Установка прямо из Safari, без компьютера',
-  'Для одного iPhone',
-  'Новые версии приложений, пока действует доступ',
-];
-
 const questions = [
-  {
-    q: 'Когда начнётся подписка?',
-    a: 'Сразу после оплаты. Срок — 1 месяц с момента, когда оплата подтвердилась.',
-  },
-  {
-    q: 'Нужна ли регистрация?',
-    a: 'Нет. Достаточно почты: на неё придёт письмо об оплате и код для входа.',
-  },
-  {
-    q: 'Можно ли оплатить с компьютера?',
-    a: 'Да. Оплатить и посмотреть свой доступ можно где угодно, а приложения ставятся на iPhone.',
-  },
-];
+  [
+    'Когда начнётся подписка?',
+    'Сразу после оплаты. Срок — 1 месяц с момента, когда оплата подтвердилась.',
+  ],
+  [
+    'Нужна ли регистрация?',
+    'Нет. Достаточно почты: на неё придёт письмо об оплате и код для входа.',
+  ],
+  [
+    'Можно ли оплатить с компьютера?',
+    'Да. Оплатить и посмотреть свой доступ можно где угодно, а приложения ставятся на iPhone.',
+  ],
+] as const;
 
-async function loadPlan(): Promise<PlanView | null> {
+type Api = Awaited<ReturnType<typeof serverApi>>;
+
+async function planPrice(api: Api): Promise<number | null> {
   try {
-    return await (await serverApi()).getPlan();
+    return (await api.getPlan()).priceRub;
   } catch (err) {
     if (err instanceof ApiClientError && err.status < 500) return null;
     throw err;
   }
 }
 
+/** The icons on the card come from the catalog; the page still opens without them. */
+async function sectionApps(api: Api, slug: 'removed' | 'premium'): Promise<AppCard[]> {
+  return api
+    .section(slug)
+    .then((page) => page.items)
+    .catch((): AppCard[] => []);
+}
+
+/** One plan, shown with the card and the questions of the home page (owner 2026-11-25, ПК 8). */
 export default async function PricingPage() {
-  const plan = await loadPlan();
+  const api = await serverApi();
+  const [priceRub, removed, premium] = await Promise.all([
+    planPrice(api),
+    sectionApps(api, 'removed'),
+    sectionApps(api, 'premium'),
+  ]);
   return (
     <div className={styles.page}>
       <header className={styles.head}>
         <h1 className={styles.title}>Тарифы</h1>
         <p className={styles.lead}>Один тариф без выбора и мелкого шрифта.</p>
       </header>
-
-      <section className={styles.card} aria-labelledby="plan-title">
-        <h2 id="plan-title" className={styles.planTitle}>
-          Доступ ко всему каталогу
-        </h2>
-        {plan ? (
-          <p className={styles.price}>
-            {formatRub(plan.priceRub)}
-            <span className={styles.per}> за 1 месяц</span>
-          </p>
-        ) : (
-          <p className={styles.lead}>Цена появится совсем скоро.</p>
-        )}
-        <ul className={styles.list}>
-          {included.map((item) => (
-            <li key={item} className={styles.item}>
-              <svg
-                className={styles.tick}
-                width="18"
-                height="18"
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-              >
-                <path
-                  d="m2.5 6.5 2.2 2.2L9.5 3.8"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p className={styles.note}>Подписка начнётся сразу после оплаты.</p>
-        <Button href="/get" disabled={!plan} className={styles.cta}>
-          Оформить доступ
-        </Button>
-      </section>
-
-      <section className={styles.faq} aria-labelledby="faq-title">
-        <h2 id="faq-title" className={styles.faqTitle}>
-          Частые вопросы
-        </h2>
-        {questions.map(({ q, a }) => (
-          <details key={q} className={styles.question}>
-            <summary className={styles.summary}>{q}</summary>
-            <p className={styles.answer}>{a}</p>
-          </details>
-        ))}
-      </section>
+      <HomePlan priceRub={priceRub} apps={[...removed, ...premium]} />
+      <HomeFaq questions={questions} />
     </div>
   );
 }

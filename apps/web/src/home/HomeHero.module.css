@@ -190,10 +190,6 @@
   stroke-linejoin: round;
 }
 
-.visual {
-  display: none;
-}
-
 .after {
   /* Above the sky, which reaches into the audience line. */
   position: relative;
@@ -383,27 +379,18 @@
   }
 }
 
-/* Computer: two columns, text on the left, the picture slot on the right (picture postponed:
-   the iPhone with the mini catalog stays there). 96 px from the pill to the heading. */
+/* Computer (owner 2026-11-25, variant А «По центру»): one centred column like on a phone, no
+   picture beside it; the lane runs across the whole screen. Mockup
+   https://claude.ai/artifact/VZXYCVZgQ9pCZAG85DbK6y. */
 @media (min-width: 64em) {
   .hero {
-    /* «Выше» (owner 2026-11-23): 32px from the pill to the heading. From the screen edge to the
-       text column: the lanes start at the screen edge. */
+    /* «Выше» (owner 2026-11-23): 32px from the pill to the heading. */
     --hero-top: calc(var(--hero-under-pill) + 1rem);
-    --hero-bleed: calc(
-      (100vw - min(100vw, var(--x-page-max) + 2 * var(--x-gutter))) /
-      2 +
-      var(--x-gutter)
-    );
     padding-bottom: 3rem;
   }
 
   .inner {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    column-gap: 3.5rem;
-    justify-items: start;
-    max-width: var(--x-page-max);
-    text-align: left;
+    max-width: 44rem;
   }
 
   .title {
@@ -411,27 +398,24 @@
   }
 
   .sub {
+    max-width: 34rem;
     margin-top: 1rem;
     font: var(--x-type-leadlg);
     font-weight: 500;
   }
 
   .lanes {
-    justify-self: start;
-    width: calc(100% + var(--hero-bleed));
     margin-top: 2rem;
-    margin-left: calc(-1 * var(--hero-bleed));
   }
 
   .search {
     margin-top: 2rem;
   }
 
-  /* The approved button on a computer too (owner 2026-11-23): as wide as the search above it. */
-  /* Owner 2026-11-24 («сетка Apple»): a 48px pill, 17px label. */
+  /* Owner 2026-11-24 («сетка Apple»): a 48px pill, 17px label; 2026-11-25 (ПК пункт 2): as wide
+     as a button, 320px, not as the search. */
   .cta {
-    /* The picture column makes the rows taller; the pill keeps its 48px. */
-    align-self: start;
+    width: 20rem;
     min-height: 3rem;
     margin-top: 0.75rem;
     font: var(--x-type-buttonsm);
@@ -451,15 +435,6 @@
   /* On a computer the sky ends before the hero does (880px, owner 2026-11-24). */
   .inner > .sky {
     height: min(55rem, 100%);
-  }
-
-  .visual {
-    display: grid;
-    grid-row: 1 / 8;
-    grid-column: 2;
-    place-items: center;
-    align-self: center;
-    justify-self: center;
   }
 
   .after {

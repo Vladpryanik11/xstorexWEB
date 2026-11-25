@@ -55,7 +55,7 @@ test('first-screen search is the App Store glass pill', async ({ page, isMobile 
 });
 
 // Owner 2026-11-23: both «Подключить» buttons are the Apple-like pill В+ in Apple blue #0071E3.
-test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page }) => {
+test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page, isMobile }) => {
   await page.goto('/');
   const cta = page.locator('[data-hero-cta]');
   await expect(cta).toHaveCSS('background-color', 'rgb(0, 113, 227)');
@@ -65,12 +65,17 @@ test('«Подключить iPhone» is a flat Apple-blue pill', async ({ page 
   await expect(cta).toHaveCSS('font-size', '17px');
   await expect(cta).toHaveCSS('font-weight', '600');
   await expect(cta.locator('svg')).toHaveCount(0);
-  // The same button on a computer (owner 2026-11-23): as wide as the search field above it.
+  // On a computer (owner 2026-11-25, ПК пункт 2) the button is 320 px, centred under the search.
   const search = await page.locator('[data-home-hero] form[role=search]').boundingBox();
   const box = await cta.boundingBox();
   expect(box?.height).toBe(48);
-  expect(box?.width).toBe(search?.width);
-  expect(box?.x).toBe(search?.x);
+  if (isMobile) {
+    expect(box?.width).toBe(search?.width);
+  } else {
+    expect(box?.width).toBe(320);
+    const mid = (b: typeof box) => (b?.x ?? 0) + (b?.width ?? 0) / 2;
+    expect(Math.abs(mid(box) - mid(search))).toBeLessThan(1);
+  }
 });
 
 // Owner 2026-11-24 (variant Б «Синяя, как небо»): the plan card carries the sky of the first
