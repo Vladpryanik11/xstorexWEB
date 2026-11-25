@@ -370,7 +370,7 @@
   gap: 0.5rem;
   max-height: 100%;
   box-sizing: border-box;
-  padding: 0.5rem;
+  padding: 0.625rem 0.625rem 0.75rem;
   border-radius: var(--x-radius-panel);
   background: var(--x-white);
   box-shadow: var(--x-shadow);
@@ -384,64 +384,143 @@
   animation: panel-out 0.22s var(--x-ease) both;
 }
 
-.card {
+/* One white panel (owner 2026-11-25, spec 2026-11-25-mobile-menu-design): the word home, a blue
+   subscription card, the catalog large, the secondary pages small and grey, the support mail. */
+.sheetBody a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheetBody a:focus-visible {
+  outline: 2px solid var(--x-blue-ring);
+  outline-offset: 2px;
+}
+
+.sheetWord {
+  justify-self: start;
+  padding: 0.375rem 0.75rem 0.25rem;
+  border-radius: var(--x-radius-field);
+  color: var(--x-text);
+  font: var(--x-type-h2);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.sheetWord span {
+  color: var(--x-blue);
+}
+
+.promo {
   display: grid;
-  gap: 0.25rem;
-  padding: 0.75rem 0.5rem 0.5rem;
+  gap: 0.625rem;
+  padding: 1rem 1rem 0.875rem;
   border-radius: var(--x-radius-card);
-  background: var(--x-ice);
-  animation: card-in 0.36s var(--x-ease-sheet) both;
+  background: linear-gradient(135deg, var(--x-cta), var(--x-sky-400));
+  color: var(--x-white);
 }
 
-.cardTitle {
-  padding: 0 0.5rem;
-  color: var(--x-text-2);
-  font: var(--x-type-cap);
-  font-weight: 600;
+.promoKicker {
+  font: var(--x-type-eyebrow);
   letter-spacing: var(--x-track-small);
+  text-transform: uppercase;
+  opacity: 0.88;
 }
 
-.sheetList {
+.promoTitle {
+  font: var(--x-type-howhead);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.promoPrimary,
+.promoGlass {
+  display: grid;
+  place-items: center;
+  border-radius: var(--x-radius-pill);
+  text-decoration: none;
+  transition: transform 0.16s var(--x-ease);
+}
+
+.promoPrimary {
+  min-height: 2.875rem;
+  background: var(--x-white);
+  color: var(--x-cta);
+  font: var(--x-type-buttonsm);
+}
+
+/* «Есть доступ? Войти» (owner 2026-11-25, variant Л3): glass, weaker than the white button. */
+.promoGlass {
+  min-height: 2.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--x-white);
+  font: var(--x-type-ui);
+  font-weight: 600;
+  letter-spacing: var(--x-track-body);
+}
+
+.promoPrimary:active,
+.promoGlass:active {
+  transform: scale(0.97);
+}
+
+.promo a:focus-visible {
+  outline-color: var(--x-white);
+}
+
+.mainList,
+.moreList {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.item {
+.mainList a {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  min-height: 3rem;
-  padding: 0 0.5rem;
+  min-height: 2.875rem;
+  padding: 0 0.75rem;
   border-radius: var(--x-radius-field);
   color: var(--x-text);
+  font: var(--x-type-howhead);
+  letter-spacing: -0.005em;
+  text-decoration: none;
+}
+
+.mainList li + li {
+  box-shadow: inset 0 1px 0 var(--x-hair);
+}
+
+/* The secondary pages: small and grey under a line (owner 2026-11-25, «вторичные маленьким серым»). */
+.moreList {
+  padding-top: 0.375rem;
+  box-shadow: inset 0 1px 0 var(--x-hair);
+}
+
+.moreList a {
+  display: flex;
+  align-items: center;
+  min-height: 2.625rem;
+  padding: 0 0.75rem;
+  border-radius: var(--x-radius-field);
+  color: var(--x-text-2);
   font: var(--x-type-body);
+  font-weight: 500;
   letter-spacing: var(--x-track-body);
   text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
-.item[aria-current="page"] {
-  background: var(--x-white);
-  color: var(--x-quiet-fg);
-  box-shadow: var(--x-shadow-sm);
+.mainList a[aria-current="page"],
+.moreList a[aria-current="page"] {
+  color: var(--x-cta);
 }
 
-.quietItem {
-  color: var(--x-text-2);
-}
-
-.item:active {
+.mainList a:active,
+.moreList a:active {
   background: var(--x-sky-50);
 }
 
-.item:focus-visible {
-  outline: 2px solid var(--x-blue-ring);
-  outline-offset: -2px;
-}
-
 @media (hover: hover) and (pointer: fine) {
-  .item:hover {
+  .mainList a:hover,
+  .moreList a:hover {
     background: var(--x-sky-50);
   }
 
@@ -451,15 +530,18 @@
   }
 }
 
-.icon {
-  flex: none;
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--x-blue);
+.support {
+  margin: 0;
+  padding: 0.375rem 0.75rem 0.25rem;
+  color: var(--x-text-2);
+  font: var(--x-type-count);
+  letter-spacing: var(--x-track-small);
+  text-align: center;
 }
 
-.quietItem .icon {
-  color: var(--x-text-3);
+.support a {
+  color: var(--x-text);
+  text-decoration: none;
 }
 
 @keyframes backdrop-in {
@@ -485,13 +567,6 @@
   to {
     opacity: 0;
     transform: translateY(-0.5rem) scaleY(0.96);
-  }
-}
-
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem);
   }
 }
 
@@ -593,8 +668,7 @@
   }
 
   .sheet,
-  .sheetBody,
-  .card {
+  .sheetBody {
     animation: none;
   }
 

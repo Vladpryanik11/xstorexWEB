@@ -97,17 +97,22 @@ test('no horizontal overflow at 320px', async ({ page }) => {
   expect(await noHorizontalScroll(page)).toBe(true);
 });
 
-test('card menu opens under the pill and closes on Escape', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('the menu panel opens under the pill, fits an iPhone 13 and closes on Escape', async ({
+  page,
+}) => {
+  // Owner 2026-11-25: one white panel instead of three cards; it fits without scrolling.
+  await page.setViewportSize({ width: 390, height: 664 });
   await page.goto('/dev/ui?auth=1');
   const burger = page.getByRole('button', { name: 'Меню' });
   await burger.click();
   const menu = page.getByRole('dialog');
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('group')).toHaveCount(3);
+  await expect(menu.getByRole('group')).toHaveCount(0);
   const pillBox = await pill(page).boundingBox();
-  const firstCard = await menu.getByRole('group').first().boundingBox();
-  expect(firstCard?.y).toBeGreaterThan((pillBox?.y ?? 0) + (pillBox?.height ?? 0));
+  const word = await menu.getByRole('link', { name: 'Xstorex, на главную' }).boundingBox();
+  expect(word?.y).toBeGreaterThan((pillBox?.y ?? 0) + (pillBox?.height ?? 0));
+  const support = await menu.getByRole('link', { name: 'support@xstorex.app' }).boundingBox();
+  expect((support?.y ?? 0) + (support?.height ?? 0)).toBeLessThanOrEqual(664);
   await expect(menu.getByRole('link', { name: 'Мой доступ' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
