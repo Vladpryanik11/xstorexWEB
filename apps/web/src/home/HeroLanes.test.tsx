@@ -40,6 +40,15 @@ it('holds three equal copies of the lane, so it can be scrolled without an end',
   expect(links.length).toBeGreaterThanOrEqual(36);
 });
 
+// Owner 2026-11-25 (ПК «По центру»): the lane spans the whole screen, so one copy must be wide
+// enough for the search to bring any app to the middle on a 2560 px screen (24 icons of 76 px).
+it('fills each copy with at least 24 icons, even with few apps', () => {
+  const { container } = render(
+    <HeroLanes removed={[app('a', '/a.png')]} premium={[app('p', '/p.png')]} />,
+  );
+  expect(container.querySelectorAll('[data-lane-track] a').length).toBeGreaterThanOrEqual(72);
+});
+
 it('opens the install sheet of an app at once, naming each app once for a screen reader', () => {
   const { container } = render(
     <HeroLanes removed={[app('a', '/a.png'), app('b', '/b.png')]} premium={[]} />,
