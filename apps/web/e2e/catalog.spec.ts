@@ -37,9 +37,14 @@ test('the header «Как это работает» opens the window over the ho
 }) => {
   await page.goto('/faq');
   // Owner 2026-11-24 12:29: the section «Как это работает» left the home page; the header item
-  // (/#how) opens the window instead. The phone menu has no such item: a shared link opens it there.
-  if (isMobile) await page.goto('/#how');
-  else
+  // (/#how) opens the window instead. On a phone the item is in the menu (owner 2026-11-25).
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Меню' }).click();
+    await page
+      .getByRole('dialog', { name: 'Меню' })
+      .getByRole('link', { name: 'Как это работает', exact: true })
+      .click();
+  } else
     await page
       .getByRole('navigation', { name: 'Основное меню' })
       .getByRole('link', { name: 'Как это работает', exact: true })

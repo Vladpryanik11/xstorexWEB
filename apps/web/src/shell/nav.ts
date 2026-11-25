@@ -20,15 +20,6 @@ const connect: NavItem = { href: '/get', label: 'Подключить iPhone' };
 /** Support is by mail in working hours; there is no support page. */
 export const SUPPORT_MAIL = 'support@xstorex.app';
 
-/**
- * Help: the phone menu card «Помощь». No «Блог» until the blog exists (owner 2026-11-25, ПК
- * пункт 3); «Поддержка» writes to the support mail.
- */
-const siteItems: NavItem[] = [
-  { href: '/faq', label: 'Вопросы' },
-  { href: `mailto:${SUPPORT_MAIL}`, label: 'Поддержка' },
-];
-
 /** The middle row after «Каталог» (spec 2026-11-23-home-first-screen §2, owner 2026-11-25). */
 const rowItems: NavItem[] = [
   { href: '/#how', label: 'Как это работает' },
@@ -53,19 +44,6 @@ export function navFor(state: NavState): EndItem[] {
   ];
 }
 
-/**
- * The «Доступ» card of the phone menu keeps pricing (spec v2 §2) and, since the phone pill holds
- * only the word and the menu (owner 2026-11-23), «Подключить iPhone» for everyone without access.
- */
-function accessItems(state: NavState): EndItem[] {
-  if (state.hasAccess) return [{ ...access, kind: 'entry' }];
-  return [
-    { ...connect, kind: 'entry' },
-    { ...pricing, kind: 'entry' },
-    { ...(state.signedIn ? access : signin), kind: 'quiet' },
-  ];
-}
-
 /** The middle row: the same for everyone. */
 export function navItems(): NavItem[] {
   return [...rowItems];
@@ -76,27 +54,44 @@ export function isActive(path: string, href: string): boolean {
   return path === href || path.startsWith(`${href}/`);
 }
 
-export type MenuCard = { title: string; items: (NavItem & { quiet?: boolean })[] };
+export type PhonePromo = {
+  kicker: string;
+  title: string;
+  /** The white button of the blue card. */
+  primary: NavItem;
+  /** The glass button under it: the way in for someone who has already paid. */
+  secondary?: NavItem;
+};
 
-/** Cards of the phone menu (spec 2026-11-17 §5): catalog, access, help. */
-export function menuCards(state: NavState): MenuCard[] {
-  return [
-    {
-      title: 'Каталог',
-      items: [
-        { href: '/', label: 'Главная' },
-        ...SECTIONS.map((s) => ({ href: s.href, label: s.title })),
-        { href: '/search', label: 'Поиск' },
-      ],
-    },
-    {
-      title: 'Доступ',
-      items: accessItems(state).map(({ href, label, kind }) =>
-        kind === 'quiet' ? { href, label, quiet: true } : { href, label },
-      ),
-    },
-    { title: 'Помощь', items: [...siteItems] },
+export type PhoneMenu = { promo: PhonePromo; main: NavItem[]; more: NavItem[] };
+
+/**
+ * The phone menu (owner 2026-11-25, spec 2026-11-25-mobile-menu-design): a blue subscription card
+ * that follows the session, the catalog large, the secondary pages small and grey. A subscriber is
+ * not offered to buy again: no «Тарифы», the card leads to «Мой доступ».
+ */
+export function phoneMenu(state: NavState): PhoneMenu {
+  const main: NavItem[] = [
+    ...SECTIONS.map((s) => ({ href: s.href, label: s.title })),
+    { href: '/search', label: 'Поиск' },
   ];
+  if (state.hasAccess) {
+    return {
+      promo: { kicker: 'Подписка активна', title: 'Весь каталог уже ваш', primary: access },
+      main,
+      more: [...rowItems],
+    };
+  }
+  return {
+    promo: {
+      kicker: 'Подписка',
+      title: 'Весь каталог в одной подписке',
+      primary: connect,
+      secondary: state.signedIn ? access : { href: signin.href, label: 'Есть доступ? Войти' },
+    },
+    main,
+    more: [...rowItems, pricing],
+  };
 }
 
 /** Paths where «Каталог» is the current header item: the catalog, its sections and search. */

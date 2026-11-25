@@ -2,90 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
-import { SECTIONS } from '../catalog/sections';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import styles from './Header.module.css';
-import { isActive, menuCards, type NavState } from './nav';
+import { isActive, type NavItem, type NavState, phoneMenu, SUPPORT_MAIL } from './nav';
 
 export type MobileMenuProps = {
   nav: NavState;
   /** Overrides the current path (dev showcase). */
   forcedPath?: string;
 };
-
-// 24px line icons, drawn for Xstore.
-const strokes: Record<string, ReactNode> = {
-  '/': (
-    <>
-      <path d="M4.75 10.5 12 4.75l7.25 5.75v8.25a1.5 1.5 0 0 1-1.5 1.5h-3.5v-5.5h-4.5v5.5h-3.5a1.5 1.5 0 0 1-1.5-1.5z" />
-    </>
-  ),
-  '/search': (
-    <>
-      <circle cx="10.75" cy="10.75" r="6" />
-      <path d="m15.25 15.25 4 4" />
-    </>
-  ),
-  '/pricing': (
-    <>
-      <path d="M4.75 12.6V5.75a1 1 0 0 1 1-1h6.85l7.15 7.15a1.5 1.5 0 0 1 0 2.12l-5.73 5.73a1.5 1.5 0 0 1-2.12 0z" />
-      <circle cx="8.75" cy="8.75" r="1.25" />
-    </>
-  ),
-  '/access': (
-    <>
-      <path d="M12 3.75 5.25 6.5v5.1c0 4.1 2.85 7.5 6.75 8.65 3.9-1.15 6.75-4.55 6.75-8.65V6.5z" />
-      <path d="m9.25 12 2 2 3.5-3.75" />
-    </>
-  ),
-  '/faq': (
-    <>
-      <path d="M12 3.75c4.56 0 8.25 3.25 8.25 7.25s-3.69 7.25-8.25 7.25c-.97 0-1.9-.15-2.76-.42L5 19.75l1.1-3.6C4.68 14.85 3.75 13.02 3.75 11c0-4 3.69-7.25 8.25-7.25z" />
-      <path d="M10.1 9.4a1.95 1.95 0 1 1 2.75 1.78c-.55.25-.85.7-.85 1.3v.27M12 15.1v.05" />
-    </>
-  ),
-  'mailto:support@xstorex.app': (
-    <>
-      <circle cx="12" cy="12" r="8.25" />
-      <circle cx="12" cy="12" r="3.5" />
-      <path d="m6.2 6.2 3.3 3.3m5 5 3.3 3.3m0-11.6-3.3 3.3m-5 5-3.3 3.3" />
-    </>
-  ),
-  '/get': (
-    <>
-      <rect x="6.75" y="2.75" width="10.5" height="18.5" rx="2.5" />
-      <path d="M10.75 18.25h2.5" />
-    </>
-  ),
-  '/signin': (
-    <>
-      <path d="M14 4.25h3.25a2 2 0 0 1 2 2v11.5a2 2 0 0 1-2 2H14" />
-      <path d="M4.75 12h9.5m0 0-3.75-3.75M14.25 12l-3.75 3.75" />
-    </>
-  ),
-};
-
-// Catalog sections draw the same icons as their tiles on the home page.
-for (const section of SECTIONS) {
-  strokes[section.href] = <path d={section.icon} />;
-}
-
-function Icon({ href }: { href: string }) {
-  return (
-    <svg
-      className={styles.icon}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {strokes[href]}
-    </svg>
-  );
-}
 
 /** How long the sheet takes to slide out (matches `.leaving` in Header.module.css). */
 const LEAVE_MS = 220;
@@ -94,9 +19,12 @@ const LEAVE_MS = 220;
 const WIDE = '(min-width: 48em)';
 
 /**
- * Phone menu: the header pill opens into a row of cards, adapted from React Bits «Card Nav»
- * (https://reactbits.dev/components/card-nav). Keeps the modal dialog behaviour: focus trap,
- * Escape, closing on navigation and on crossing 48em.
+ * Phone menu (owner 2026-11-25, spec 2026-11-25-mobile-menu-design): one white panel under the
+ * round button, adapted from the mobile menu of Aceternity «Resizable Navbar»
+ * (https://ui.aceternity.com/components/resizable-navbar): the word home, a blue subscription
+ * card with its two buttons, the catalog large, the secondary pages small and grey, the support
+ * mail. Keeps the modal dialog behaviour: focus trap, Escape, closing on navigation and on
+ * crossing 48em.
  */
 export function MobileMenu({ nav, forcedPath }: MobileMenuProps) {
   const pathname = usePathname();
@@ -169,18 +97,19 @@ export function MobileMenu({ nav, forcedPath }: MobileMenuProps) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, close]);
 
-  const row = (href: string, label: string, quiet = false) => (
-    <li key={href}>
-      <Link
-        className={quiet ? `${styles.item} ${styles.quietItem}` : styles.item}
-        href={href}
-        aria-current={isActive(path, href) ? 'page' : undefined}
-        onClick={() => setState('closed')}
-      >
-        <Icon href={href} />
-        <span>{label}</span>
-      </Link>
-    </li>
+  const menu = phoneMenu(nav);
+  const shut = () => setState('closed');
+  const current = (href: string) => (isActive(path, href) ? 'page' : undefined);
+  const rows = (items: NavItem[], className: string | undefined, label: string) => (
+    <ul className={className} aria-label={label}>
+      {items.map((item) => (
+        <li key={item.href}>
+          <Link href={item.href} aria-current={current(item.href)} onClick={shut}>
+            {item.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 
   return (
@@ -212,23 +141,44 @@ export function MobileMenu({ nav, forcedPath }: MobileMenuProps) {
           inert={leaving || undefined}
         >
           <div className={styles.sheetBody}>
-            {menuCards(nav).map((card, i) => (
-              // biome-ignore lint/a11y/useSemanticElements: a group of links, not form controls, so no <fieldset>
-              <div
-                key={card.title}
-                role="group"
-                aria-label={card.title}
-                className={styles.card}
-                style={{ animationDelay: `${60 + i * 50}ms` }}
+            <Link
+              className={styles.sheetWord}
+              href="/"
+              aria-label="Xstorex, на главную"
+              onClick={shut}
+            >
+              X<span>storex</span>
+            </Link>
+            <div className={styles.promo}>
+              <span className={styles.promoKicker}>{menu.promo.kicker}</span>
+              <span className={styles.promoTitle}>{menu.promo.title}</span>
+              <Link
+                className={styles.promoPrimary}
+                href={menu.promo.primary.href}
+                aria-current={current(menu.promo.primary.href)}
+                onClick={shut}
               >
-                <span className={styles.cardTitle} aria-hidden="true">
-                  {card.title}
-                </span>
-                <ul className={styles.sheetList}>
-                  {card.items.map((item) => row(item.href, item.label, item.quiet))}
-                </ul>
-              </div>
-            ))}
+                {menu.promo.primary.label}
+              </Link>
+              {menu.promo.secondary ? (
+                <Link
+                  className={styles.promoGlass}
+                  href={menu.promo.secondary.href}
+                  aria-current={current(menu.promo.secondary.href)}
+                  onClick={shut}
+                >
+                  {menu.promo.secondary.label}
+                </Link>
+              ) : null}
+            </div>
+            {rows(menu.main, styles.mainList, 'Каталог')}
+            {rows(menu.more, styles.moreList, 'Ещё')}
+            <p className={styles.support}>
+              Поддержка:{' '}
+              <a href={`mailto:${SUPPORT_MAIL}`} onClick={shut}>
+                {SUPPORT_MAIL}
+              </a>
+            </p>
           </div>
         </div>
       )}

@@ -3,10 +3,10 @@ import {
   catalogMenu,
   isActive,
   isCatalogPath,
-  menuCards,
   navFor,
   navItems,
   navStateFrom,
+  phoneMenu,
 } from './nav';
 
 const GUEST = { signedIn: false, hasAccess: false };
@@ -67,24 +67,54 @@ describe('navItems', () => {
   });
 });
 
-describe('menuCards', () => {
-  const labels = (state: typeof GUEST) =>
-    menuCards(state).map((card) => [card.title, card.items.map((i) => i.label)]);
+describe('phoneMenu', () => {
+  const pick = (state: typeof GUEST) => {
+    const m = phoneMenu(state);
+    return {
+      promo: [m.promo.kicker, m.promo.title, m.promo.primary.label, m.promo.secondary?.label],
+      main: m.main.map((i) => i.label),
+      more: m.more.map((i) => i.label),
+    };
+  };
 
   it('the word «аккаунт» never shows', () => {
     for (const state of [GUEST, SUBSCRIBER, SIGNED_IN_NO_ACCESS]) {
-      expect(JSON.stringify(labels(state)).toLowerCase()).not.toContain('аккаунт');
+      expect(JSON.stringify(phoneMenu(state)).toLowerCase()).not.toContain('аккаунт');
     }
   });
 
-  it('access card follows the session', () => {
-    // Owner 2026-11-23: the phone pill holds only the word and the menu, so «Подключить» moves here.
-    expect(labels(GUEST)[1]).toEqual(['Доступ', ['Подключить iPhone', 'Тарифы', 'Войти']]);
-    expect(labels(SUBSCRIBER)[1]).toEqual(['Доступ', ['Мой доступ']]);
-    expect(labels(SIGNED_IN_NO_ACCESS)[1]).toEqual([
-      'Доступ',
-      ['Подключить iPhone', 'Тарифы', 'Мой доступ'],
-    ]);
+  it('a guest: the subscription card offers to connect, then «Есть доступ? Войти»', () => {
+    expect(pick(GUEST)).toEqual({
+      promo: [
+        'Подписка',
+        'Весь каталог в одной подписке',
+        'Подключить iPhone',
+        'Есть доступ? Войти',
+      ],
+      main: ['Удалённые из App Store', 'Premium доступы', 'Поиск'],
+      more: ['Как это работает', 'Вопросы', 'Тарифы'],
+    });
+    const m = phoneMenu(GUEST);
+    expect(m.promo.primary.href).toBe('/get');
+    expect(m.promo.secondary?.href).toBe('/signin');
+    expect(m.main.map((i) => i.href)).toEqual(['/removed', '/premium', '/search']);
+    expect(m.more.map((i) => i.href)).toEqual(['/#how', '/faq', '/pricing']);
+  });
+
+  it('signed in without access: the second button leads to «Мой доступ»', () => {
+    const m = phoneMenu(SIGNED_IN_NO_ACCESS);
+    expect(m.promo.primary).toEqual({ href: '/get', label: 'Подключить iPhone' });
+    expect(m.promo.secondary).toEqual({ href: '/access', label: 'Мой доступ' });
+    expect(m.more.map((i) => i.label)).toContain('Тарифы');
+  });
+
+  it('a subscriber is not offered to buy again', () => {
+    expect(pick(SUBSCRIBER)).toEqual({
+      promo: ['Подписка активна', 'Весь каталог уже ваш', 'Мой доступ', undefined],
+      main: ['Удалённые из App Store', 'Premium доступы', 'Поиск'],
+      more: ['Как это работает', 'Вопросы'],
+    });
+    expect(phoneMenu(SUBSCRIBER).promo.primary.href).toBe('/access');
   });
 });
 

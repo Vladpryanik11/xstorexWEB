@@ -133,7 +133,7 @@ describe('Header', () => {
     expect(pills[0]?.closest('a')).toHaveTextContent('Вопросы');
   });
 
-  it('has no logo and no word «Xstorex» (owner 2026-11-23); «Главная» stays in the menu', () => {
+  it('has no logo and no word «Xstorex» (owner 2026-11-23); the menu word leads home', () => {
     const { container } = render(<Header nav={GUEST} />);
     expect(container.querySelector('header img')).toBeNull();
     expect(screen.queryByRole('link', { name: /Xstorex/ })).toBeNull();
@@ -141,9 +141,13 @@ describe('Header', () => {
     const pill = screen.getByRole('navigation', { name: 'Основное меню' }).parentElement;
     expect(pill?.firstElementChild).toBe(screen.getByRole('navigation', { name: 'Основное меню' }));
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    expect(
-      within(screen.getByRole('dialog')).getByRole('link', { name: 'Главная' }),
-    ).toHaveAttribute('href', '/');
+    // Owner 2026-11-25: the phone menu opens with the word «Xstorex», a link home, not «Главная».
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('link', { name: 'Xstorex, на главную' })).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(within(sheet).queryByRole('link', { name: 'Главная' })).toBeNull();
   });
 
   it('forcedPath overrides the current path', () => {
@@ -164,7 +168,9 @@ describe('Header', () => {
 });
 
 describe('MobileMenu', () => {
-  it('burger opens the card menu: catalog, access and help cards', () => {
+  // Owner 2026-11-25 (spec 2026-11-25-mobile-menu-design): one white panel, a blue subscription
+  // card, the catalog large, secondary pages small and grey, the support mail at the bottom.
+  it('burger opens one panel: word, subscription card, catalog, secondary pages, support', () => {
     render(<Header nav={SUB} />);
     const burger = screen.getByRole('button', { name: 'Меню' });
     expect(burger).toHaveAttribute('aria-expanded', 'false');
@@ -175,53 +181,87 @@ describe('MobileMenu', () => {
     expect(burger).toHaveAttribute('aria-expanded', 'true');
     const sheet = screen.getByRole('dialog');
     expect(sheet).toHaveAttribute('aria-modal', 'true');
-    const cards = within(sheet).getAllByRole('group');
-    expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual([
-      'Каталог',
-      'Доступ',
-      'Помощь',
-    ]);
-    const labels = (card: HTMLElement) =>
-      within(card)
+    // No group captions and no cards inside the panel any more.
+    expect(within(sheet).queryAllByRole('group')).toHaveLength(0);
+    expect(
+      within(sheet)
         .getAllByRole('link')
-        .map((link) => link.textContent);
-    expect(labels(cards[0] as HTMLElement)).toEqual([
-      'Главная',
+        .map((link) => link.textContent),
+    ).toEqual([
+      'Xstorex',
+      'Мой доступ',
       'Удалённые из App Store',
       'Premium доступы',
       'Поиск',
+      'Как это работает',
+      'Вопросы',
+      'support@xstorex.app',
     ]);
-    expect(labels(cards[1] as HTMLElement)).toEqual(['Мой доступ']);
-    expect(labels(cards[2] as HTMLElement)).toEqual(['Вопросы', 'Поддержка']);
-    // Support is by mail (no /support page): the menu writes to it.
-    expect(
-      within(cards[2] as HTMLElement).getByRole('link', { name: 'Поддержка' }),
-    ).toHaveAttribute('href', 'mailto:support@xstorex.app');
+    expect(within(sheet).getByText('Подписка активна')).toBeVisible();
+    expect(within(sheet).getByText('Весь каталог уже ваш')).toBeVisible();
+    expect(within(sheet).getByRole('link', { name: 'Мой доступ' })).toHaveAttribute(
+      'href',
+      '/access',
+    );
+    // Support is by mail (no /support page).
+    expect(within(sheet).getByRole('link', { name: 'support@xstorex.app' })).toHaveAttribute(
+      'href',
+      'mailto:support@xstorex.app',
+    );
+    expect(within(sheet).getByText(/Поддержка/)).toBeVisible();
     expect(within(sheet).getByRole('link', { name: 'Вопросы' })).toHaveAttribute(
       'aria-current',
       'page',
     );
   });
 
-  it('every menu row has its line icon', () => {
+  it('the catalog and the secondary pages are two lists, the rows have no icons', () => {
     render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    for (const link of within(screen.getByRole('dialog')).getAllByRole('link')) {
-      const icon = link.querySelector('svg');
-      expect(icon, link.textContent ?? '').not.toBeNull();
-      expect(icon?.childElementCount, link.textContent ?? '').toBeGreaterThan(0);
+    const sheet = screen.getByRole('dialog');
+    const catalog = within(sheet).getByRole('list', { name: 'Каталог' });
+    expect(
+      within(catalog)
+        .getAllByRole('link')
+        .map((l) => l.getAttribute('href')),
+    ).toEqual(['/removed', '/premium', '/search']);
+    const more = within(sheet).getByRole('list', { name: 'Ещё' });
+    expect(
+      within(more)
+        .getAllByRole('link')
+        .map((l) => l.textContent),
+    ).toEqual(['Как это работает', 'Вопросы', 'Тарифы']);
+    for (const list of [catalog, more]) {
+      expect(list.querySelector('svg')).toBeNull();
     }
   });
 
-  it('guest access card offers pricing and login', () => {
+  it('a guest gets «Подключить iPhone» and the glass button «Есть доступ? Войти» in the card', () => {
     render(<Header nav={GUEST} />);
     fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
-    const account = within(screen.getByRole('dialog')).getByRole('group', { name: 'Доступ' });
-    expect(within(account).getByRole('link', { name: 'Тарифы' })).toHaveAttribute(
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByText('Весь каталог в одной подписке')).toBeVisible();
+    expect(within(sheet).getByRole('link', { name: 'Подключить iPhone' })).toHaveAttribute(
       'href',
-      '/pricing',
+      '/get',
     );
-    expect(within(account).getByRole('link', { name: 'Войти' })).toHaveAttribute('href', '/signin');
+    expect(within(sheet).getByRole('link', { name: 'Есть доступ? Войти' })).toHaveAttribute(
+      'href',
+      '/signin',
+    );
+    expect(within(sheet).getByRole('link', { name: 'Тарифы' })).toHaveAttribute('href', '/pricing');
+  });
+
+  it('signed in without access: the glass button leads to «Мой доступ»', () => {
+    render(<Header nav={{ signedIn: true, hasAccess: false }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Меню' }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('link', { name: 'Подключить iPhone' })).toBeVisible();
+    expect(within(sheet).getByRole('link', { name: 'Мой доступ' })).toHaveAttribute(
+      'href',
+      '/access',
+    );
+    expect(within(sheet).queryByRole('link', { name: /Войти/ })).toBeNull();
   });
 
   it('Escape closes the sheet and returns focus to the burger', () => {
